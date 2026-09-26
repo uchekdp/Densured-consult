@@ -4,23 +4,18 @@ import { GalleryItem } from '../../types';
 import { Sparkles, Maximize2, X, CheckCircle2 } from 'lucide-react';
 
 export const GalleryPage: React.FC = () => {
-  const { galleryItems } = useApp();
+  const { galleryItems, galleryCategories } = useApp();
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
 
-  const categories = [
-    'All',
-    'CBT Lab',
-    'Classrooms',
-    'Practicals',
-    'Awards & Achievers',
-    'Campus Life',
-  ];
+  const categories = ['All', ...(galleryCategories || [])];
+
+  const currentCategory = categories.includes(activeCategory) ? activeCategory : 'All';
 
   const filteredItems =
-    activeCategory === 'All'
+    currentCategory === 'All'
       ? galleryItems
-      : galleryItems.filter((item) => item.category === activeCategory);
+      : galleryItems.filter((item) => item.category === currentCategory);
 
   return (
     <div className="space-y-12 pb-16 bg-slate-50/60">

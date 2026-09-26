@@ -409,5 +409,6 @@ export interface AdminUser {
   role: 'Directorate / Super Admin' | 'Registrar' | 'CBT Coordinator' | 'Accounts Officer';
   lastLogin: string;
   status: 'Active' | 'Suspended';
+  isSuperAdmin?: boolean;
 }
 

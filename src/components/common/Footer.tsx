@@ -1,6 +1,4 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
-import { PageId } from '../../types';
 import {
   Phone,
   MapPin,
@@ -8,23 +6,18 @@ import {
   ShieldCheck,
   CheckCircle2,
   MessageCircle,
+  Award,
+  BookCheck,
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { navigateTo } = useApp();
-
-  const handleLinkClick = (e: React.MouseEvent, page: PageId, tab?: string) => {
-    e.preventDefault();
-    navigateTo(page, tab);
-  };
-
   return (
-    <footer className="bg-[#0b1329] text-slate-300 border-t-4 border-sky-500">
-      {/* Upper CTA Banner - Navy Blue */}
-      <div className="bg-gradient-to-r from-[#0d1b3e] via-[#172554] to-[#0d1b3e] border-b border-sky-900/50 py-12 px-4 sm:px-6 lg:px-8">
+    <footer className="bg-[#081426] text-slate-300 border-t-4 border-sky-500">
+      {/* Upper CTA Banner - Deep Navy Blue */}
+      <div className="bg-gradient-to-r from-[#060e1c] via-[#0b1b36] to-[#060e1c] border-b border-sky-900/60 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-6">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-950/80 text-sky-300 border border-sky-700/60 shadow-xs mb-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-950 text-sky-300 border border-sky-700/60 shadow-xs mb-3">
               <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
               Official 2026/2027 Academic Session • 98.4% Pass Rate
             </span>
@@ -37,29 +30,29 @@ export const Footer: React.FC = () => {
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
             <a
-              href="#/admission"
-              onClick={(e) => handleLinkClick(e, 'admission')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl text-sm font-extrabold bg-[#D5241B] text-white hover:bg-[#b01c14] transition-all shadow-md text-center cursor-pointer active:scale-95 border border-[#FFC600]"
-            >
-              Start Admission Online
-            </a>
-            <a
               href="https://wa.me/2348147896930?text=Hello%20D%20Ensured%20Consult,%20I%20would%20like%20to%20enroll%20for%20classes."
               target="_blank"
               rel="noreferrer"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors shadow-xs"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-extrabold bg-[#D5241B] hover:bg-[#b01c14] text-white border border-[#FFC600] transition-all shadow-md active:scale-95"
             >
-              <MessageCircle className="w-4 h-4 text-sky-400" />
+              <MessageCircle className="w-4 h-4 text-white" />
               <span>Chat on WhatsApp: 08147896930</span>
+            </a>
+            <a
+              href="tel:08147896930"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold bg-[#0d2242] hover:bg-[#122e57] text-sky-300 border border-sky-700/50 transition-colors shadow-xs"
+            >
+              <Phone className="w-4 h-4 text-sky-400" />
+              <span>Call Helpline: 08147896930</span>
             </a>
           </div>
         </div>
       </div>
 
-      {/* Main Footer Links - Navy Blue */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10">
-          {/* Col 1: Brand & Credibility */}
+      {/* Main Footer Content - Navy Blue */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-[#081426]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
+          {/* Col 1: Brand & Directorate Info */}
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
               <img
@@ -82,80 +75,50 @@ export const Footer: React.FC = () => {
             </p>
 
             <div className="pt-2 flex flex-wrap gap-2 text-xs">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#111e38] border border-sky-900/60 text-slate-200 font-medium">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0e223f] border border-sky-800/60 text-slate-200 font-medium">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#009E49]" />
                 JAMB CBT Accredited Software
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#111e38] border border-sky-900/60 text-slate-200 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#009E49]" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0e223f] border border-sky-800/60 text-slate-200 font-medium">
+                <Award className="w-3.5 h-3.5 text-[#009E49]" />
                 British Council Certified Tutors
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#111e38] border border-sky-900/60 text-slate-200 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#009E49]" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0e223f] border border-sky-800/60 text-slate-200 font-medium">
+                <BookCheck className="w-3.5 h-3.5 text-[#009E49]" />
                 98.4% Proven Pass Rate
               </span>
             </div>
           </div>
 
-          {/* Col 2: Programs */}
+          {/* Col 2: Academic Programs Overview (Informational, No page/portal links) */}
           <div className="lg:col-span-3 space-y-3">
             <h4 className="text-sky-400 font-bold text-sm uppercase tracking-wider">
-              Examination Programs
+              Coaching Specializations
             </h4>
-            <ul className="space-y-2.5 text-sm text-slate-300 font-medium">
-              <li>
-                <a
-                  href="#/services"
-                  onClick={(e) => handleLinkClick(e, 'services')}
-                  className="hover:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  UTME (JAMB) CBT Coaching
-                </a>
+            <ul className="space-y-2 text-sm text-slate-300 font-medium">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                <span>UTME (JAMB) CBT Coaching</span>
               </li>
-              <li>
-                <a
-                  href="#/services"
-                  onClick={(e) => handleLinkClick(e, 'services')}
-                  className="hover:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  WAEC / WASSCE Science &amp; Arts
-                </a>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                <span>WAEC / WASSCE Science &amp; Arts</span>
               </li>
-              <li>
-                <a
-                  href="#/services"
-                  onClick={(e) => handleLinkClick(e, 'services')}
-                  className="hover:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  NECO Senior School Certificate
-                </a>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                <span>NECO Senior School Certificate</span>
               </li>
-              <li>
-                <a
-                  href="#/services"
-                  onClick={(e) => handleLinkClick(e, 'services')}
-                  className="hover:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  IELTS Academic &amp; General
-                </a>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                <span>IELTS Academic &amp; General</span>
               </li>
-              <li>
-                <a
-                  href="#/services"
-                  onClick={(e) => handleLinkClick(e, 'services')}
-                  className="hover:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  ATSWA Professional Accounting
-                </a>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                <span>ATSWA Professional Accounting</span>
               </li>
-              <li>
-                <a
-                  href="#/services"
-                  onClick={(e) => handleLinkClick(e, 'services')}
-                  className="hover:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  SAT &amp; TOEFL Coaching
-                </a>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                <span>Post-UTME Screening Drills</span>
               </li>
             </ul>
           </div>
@@ -163,9 +126,9 @@ export const Footer: React.FC = () => {
           {/* Col 3: Office Location & Contact */}
           <div className="lg:col-span-4 space-y-3">
             <h4 className="text-sky-400 font-bold text-sm uppercase tracking-wider">
-              Office Location
+              Campus Headquarters
             </h4>
-            <div className="space-y-3.5 text-xs text-slate-300">
+            <div className="space-y-3 text-xs text-slate-300">
               <div>
                 <p className="font-bold text-sky-400 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-[#D5241B] shrink-0" />
@@ -202,28 +165,16 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Legal Notice */}
-        <div className="mt-12 pt-8 border-t border-sky-950 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} D Ensured Consult. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <a
-              href="#/contact"
-              onClick={(e) => handleLinkClick(e, 'contact')}
-              className="hover:text-sky-300 cursor-pointer transition-colors"
-            >
-              Terms &amp; Guidelines
-            </a>
-            <span>•</span>
-            <a
-              href="#/contact"
-              onClick={(e) => handleLinkClick(e, 'contact')}
-              className="hover:text-sky-300 cursor-pointer transition-colors"
-            >
-              Privacy Policy
-            </a>
-          </div>
+        {/* Bottom Legal & Directorate Notice */}
+        <div className="mt-10 pt-6 border-t border-sky-950 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <p>© {new Date().getFullYear()} D Ensured Consult. Directorate &amp; Super Admin: Mr Akinjo Rotimi.</p>
+          <p className="text-slate-400">
+            Doyin Plaza, Okomaiko, Lagos State, Nigeria.
+          </p>
         </div>
       </div>
     </footer>
   );
 };
+
+export default Footer;

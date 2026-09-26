@@ -14,7 +14,7 @@ import {
 export const ADMIN_CREDENTIALS = {
   email: 'Densuredconsult@gmail.com',
   password: 'Blessing0147$$',
-  name: 'Directorate Office (Dr. Anthony Adeleke)',
+  name: 'Mr Akinjo Rotimi',
   role: 'Directorate / Super Admin' as const,
 };
 
@@ -552,35 +552,12 @@ export const AUDIT_LOGS_DATA: AuditLogItem[] = [
 
 export const ADMIN_USERS_DATA: AdminUser[] = [
   {
-    id: 'adm-1',
-    name: 'Dr. Anthony Adeleke',
+    id: 'adm-super',
+    name: 'Mr Akinjo Rotimi',
     email: 'Densuredconsult@gmail.com',
     role: 'Directorate / Super Admin',
-    lastLogin: 'Today, 08:30 AM',
+    lastLogin: 'Active Now',
     status: 'Active',
-  },
-  {
-    id: 'adm-2',
-    name: 'Mrs. Folashade Adeleke',
-    email: 'registrar@dec.ng',
-    role: 'Registrar',
-    lastLogin: 'Yesterday, 04:15 PM',
-    status: 'Active',
-  },
-  {
-    id: 'adm-3',
-    name: 'Engr. Chidi Okafor',
-    email: 'cbt.head@dec.ng',
-    role: 'CBT Coordinator',
-    lastLogin: '2 days ago',
-    status: 'Active',
-  },
-  {
-    id: 'adm-4',
-    name: 'Mr. Segun Oladipo (FCA)',
-    email: 'accounts@dec.ng',
-    role: 'Accounts Officer',
-    lastLogin: '3 days ago',
-    status: 'Active',
+    isSuperAdmin: true,
   },
 ];

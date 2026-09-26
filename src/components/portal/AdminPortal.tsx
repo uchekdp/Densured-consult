@@ -90,6 +90,9 @@ export const AdminPortal: React.FC = () => {
     galleryItems,
     addGalleryItem,
     deleteGalleryItem,
+    galleryCategories,
+    addGalleryCategory,
+    deleteGalleryCategory,
     cbtExams,
     addCBTExam,
     cbtAttempts,
@@ -104,6 +107,8 @@ export const AdminPortal: React.FC = () => {
     addAnnouncement,
     auditLogs,
     adminUsers,
+    addAdminUser,
+    deleteAdminUser,
     showToast,
   } = useApp();
 
@@ -223,6 +228,14 @@ export const AdminPortal: React.FC = () => {
   const [imageTargetPage, setImageTargetPage] = useState<WebsitePageTarget>('hero');
   const [imagePageFilter, setImagePageFilter] = useState<string>('All');
   const [imageToDelete, setImageToDelete] = useState<GalleryItem | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  // Admin Management States
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState<'Registrar' | 'CBT Coordinator' | 'Accounts Officer'>('Registrar');
+  const [adminToDelete, setAdminToDelete] = useState<any>(null);
 
   // Question Document Upload (MS Word / PDF)
   const [showUploadDocModal, setShowUploadDocModal] = useState(false);
@@ -569,14 +582,14 @@ export const AdminPortal: React.FC = () => {
             </p>
           </div>
 
-          {/* Confidential Notice (no passwords or usernames displayed) */}
+          {/* Confidential Notice */}
           <div className="p-3.5 bg-sky-50/50 rounded-xl border border-sky-200 text-xs text-[#1D1918] space-y-1">
             <div className="flex items-center gap-2 font-bold text-sky-700">
               <Lock className="w-4 h-4 text-sky-600" />
               <span>Directorate Clearance Required</span>
             </div>
             <p className="text-[11px] text-[#1D1918]/80 leading-relaxed">
-              This terminal is confidential and strictly restricted to accredited directorate executives, registrars, and CBT coordinators.
+              This terminal is confidential and strictly restricted to accredited directorate executives, registrars, and authorized administrative personnel.
             </p>
           </div>
 
@@ -2006,6 +2019,73 @@ export const AdminPortal: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Category Management Bar */}
+                <div className="p-4 bg-sky-50/70 rounded-2xl border border-sky-200 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="font-black text-sky-900 text-xs flex items-center gap-1.5">
+                        <Filter className="w-3.5 h-3.5 text-sky-600" />
+                        Manage Gallery &amp; Upload Categories ({galleryCategories.length})
+                      </span>
+                      <p className="text-[11px] text-sky-700">
+                        Admin can add and remove categories. Removing a category updates the public gallery and image upload options.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <input
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="New category name..."
+                        className="px-3 py-1.5 rounded-xl border border-sky-300 text-xs bg-white font-medium text-slate-800 outline-hidden w-full sm:w-48"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newCategoryName.trim()) {
+                            addGalleryCategory(newCategoryName);
+                            setNewCategoryName('');
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs"
+                      >
+                        + Add Category
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Badges with Delete button for each category */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {galleryCategories.map((cat) => {
+                      const count = galleryItems.filter((i) => i.category === cat).length;
+                      return (
+                        <div
+                          key={cat}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-sky-300 text-xs font-bold text-slate-800 shadow-2xs"
+                        >
+                          <span>{cat}</span>
+                          <span className="px-1.5 py-0.2 rounded-full bg-sky-100 text-sky-800 text-[10px] font-semibold">
+                            {count}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to remove the category "${cat}" from the gallery and image upload?`)) {
+                                deleteGalleryCategory(cat);
+                              }
+                            }}
+                            className="p-1 rounded-md text-red-500 hover:bg-red-50 hover:text-red-700 cursor-pointer transition-colors"
+                            title={`Remove category "${cat}"`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Images Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {galleryItems
@@ -2082,28 +2162,107 @@ export const AdminPortal: React.FC = () => {
             {/* FEATURE 17: ADMIN USERS */}
             {adminTab === 'admin-users' && (
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                <div className="border-b border-slate-200 pb-4">
-                  <h2 className="text-xl font-black text-[#0a192f]">Administrative Personnel & Access Control</h2>
-                  <p className="text-slate-500 text-xs">
-                    Staff credentials, roles, and administrative login privilege settings.
-                  </p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h2 className="text-xl font-black text-[#0a192f]">Administrative Personnel &amp; Access Control</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Directorate: <strong className="text-[#0a192f]">Mr Akinjo Rotimi</strong> (Super Admin). Exclusive rights to appoint administrators.
+                    </p>
+                  </div>
+
+                  {adminUser?.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase() ||
+                  adminUser?.name.includes('Akinjo') ||
+                  adminUser?.role.includes('Super Admin') ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewAdminName('');
+                        setNewAdminEmail('');
+                        setNewAdminRole('Registrar');
+                        setShowAddAdminModal(true);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-[#D5241B] hover:bg-[#b81d15] text-white font-bold text-xs shadow-md cursor-pointer flex items-center gap-1.5 transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add New Admin</span>
+                    </button>
+                  ) : (
+                    <span className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-300 text-xs font-semibold flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Only Super Admin (Mr Akinjo Rotimi) can add admins</span>
+                    </span>
+                  )}
                 </div>
 
+                {/* Directorate Notice Box */}
+                <div className="p-4 bg-sky-50 rounded-2xl border border-sky-200 text-xs text-sky-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="font-black text-sky-900 flex items-center gap-1.5 text-sm">
+                      <ShieldCheck className="w-4 h-4 text-sky-600" />
+                      Directorate Leadership: Mr Akinjo Rotimi
+                    </p>
+                    <p className="text-sky-800 text-[11px]">
+                      Mr Akinjo Rotimi is the Directorate and Super Admin with full rights over institution configurations, credentials, and staff appointments.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-sky-600 text-white shadow-2xs shrink-0">
+                    {adminUsers.length} Active {adminUsers.length === 1 ? 'Admin' : 'Admins'}
+                  </span>
+                </div>
+
+                {/* Admins List */}
                 <div className="space-y-3">
-                  {adminUsers.map((usr) => (
-                    <div key={usr.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-[#0a192f] text-sm block">{usr.name}</span>
-                        <span className="text-slate-500 font-mono">{usr.email}</span>
+                  {adminUsers.map((usr) => {
+                    const isSuper =
+                      usr.isSuperAdmin ||
+                      usr.name.includes('Akinjo') ||
+                      usr.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase();
+
+                    return (
+                      <div
+                        key={usr.id}
+                        className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#0a192f] text-sm">{usr.name}</span>
+                            {isSuper && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                Super Admin &amp; Directorate
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-slate-500 font-mono text-[11px]">{usr.email}</p>
+                          <p className="text-slate-400 text-[10px]">Last login: {usr.lastLogin}</p>
+                        </div>
+
+                        <div className="flex items-center gap-3 self-end sm:self-center">
+                          <div className="text-right">
+                            <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#d97706] uppercase block mb-0.5">
+                              {usr.role}
+                            </span>
+                            <span className="text-[11px] text-emerald-600 font-bold">{usr.status}</span>
+                          </div>
+
+                          {isSuper ? (
+                            <span className="px-3 py-1.5 rounded-xl bg-slate-200 text-slate-600 font-bold text-xs cursor-not-allowed">
+                              Protected
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setAdminToDelete(usr)}
+                              className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              title={`Delete admin ${usr.name}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                              <span>Delete Admin</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#d97706] uppercase block mb-0.5">
-                          {usr.role}
-                        </span>
-                        <span className="text-[11px] text-emerald-600 font-bold">{usr.status}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -3552,17 +3711,42 @@ export const AdminPortal: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Category</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700">Category *</label>
+                    {galleryCategories.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Are you sure you want to remove the category "${imageCategory}" from the gallery and image upload?`
+                            )
+                          ) {
+                            deleteGalleryCategory(imageCategory);
+                            const remaining = galleryCategories.filter((c) => c !== imageCategory);
+                            if (remaining.length > 0) {
+                              setImageCategory(remaining[0]);
+                            }
+                          }
+                        }}
+                        className="text-[10px] text-red-600 hover:text-red-800 font-bold flex items-center gap-1 cursor-pointer"
+                        title="Remove this category"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Remove Cat</span>
+                      </button>
+                    )}
+                  </div>
                   <select
                     value={imageCategory}
                     onChange={(e) => setImageCategory(e.target.value as any)}
                     className="w-full p-2.5 rounded-xl border border-slate-300 font-bold bg-white outline-hidden"
                   >
-                    <option value="CBT Lab">CBT Lab</option>
-                    <option value="Classrooms">Classrooms</option>
-                    <option value="Practicals">Practicals</option>
-                    <option value="Awards & Achievers">Awards & Achievers</option>
-                    <option value="Campus Life">Campus Life</option>
+                    {galleryCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -3783,6 +3967,154 @@ export const AdminPortal: React.FC = () => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Appoint New Administrator (Super Admin Mr Akinjo Rotimi Only) */}
+      {showAddAdminModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#25166B] text-white flex items-center justify-center">
+                  <Users className="w-4 h-4 text-[#FFC600]" />
+                </div>
+                <div>
+                  <h3 className="font-black text-[#0a192f] text-base">Appoint New Admin</h3>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">
+                    Directorate Action • Mr Akinjo Rotimi
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddAdminModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newAdminName.trim() || !newAdminEmail.trim()) {
+                  showToast('error', 'Incomplete Form', 'Please enter admin name and email.');
+                  return;
+                }
+                addAdminUser({
+                  name: newAdminName.trim(),
+                  email: newAdminEmail.trim().toLowerCase(),
+                  role: newAdminRole,
+                  status: 'Active',
+                });
+                setShowAddAdminModal(false);
+                setNewAdminName('');
+                setNewAdminEmail('');
+              }}
+              className="space-y-3.5 text-xs"
+            >
+              <div className="p-3 bg-sky-50 rounded-xl border border-sky-200 text-sky-900 text-[11px] leading-relaxed">
+                Appointed staff will be granted administrative clearance to perform duties under their selected role.
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mrs. Folashade Adeleke"
+                  value={newAdminName}
+                  onChange={(e) => setNewAdminName(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Official Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. registrar@dec.ng"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Assigned Administrative Role *</label>
+                <select
+                  value={newAdminRole}
+                  onChange={(e) => setNewAdminRole(e.target.value as any)}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-bold bg-white text-[#25166B] outline-hidden"
+                >
+                  <option value="Registrar">Registrar (Admissions &amp; Records)</option>
+                  <option value="CBT Coordinator">CBT Coordinator (Exams &amp; Lab)</option>
+                  <option value="Accounts Officer">Accounts Officer (Tuition &amp; Receipts)</option>
+                </select>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setShowAddAdminModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 font-bold text-slate-700 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#25166B] hover:bg-[#1a0f4c] text-white font-bold cursor-pointer shadow-sm"
+                >
+                  Appoint Administrator
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Delete Admin Confirmation */}
+      {adminToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-red-200 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 border-b border-slate-200 pb-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-[#0a192f] text-base">Revoke Admin Access</h3>
+                <p className="text-slate-400 text-xs">Remove administrative privileges</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 text-xs leading-relaxed">
+              Are you sure you want to permanently remove admin user{' '}
+              <strong>&quot;{adminToDelete.name}&quot;</strong> ({adminToDelete.email}) with role{' '}
+              <strong className="text-[#0a192f]">{adminToDelete.role}</strong>? Their login clearance will be immediately revoked.
+            </p>
+
+            <div className="pt-2 flex justify-end gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setAdminToDelete(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 font-bold text-slate-700 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteAdminUser(adminToDelete.id);
+                  setAdminToDelete(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer"
+              >
+                Yes, Remove Admin
+              </button>
             </div>
           </div>
         </div>

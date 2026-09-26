@@ -185,6 +185,9 @@ interface AppContextType {
   galleryItems: GalleryItem[];
   addGalleryItem: (item: Omit<GalleryItem, 'id'>) => void;
   deleteGalleryItem: (id: string) => void;
+  galleryCategories: string[];
+  addGalleryCategory: (category: string) => void;
+  deleteGalleryCategory: (category: string) => void;
 
   // CBT System
   cbtExams: CBTExam[];
@@ -201,6 +204,8 @@ interface AppContextType {
   auditLogs: AuditLogItem[];
   addAuditLog: (action: string, details: string) => void;
   adminUsers: AdminUser[];
+  addAdminUser: (admin: Omit<AdminUser, 'id' | 'lastLogin'>) => void;
+  deleteAdminUser: (id: string) => void;
 
   // Toasts & Modals
   toasts: ToastMessage[];
@@ -517,9 +522,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : AUDIT_LOGS_DATA;
   });
 
+  // Gallery Categories
+  const [galleryCategories, setGalleryCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem('dec_gallery_categories');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {
+        // fallback
+      }
+    }
+    return ['CBT Lab', 'Classrooms', 'Practicals', 'Awards & Achievers', 'Campus Life'];
+  });
+
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
-    const saved = localStorage.getItem('dec_admin_users');
-    return saved ? JSON.parse(saved) : ADMIN_USERS_DATA;
+    const saved = localStorage.getItem('dec_admin_users_v3');
+    if (saved) {
+      try {
+        const parsed: AdminUser[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {
+        // fallback
+      }
+    }
+    return ADMIN_USERS_DATA;
   });
 
   // Toasts
@@ -639,6 +666,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('dec_gallery_items', JSON.stringify(galleryItems));
   }, [galleryItems]);
+
+  useEffect(() => {
+    localStorage.setItem('dec_gallery_categories', JSON.stringify(galleryCategories));
+  }, [galleryCategories]);
+
+  useEffect(() => {
+    localStorage.setItem('dec_admin_users_v3', JSON.stringify(adminUsers));
+  }, [adminUsers]);
 
   useEffect(() => {
     localStorage.setItem('dec_question_batches', JSON.stringify(questionBatches));
@@ -1144,6 +1179,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setGalleryItems((prev) => prev.filter((g) => g.id !== id));
     addAuditLog('Gallery Image Deleted', `Removed image "${itemToDelete?.title || id}" from gallery`);
     showToast('info', 'Image Deleted', 'Image was deleted from the gallery and database.');
+  };
+
+  const addGalleryCategory = (category: string) => {
+    const trimmed = category.trim();
+    if (!trimmed) {
+      showToast('error', 'Invalid Category', 'Category name cannot be empty.');
+      return;
+    }
+    if (galleryCategories.includes(trimmed)) {
+      showToast('info', 'Category Exists', `Category "${trimmed}" already exists.`);
+      return;
+    }
+    setGalleryCategories((prev) => [...prev, trimmed]);
+    addAuditLog('Gallery Category Added', `Added new image category: "${trimmed}"`);
+    showToast('success', 'Category Created', `Category "${trimmed}" added to gallery & image upload.`);
+  };
+
+  const deleteGalleryCategory = (category: string) => {
+    setGalleryCategories((prev) => prev.filter((c) => c !== category));
+    addAuditLog('Gallery Category Removed', `Removed image category: "${category}"`);
+    showToast('info', 'Category Removed', `Category "${category}" removed from gallery and image upload.`);
+  };
+
+  const addAdminUser = (newAdmin: Omit<AdminUser, 'id' | 'lastLogin'>) => {
+    const newId = `adm-${Date.now()}`;
+    const adminObj: AdminUser = {
+      ...newAdmin,
+      id: newId,
+      lastLogin: 'Never (Pending First Login)',
+      isSuperAdmin: false,
+    };
+    setAdminUsers((prev) => [...prev, adminObj]);
+    addAuditLog(
+      'Admin Appointed',
+      `Super Admin (Mr Akinjo Rotimi) appointed new administrator: ${adminObj.name} (${adminObj.role})`
+    );
+    showToast('success', 'Admin Appointed', `${adminObj.name} appointed as ${adminObj.role}.`);
+  };
+
+  const deleteAdminUser = (id: string) => {
+    const target = adminUsers.find((u) => u.id === id);
+    if (!target) return;
+    if (
+      target.isSuperAdmin ||
+      target.name.includes('Akinjo') ||
+      target.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase()
+    ) {
+      showToast('error', 'Action Prohibited', 'The Super Admin & Directorate (Mr Akinjo Rotimi) cannot be removed.');
+      return;
+    }
+    setAdminUsers((prev) => prev.filter((u) => u.id !== id));
+    addAuditLog(
+      'Admin Removed',
+      `Super Admin (Mr Akinjo Rotimi) revoked access for admin: ${target.name} (${target.email})`
+    );
+    showToast('info', 'Admin Removed', `${target.name} was successfully removed from the portal.`);
   };
 
   // Question Batches (Word/PDF document upload & approval)
@@ -1755,6 +1846,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         galleryItems,
         addGalleryItem,
         deleteGalleryItem,
+        galleryCategories,
+        addGalleryCategory,
+        deleteGalleryCategory,
 
         cbtExams,
         addCBTExam,
@@ -1768,6 +1862,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         auditLogs,
         addAuditLog,
         adminUsers,
+        addAdminUser,
+        deleteAdminUser,
 
         toasts,
         showToast,
