@@ -337,17 +337,17 @@ export const AdmissionPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#FAFAFA] min-h-screen space-y-12 pb-20 text-[#1D1918]">
-      {/* Hero Header Section */}
-      <section className="bg-white border-b-2 border-[#D5241B] py-12 px-4 sm:px-6 lg:px-8 text-center space-y-4">
+    <div className="bg-slate-50/60 min-h-screen space-y-12 pb-20 text-[#1D1918]">
+      {/* Hero Header Section - Attractive Light Colors */}
+      <section className="bg-gradient-to-b from-sky-50 via-white to-sky-50 border-b-2 border-sky-200 py-12 px-4 sm:px-6 lg:px-8 text-center space-y-4">
         <div className="max-w-4xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#D5241B] text-white text-xs font-black uppercase tracking-wider shadow-xs border border-[#FFC600]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-black uppercase tracking-wider shadow-xs border border-sky-300">
             ★ Official 2026/2027 academic session Candidate Registration
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[#25166B]">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-sky-600">
             Comprehensive Candidate Bio-Data &amp; Exam Registration
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sky-800 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-semibold">
             Accredited examination enrollment for UTME (JAMB CBT), WAEC, NECO, IELTS, ATSWA &amp; SAT. Complete your bio-data below to generate your official identity clearance and admission slip.
           </p>
         </div>

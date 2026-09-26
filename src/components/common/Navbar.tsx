@@ -96,7 +96,7 @@ export const Navbar: React.FC = () => {
             />
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-xl tracking-tight text-[#25166B]">
+                <span className="font-black text-xl tracking-tight text-sky-600">
                   D ENSURED
                 </span>
                 <span className="font-black text-xl tracking-tight text-[#D5241B]">

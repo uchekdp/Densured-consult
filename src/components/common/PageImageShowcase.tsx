@@ -42,20 +42,20 @@ export const PageImageShowcase: React.FC<PageImageShowcaseProps> = ({
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b-2 border-slate-200 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b-2 border-sky-100 pb-3">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-[#D5241B] text-[10px] font-black uppercase tracking-wider border border-red-200">
-            <Sparkles className="w-3 h-3 text-[#FFC600]" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-[10px] font-black uppercase tracking-wider border border-sky-300">
+            <Sparkles className="w-3 h-3 text-sky-600" />
             <span>Campus Media</span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-black text-[#25166B]">
+          <h3 className="text-xl sm:text-2xl font-black text-sky-600">
             {title || defaultTitle}
           </h3>
-          <p className="text-slate-600 text-xs sm:text-sm font-medium">
+          <p className="text-sky-800 text-xs sm:text-sm font-semibold">
             {subtitle || defaultSubtitle}
           </p>
         </div>
-        <span className="text-xs font-bold text-slate-500 self-start sm:self-auto bg-slate-100 px-3 py-1 rounded-full">
+        <span className="text-xs font-bold text-sky-700 self-start sm:self-auto bg-sky-100 px-3 py-1 rounded-full">
           {pageImages.length} {pageImages.length === 1 ? 'Photo' : 'Photos'}
         </span>
       </div>

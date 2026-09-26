@@ -560,19 +560,19 @@ export const AdminPortal: React.FC = () => {
         <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-xl border border-slate-200 shadow-md">
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-xl bg-[#25166B] text-white flex items-center justify-center mx-auto shadow-sm">
-              <ShieldCheck className="w-7 h-7 text-[#098CD0]" />
+            <div className="w-14 h-14 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center mx-auto shadow-sm">
+              <ShieldCheck className="w-7 h-7 text-sky-600" />
             </div>
-            <h2 className="text-2xl font-black text-[#25166B] tracking-tight">Executive Admin Portal</h2>
-            <p className="text-xs text-[#1D1918]/70 font-medium">
+            <h2 className="text-2xl font-black text-sky-600 tracking-tight">Executive Admin Portal</h2>
+            <p className="text-xs text-sky-800 font-semibold">
               D Ensured Consult Directorate • Confidential System Access
             </p>
           </div>
 
           {/* Confidential Notice (no passwords or usernames displayed) */}
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-[#098CD0]/30 text-xs text-[#1D1918] space-y-1">
-            <div className="flex items-center gap-2 font-bold text-[#25166B]">
-              <Lock className="w-4 h-4 text-[#098CD0]" />
+          <div className="p-3.5 bg-sky-50/50 rounded-xl border border-sky-200 text-xs text-[#1D1918] space-y-1">
+            <div className="flex items-center gap-2 font-bold text-sky-700">
+              <Lock className="w-4 h-4 text-sky-600" />
               <span>Directorate Clearance Required</span>
             </div>
             <p className="text-[11px] text-[#1D1918]/80 leading-relaxed">
@@ -2427,8 +2427,8 @@ export const AdminPortal: React.FC = () => {
 
       {/* Modal: Add Study Material */}
       {showAddMatModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#25166B] text-white flex items-center justify-center">
@@ -3450,8 +3450,8 @@ export const AdminPortal: React.FC = () => {
 
       {/* MODAL: Upload New Website/Gallery Image */}
       {showUploadImageModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#25166B] text-white flex items-center justify-center">
@@ -3673,8 +3673,8 @@ export const AdminPortal: React.FC = () => {
 
       {/* MODAL: Upload Questions Document (MS Word / PDF) */}
       {showUploadDocModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-[#25166B] text-white flex items-center justify-center">

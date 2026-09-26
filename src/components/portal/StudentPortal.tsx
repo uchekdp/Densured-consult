@@ -347,22 +347,22 @@ export const StudentPortal: React.FC = () => {
         <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-xl border border-slate-200 shadow-md">
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-xl bg-[#25166B] text-white flex items-center justify-center mx-auto shadow-sm">
-              <GraduationCap className="w-7 h-7 text-[#098CD0]" />
+            <div className="w-14 h-14 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center mx-auto shadow-sm">
+              <GraduationCap className="w-7 h-7 text-sky-600" />
             </div>
-            <h2 className="text-2xl font-black text-[#25166B] tracking-tight">Student e-portal Sign In</h2>
-            <p className="text-xs text-[#1D1918]/70 font-medium">
+            <h2 className="text-2xl font-black text-sky-600 tracking-tight">Student e-portal Sign In</h2>
+            <p className="text-xs text-sky-800 font-semibold">
               D Ensured Consult • Individual Candidate Access Desk
             </p>
           </div>
 
           {/* Quick Info Box */}
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-[#098CD0]/30 text-xs text-[#1D1918] space-y-1">
-            <div className="flex items-center gap-2 font-bold text-[#25166B]">
-              <Lock className="w-4 h-4 text-[#098CD0]" />
+          <div className="p-3.5 bg-sky-50/50 rounded-xl border border-sky-200 text-xs text-[#1D1918] space-y-1">
+            <div className="flex items-center gap-2 font-bold text-sky-700">
+              <Lock className="w-4 h-4 text-sky-600" />
               <span>Registered Candidate Authentication</span>
             </div>
-            <p className="text-[11px] text-[#1D1918]/80 leading-relaxed">
+            <p className="text-[11px] text-slate-900 leading-relaxed font-medium">
               Sign in with your official <strong>Registration Number</strong> (e.g. <code>DEC-2026-XXXX</code>) or registered <strong>Email Address</strong> and your portal password.
             </p>
           </div>

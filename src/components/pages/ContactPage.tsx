@@ -66,18 +66,18 @@ export const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-16 pb-16">
-      {/* Header Banner */}
-      <section className="bg-gradient-to-b from-[#25166B] via-[#1c1152] to-[#25166B] text-white py-16 px-4 sm:px-6 lg:px-8 text-center space-y-4 border-b-4 border-[#D5241B]">
+    <div className="space-y-16 pb-16 bg-slate-50/60">
+      {/* Header Banner - Attractive Light Colors */}
+      <section className="bg-gradient-to-b from-sky-50 via-white to-sky-50 py-14 sm:py-16 px-4 sm:px-6 lg:px-8 text-center space-y-4 border-b-2 border-sky-200">
         <div className="max-w-7xl mx-auto space-y-3">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#D5241B] text-white text-xs font-black uppercase tracking-wider border border-[#FFC600]">
-            <Phone className="w-4 h-4 text-[#FFC600]" />
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-black uppercase tracking-wider border border-sky-300">
+            <Phone className="w-4 h-4 text-sky-600" />
             Official 2026/2027 academic session Admissions Helpdesk
           </span>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[#0ea5e9]">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-sky-600">
             Contact D Ensured Consult
           </h1>
-          <p className="text-white/90 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sky-800 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-semibold">
             Have questions about syllabus requirements, CBT mock schedules, or tuition installment plans? Our counselors are here to guide you.
           </p>
         </div>
@@ -87,12 +87,12 @@ export const ContactPage: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Left Column: Contact Form */}
-          <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-10 border-2 border-slate-200 shadow-xs space-y-6">
+          <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-10 border-2 border-sky-100 hover:border-sky-300 shadow-xs space-y-6">
             <div>
-              <h2 className="text-2xl font-black text-[#25166B]">
+              <h2 className="text-2xl font-black text-sky-600">
                 Send an Admissions Inquiry
               </h2>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
+              <p className="text-xs text-sky-800 mt-1 font-semibold">
                 Fill out the quick form below. Our response time is typically under 15 minutes during office hours.
               </p>
             </div>
@@ -218,24 +218,24 @@ export const ContactPage: React.FC = () => {
 
           {/* Right Column: Office Location & Direct Channels */}
           <div className="lg:col-span-5 space-y-6">
-            {/* Direct Connect Box */}
-            <div className="bg-[#25166B] text-white rounded-3xl p-6 sm:p-8 space-y-4 border-2 border-[#D5241B] shadow-xl">
-              <h3 className="text-xl font-black text-white">Direct Contacts</h3>
-              <p className="text-xs text-white/80">
+            {/* Direct Connect Box - Attractive Light Colors */}
+            <div className="bg-gradient-to-br from-sky-50 via-white to-blue-50/70 text-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 border-2 border-sky-200 shadow-md">
+              <h3 className="text-xl font-black text-sky-600">Direct Contacts</h3>
+              <p className="text-xs text-sky-800 font-semibold">
                 Reach our counseling desk through direct hotlines and WhatsApp:
               </p>
 
               <div className="space-y-3 text-xs pt-1">
                 <a
                   href="tel:08147896930"
-                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors border border-white/20"
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-white hover:bg-sky-50 transition-colors border border-sky-200 shadow-xs"
                 >
-                  <div className="p-2.5 rounded-xl bg-[#D5241B] text-white">
+                  <div className="p-2.5 rounded-xl bg-sky-600 text-white">
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-300 block font-bold uppercase">Phone Number</span>
-                    <span className="font-bold text-white text-sm font-mono">08147896930</span>
+                    <span className="text-[10px] text-slate-500 block font-bold uppercase">Phone Number</span>
+                    <span className="font-bold text-sky-700 text-sm font-mono">08147896930</span>
                   </div>
                 </a>
 
@@ -243,66 +243,66 @@ export const ContactPage: React.FC = () => {
                   href="https://wa.me/2348147896930?text=Hello%20D%20Ensured%20Consult,%20I%20am%20inquiring%20about%20exam%20coaching%20fees."
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#028D3B]/20 hover:bg-[#028D3B]/30 transition-colors border border-[#028D3B]/40"
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#028D3B]/10 hover:bg-[#028D3B]/20 transition-colors border border-[#028D3B]/30"
                 >
                   <div className="p-2.5 rounded-xl bg-[#028D3B] text-white">
                     <MessageCircle className="w-4 h-4" />
                   </div>
                   <div>
                     <span className="text-[10px] text-[#028D3B] block font-extrabold uppercase">WhatsApp Number</span>
-                    <span className="font-bold text-white text-sm font-mono">08147896930</span>
+                    <span className="font-bold text-slate-900 text-sm font-mono">08147896930</span>
                   </div>
                 </a>
 
-                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/10 border border-white/20">
-                  <div className="p-2.5 rounded-xl bg-white/15 text-white">
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-sky-200 shadow-xs">
+                  <div className="p-2.5 rounded-xl bg-sky-100 text-sky-600">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-300 block font-bold uppercase">Official Email</span>
-                    <span className="font-bold text-white text-sm">Densuredconsult@gmail.com</span>
+                    <span className="text-[10px] text-slate-500 block font-bold uppercase">Official Email</span>
+                    <span className="font-bold text-slate-800 text-sm">Densuredconsult@gmail.com</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Office Address Location */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-xs space-y-4 text-xs">
-              <h3 className="text-base font-black text-[#25166B] flex items-center gap-2">
-                <Building className="w-4 h-4 text-[#D5241B]" />
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-sky-100 shadow-xs space-y-4 text-xs">
+              <h3 className="text-base font-black text-sky-600 flex items-center gap-2">
+                <Building className="w-4 h-4 text-sky-600" />
                 Campus &amp; CBT Laboratory Address
               </h3>
 
-              <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <div className="p-5 bg-sky-50/50 rounded-2xl border border-sky-100 space-y-2">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-[#D5241B] shrink-0" />
-                  <span className="font-black text-[#25166B] text-sm">
+                  <span className="font-black text-sky-600 text-sm">
                     D Ensured Consult Campus
                   </span>
                 </div>
-                <div className="text-slate-700 font-bold pl-6 text-xs sm:text-sm leading-relaxed">
+                <div className="text-slate-800 font-bold pl-6 text-xs sm:text-sm leading-relaxed">
                   DOYIN PLAZA, IGBOELERIN BUSSTOP<br />
                   BESIDE PRIME-MART, OKOMAIKO, LAGOS
                 </div>
-                <div className="pt-2 pl-6 space-y-1 text-slate-500">
-                  <p className="flex items-center gap-2 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-[#D5241B]" />
+                <div className="pt-2 pl-6 space-y-1 text-slate-600 font-medium">
+                  <p className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-sky-600" />
                     <span>Monday – Friday: 8:00 AM – 6:30 PM (Morning &amp; Evening)</span>
                   </p>
-                  <p className="flex items-center gap-2 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-[#D5241B]" />
+                  <p className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-sky-600" />
                     <span>Saturday (Grand Mock CBT Tests): 8:00 AM – 4:00 PM</span>
                   </p>
                 </div>
-                <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-[#D5241B] border border-red-200">
+                <div className="mt-3 pt-3 border-t border-sky-200/60 flex items-center justify-between gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-300">
                     Igboelerin • Okomaiko, Lagos
                   </span>
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent("DOYIN PLAZA, IGBOELERIN BUS STOP, BESIDE PRIME-MART, OKOMAIKO, LAGOS")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D5241B] hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:underline"
                   >
                     <Navigation className="w-3 h-3" />
                     <span>Directions ↗</span>
@@ -331,12 +331,15 @@ export const ContactPage: React.FC = () => {
       {/* Frequently Asked Questions */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 space-y-2">
-          <span className="text-xs font-black uppercase tracking-wider text-[#D5241B] bg-red-50 border border-red-200 px-3.5 py-1.5 rounded-full inline-block">
+          <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3.5 py-1.5 rounded-full inline-block">
             Official 2026/2027 Guidance
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-[#25166B] tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-sky-600 tracking-tight">
             Frequently Asked Questions
           </h2>
+          <p className="text-sky-800 text-xs sm:text-sm font-semibold">
+            Answers to common inquiries regarding registration, CBT lab simulations, and class batch options.
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -345,22 +348,22 @@ export const ContactPage: React.FC = () => {
             return (
               <div
                 key={idx}
-                className="bg-white rounded-2xl border-2 border-slate-200 hover:border-[#D5241B] shadow-xs overflow-hidden transition-all"
+                className="bg-white rounded-2xl border-2 border-sky-100 hover:border-sky-300 shadow-xs overflow-hidden transition-all"
               >
                 <button
                   onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-sm text-[#25166B] hover:text-[#D5241B] transition-colors cursor-pointer"
+                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-sm text-sky-700 hover:text-sky-600 transition-colors cursor-pointer"
                 >
                   <span>{faq.question}</span>
                   {isOpen ? (
-                    <ChevronUp className="w-4 h-4 text-[#D5241B] shrink-0" />
+                    <ChevronUp className="w-4 h-4 text-sky-600 shrink-0" />
                   ) : (
                     <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
                   )}
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 pb-5 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3 animate-in fade-in duration-150 font-medium">
+                  <div className="px-5 pb-5 text-xs sm:text-sm text-slate-800 leading-relaxed border-t border-slate-100 pt-3 animate-in fade-in duration-150 font-medium">
                     {faq.answer}
                   </div>
                 )}

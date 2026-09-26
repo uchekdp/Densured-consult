@@ -150,18 +150,18 @@ export const ServicesPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-16 pb-16">
-      {/* Header Banner */}
-      <section className="bg-gradient-to-b from-[#25166B] via-[#1c1152] to-[#25166B] text-white py-16 px-4 sm:px-6 lg:px-8 text-center space-y-4 border-b-4 border-[#D5241B]">
+    <div className="space-y-16 pb-16 bg-slate-50/60">
+      {/* Header Banner - Attractive Light Colors */}
+      <section className="bg-gradient-to-b from-sky-50 via-white to-sky-50 py-14 sm:py-16 px-4 sm:px-6 lg:px-8 text-center space-y-4 border-b-2 border-sky-200">
         <div className="max-w-7xl mx-auto space-y-3">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#D5241B] text-white text-xs font-black uppercase tracking-wider border border-[#FFC600]">
-            <GraduationCap className="w-4 h-4 text-[#FFC600]" />
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-black uppercase tracking-wider border border-sky-300">
+            <GraduationCap className="w-4 h-4 text-sky-600" />
             Official 2026/2027 academic session
           </span>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[#FFC600]">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-sky-600">
             Academic Services &amp; Examination Programs
           </h1>
-          <p className="text-white/90 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sky-800 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-semibold">
             Discover our comprehensive tutorial programs, CBT laboratory practicals, and test preparation masterclasses at our Lagos center.
           </p>
         </div>
@@ -174,8 +174,8 @@ export const ServicesPage: React.FC = () => {
             onClick={() => setSelectedCategory('all')}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               selectedCategory === 'all'
-                ? 'bg-[#D5241B] text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:border-[#D5241B]'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-sky-200 hover:border-sky-400'
             }`}
           >
             All Programs ({services.length})
@@ -184,8 +184,8 @@ export const ServicesPage: React.FC = () => {
             onClick={() => setSelectedCategory('utme')}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               selectedCategory === 'utme'
-                ? 'bg-[#D5241B] text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:border-[#D5241B]'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-sky-200 hover:border-sky-400'
             }`}
           >
             UTME (JAMB CBT)
@@ -194,8 +194,8 @@ export const ServicesPage: React.FC = () => {
             onClick={() => setSelectedCategory('waec_neco')}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               selectedCategory === 'waec_neco'
-                ? 'bg-[#D5241B] text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:border-[#D5241B]'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-sky-200 hover:border-sky-400'
             }`}
           >
             WAEC &amp; NECO SSCE
@@ -204,8 +204,8 @@ export const ServicesPage: React.FC = () => {
             onClick={() => setSelectedCategory('ielts')}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               selectedCategory === 'ielts'
-                ? 'bg-[#D5241B] text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:border-[#D5241B]'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-sky-200 hover:border-sky-400'
             }`}
           >
             IELTS Academic / General
@@ -214,8 +214,8 @@ export const ServicesPage: React.FC = () => {
             onClick={() => setSelectedCategory('atswa')}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               selectedCategory === 'atswa'
-                ? 'bg-[#D5241B] text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:border-[#D5241B]'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-sky-200 hover:border-sky-400'
             }`}
           >
             ATSWA (ICAN)
@@ -224,8 +224,8 @@ export const ServicesPage: React.FC = () => {
             onClick={() => setSelectedCategory('toefl_sat')}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               selectedCategory === 'toefl_sat'
-                ? 'bg-[#D5241B] text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:border-[#D5241B]'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-sky-200 hover:border-sky-400'
             }`}
           >
             TOEFL &amp; SAT
@@ -237,45 +237,45 @@ export const ServicesPage: React.FC = () => {
           {filteredServices.map((srv) => (
             <div
               key={srv.id}
-              className="bg-white rounded-3xl border-2 border-slate-200 hover:border-[#D5241B] shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+              className="bg-white rounded-3xl border-2 border-sky-100 hover:border-sky-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
             >
               <div>
                 {/* Header card banner */}
-                <div className="p-6 border-b border-slate-100 space-y-3">
+                <div className="p-6 border-b border-sky-100 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-md text-[10px] font-black uppercase bg-red-50 text-[#D5241B] border border-red-200">
+                    <span className="px-3 py-1 rounded-md text-[10px] font-black uppercase bg-sky-50 text-sky-700 border border-sky-200">
                       {srv.badge}
                     </span>
-                    <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-[#D5241B]" />
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-sky-600" />
                       {srv.duration}
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-black text-[#25166B] group-hover:text-[#D5241B] transition-colors">
+                  <h3 className="text-xl font-black text-sky-600 group-hover:text-sky-700 transition-colors">
                     {srv.title}
                   </h3>
 
-                  <p className="text-xs text-slate-500 italic font-medium">
+                  <p className="text-xs text-sky-800 italic font-semibold">
                     {srv.targetAudience}
                   </p>
                 </div>
 
                 {/* Body Content */}
                 <div className="p-6 space-y-4">
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-xs text-slate-800 leading-relaxed font-medium">
                     {srv.description}
                   </p>
 
                   <div className="space-y-2 pt-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#25166B]">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-sky-600">
                       Key Program Features:
                     </h4>
-                    <ul className="space-y-2 text-xs text-slate-600">
+                    <ul className="space-y-2 text-xs text-slate-800 font-medium">
                       {srv.features.map((feat, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <CheckCircle2 className="w-4 h-4 text-[#028D3B] shrink-0 mt-0.5" />
-                          <span className="font-medium">{feat}</span>
+                          <span>{feat}</span>
                         </li>
                       ))}
                     </ul>
@@ -284,14 +284,14 @@ export const ServicesPage: React.FC = () => {
               </div>
 
               {/* Card Footer with Enrollment Action (Prices removed as requested) */}
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <div className="p-6 bg-sky-50/50 border-t border-sky-100 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] uppercase font-black text-[#028D3B] block">Admissions Open</span>
-                  <span className="text-xs font-bold text-[#25166B]">Morning &amp; Evening Batches</span>
+                  <span className="text-xs font-bold text-sky-700">Morning &amp; Evening Batches</span>
                 </div>
                 <button
                   onClick={() => handleEnrollClick(srv.programTag)}
-                  className="px-5 py-2.5 rounded-xl bg-[#D5241B] hover:bg-[#b81d15] text-white font-black text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-[#D5241B] hover:bg-[#b81d15] text-white font-black text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer border border-[#FFC600]"
                 >
                   <span>Enroll Now</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -304,15 +304,15 @@ export const ServicesPage: React.FC = () => {
 
       {/* Program Comparison Table */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border-2 border-slate-200 shadow-xs space-y-6">
+        <div className="bg-white rounded-3xl p-6 sm:p-10 border-2 border-sky-100 shadow-xs space-y-6">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-black uppercase tracking-wider text-[#D5241B] bg-red-50 border border-red-200 px-3.5 py-1 rounded-full">
+            <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3.5 py-1 rounded-full">
               Overview Matrix
             </span>
-            <h3 className="text-2xl sm:text-3xl font-black text-[#25166B] tracking-tight">
+            <h3 className="text-2xl sm:text-3xl font-black text-sky-600 tracking-tight">
               Program Comparison at a Glance
             </h3>
-            <p className="text-slate-500 text-xs sm:text-sm font-medium">
+            <p className="text-sky-800 text-xs sm:text-sm font-semibold">
               Compare schedules, laboratory practical access, and mock examination frequencies for the Official 2026/2027 academic session.
             </p>
           </div>
@@ -320,7 +320,7 @@ export const ServicesPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-[#D5241B] text-white font-bold uppercase tracking-wider">
+                <tr className="border-b border-sky-200 bg-sky-600 text-white font-black uppercase tracking-wider">
                   <th className="p-3.5 rounded-tl-xl">Examination Track</th>
                   <th className="p-3.5">Duration</th>
                   <th className="p-3.5">Study Mode</th>
@@ -329,9 +329,9 @@ export const ServicesPage: React.FC = () => {
                   <th className="p-3.5 text-right rounded-tr-xl">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-[#25166B]">UTME (JAMB CBT)</td>
+              <tbody className="divide-y divide-sky-100 text-slate-800 font-semibold">
+                <tr className="hover:bg-sky-50/50 transition-colors">
+                  <td className="p-3.5 font-bold text-sky-700">UTME (JAMB CBT)</td>
                   <td className="p-3.5">3 – 6 Months</td>
                   <td className="p-3.5">Physical / Virtual</td>
                   <td className="p-3.5 font-medium">120-Seat CBT Lab</td>
@@ -345,8 +345,8 @@ export const ServicesPage: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-[#25166B]">WAEC / WASSCE</td>
+                <tr className="hover:bg-sky-50/50 transition-colors">
+                  <td className="p-3.5 font-bold text-sky-700">WAEC / WASSCE</td>
                   <td className="p-3.5">4 – 8 Months</td>
                   <td className="p-3.5">Physical Weekday</td>
                   <td className="p-3.5 font-medium">Chemistry &amp; Physics Lab</td>
@@ -360,8 +360,8 @@ export const ServicesPage: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-[#25166B]">NECO SSCE</td>
+                <tr className="hover:bg-sky-50/50 transition-colors">
+                  <td className="p-3.5 font-bold text-sky-700">NECO SSCE</td>
                   <td className="p-3.5">3 – 5 Months</td>
                   <td className="p-3.5">Physical Weekday</td>
                   <td className="p-3.5 font-medium">Oral Audio + Science Lab</td>
@@ -375,8 +375,8 @@ export const ServicesPage: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-[#25166B]">IELTS Academic/General</td>
+                <tr className="hover:bg-sky-50/50 transition-colors">
+                  <td className="p-3.5 font-bold text-sky-700">IELTS Academic/General</td>
                   <td className="p-3.5">6 – 10 Weeks</td>
                   <td className="p-3.5">Weekend / Evening</td>
                   <td className="p-3.5 font-medium">Audio Studio + 1-on-1 Suite</td>
@@ -390,8 +390,8 @@ export const ServicesPage: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-[#25166B]">ATSWA (ICAN Technicians)</td>
+                <tr className="hover:bg-sky-50/50 transition-colors">
+                  <td className="p-3.5 font-bold text-sky-700">ATSWA (ICAN Technicians)</td>
                   <td className="p-3.5">4 – 6 Months</td>
                   <td className="p-3.5">Weekend / Executive</td>
                   <td className="p-3.5 font-medium">Financial Accounting Suite</td>
@@ -405,8 +405,8 @@ export const ServicesPage: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-[#25166B]">TOEFL &amp; SAT Track</td>
+                <tr className="hover:bg-sky-50/50 transition-colors">
+                  <td className="p-3.5 font-bold text-sky-700">TOEFL &amp; SAT Track</td>
                   <td className="p-3.5">8 – 12 Weeks</td>
                   <td className="p-3.5">Physical / Hybrid</td>
                   <td className="p-3.5 font-medium">Digital SAT Bluebook Suite</td>
