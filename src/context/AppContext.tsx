@@ -133,7 +133,13 @@ interface AppContextType {
 
   // Transactions & Billing
   transactions: TransactionRecord[];
-  processPayment: (amount: number, description: string, method: TransactionRecord['paymentMethod'], studentId?: string) => string;
+  processPayment: (
+    amount: number,
+    description: string,
+    method: TransactionRecord['paymentMethod'],
+    studentId?: string,
+    asApproved?: boolean
+  ) => string;
 
   // Monthly Tuition & Access Pass (₦20,000 Morning / ₦15,000 Evening)
   submitMonthlyTuition: (studentId: string, shift: StudentShift, method?: TransactionRecord['paymentMethod']) => string;
@@ -327,10 +333,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_LESSONS;
   });
 
-  // Transactions
+  // Transactions - Empty by default as requested. Only real payments made by students and approved by the admin will appear.
   const [transactions, setTransactions] = useState<TransactionRecord[]>(() => {
-    const saved = localStorage.getItem('dec_transactions');
-    return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+    try {
+      localStorage.removeItem('dec_transactions');
+      localStorage.removeItem('dec_transactions_v2');
+      localStorage.removeItem('dec_transactions_v3');
+    } catch {
+      // Ignore
+    }
+    const saved = localStorage.getItem('dec_transactions_clean_v1');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
+    }
+    return [];
   });
 
   // Announcements
@@ -624,7 +644,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [lessons]);
 
   useEffect(() => {
-    localStorage.setItem('dec_transactions', JSON.stringify(transactions));
+    localStorage.setItem('dec_transactions_clean_v1', JSON.stringify(transactions));
   }, [transactions]);
 
   useEffect(() => {
@@ -932,10 +952,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setApplications((prev) => [newApp, ...prev]);
     addAuditLog('Admission Application Received', `Application #${newId} for ${data.fullName} (${data.program})`);
 
-    // Automatically create and sync the student profile so they can immediately sign in to their individual portal!
-    const tuitionTotal = data.program === 'IELTS' ? 140000 : 85000;
+    // Automatically create and sync the student profile
+    const progStr = (data.program || '').toUpperCase();
+    const tuitionTotal = progStr.includes('IELTS')
+      ? 70000
+      : progStr.includes('ADULT')
+      ? 60000
+      : 20000; // JAMB, WAEC, NECO, GCE
     const shift: StudentShift = data.studentShift || 'Morning';
-    const monthlyFee = shift === 'Morning' ? 20000 : 15000;
+    const monthlyFee = tuitionTotal;
     const currentMonthPeriod = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
     const studentProfile: StudentProfile = {
@@ -1043,13 +1068,112 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     amount: number,
     description: string,
     method: TransactionRecord['paymentMethod'],
-    targetStudentId?: string
+    targetStudentId?: string,
+    asApproved = false
   ): string => {
     const ref = `DEC-PAY-${Math.floor(100000 + Math.random() * 900000)}`;
     const student = targetStudentId
       ? studentsList.find((s) => s.id === targetStudentId) || currentStudent
       : currentStudent;
+    const now = new Date();
+    const monthPeriod = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const validUntil = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}`;
+    const shift = student.studentShift || 'Morning';
 
+    // If asApproved is true (e.g. Admin recording payment directly in-person)
+    if (asApproved) {
+      const receiptNum = `DEC-REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const approvedAtFormatted = new Date().toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const qrPayload = `https://densuredconsult.ng/verify-receipt?receipt=${receiptNum}&ref=${ref}&student=${encodeURIComponent(student.fullName)}&reg=${student.registrationNumber}&shift=${shift}&month=${encodeURIComponent(monthPeriod)}&amount=${amount}&status=APPROVED`;
+
+      const officialReceipt: OfficialReceipt = {
+        id: `rec-${Date.now()}`,
+        receiptNumber: receiptNum,
+        transactionReference: ref,
+        studentId: student.id,
+        studentName: student.fullName,
+        studentEmail: student.email,
+        studentPhone: student.phone,
+        registrationNumber: student.registrationNumber,
+        program: student.program,
+        studentShift: shift,
+        amount,
+        amountInWords: amount === 70000
+          ? 'SEVENTY THOUSAND NAIRA ONLY'
+          : amount === 60000
+          ? 'SIXTY THOUSAND NAIRA ONLY'
+          : 'TWENTY THOUSAND NAIRA ONLY',
+        currency: 'NGN',
+        monthPeriod,
+        validUntil,
+        issueDate: approvedAtFormatted,
+        approvedBy: 'Mr. Akinjo Rotimi (Directorate & Super Admin)',
+        approvedAt: approvedAtFormatted,
+        qrPayload,
+        status: 'Approved',
+        paymentMethod: method,
+      };
+
+      const newTx: TransactionRecord = {
+        id: `tx-${Date.now()}`,
+        reference: ref,
+        studentId: student.id,
+        studentName: student.fullName,
+        program: student.program,
+        amount,
+        currency: student.currency,
+        status: 'Successful',
+        paymentMethod: method,
+        description,
+        timestamp: approvedAtFormatted,
+        studentShift: shift,
+        monthPeriod,
+        validUntil,
+        receiptNumber: receiptNum,
+        approvedAt: approvedAtFormatted,
+        approvedBy: officialReceipt.approvedBy,
+        qrPayload,
+      };
+
+      setTransactions((prev) => [newTx, ...prev]);
+
+      // Update tuition balance and unlock portal
+      setStudentsList((prev) =>
+        prev.map((std) => {
+          if (std.id === student.id) {
+            const newPaid = Math.min(std.tuitionTotal, std.tuitionPaid + amount);
+            const newBalance = Math.max(0, std.tuitionTotal - newPaid);
+            const updated: StudentProfile = {
+              ...std,
+              subscriptionStatus: 'Active',
+              subscriptionExpiryDate: `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`,
+              subscriptionMonth: monthPeriod,
+              lastApprovedReceipt: officialReceipt,
+              tuitionPaid: newPaid,
+              tuitionBalance: newBalance,
+            };
+            if (std.id === currentStudent.id) {
+              setCurrentStudent(updated);
+            }
+            return updated;
+          }
+          return std;
+        })
+      );
+
+      addAuditLog('Tuition Payment Approved Directly', `Payment ref ${ref} of ₦${amount.toLocaleString()} for ${student.fullName} recorded & approved.`);
+      showToast('success', 'Payment Approved & Logged', `Receipt ${receiptNum} generated for ${student.fullName}.`);
+      return ref;
+    }
+
+    // Default: Candidate submitted payment - awaits Admin Directorate approval
     const newTx: TransactionRecord = {
       id: `tx-${Date.now()}`,
       reference: ref,
@@ -1058,7 +1182,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       program: student.program,
       amount,
       currency: student.currency,
-      status: 'Successful',
+      status: 'Pending',
       paymentMethod: method,
       description,
       timestamp: new Date().toLocaleDateString('en-GB', {
@@ -1068,17 +1192,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hour: '2-digit',
         minute: '2-digit',
       }),
+      studentShift: shift,
+      monthPeriod,
+      validUntil,
     };
 
     setTransactions((prev) => [newTx, ...prev]);
 
-    // Update tuition balance
+    // Update student subscription status to Pending Approval
     setStudentsList((prev) =>
       prev.map((std) => {
         if (std.id === student.id) {
-          const newPaid = Math.min(std.tuitionTotal, std.tuitionPaid + amount);
-          const newBalance = Math.max(0, std.tuitionTotal - newPaid);
-          const updated = { ...std, tuitionPaid: newPaid, tuitionBalance: newBalance };
+          const updated: StudentProfile = { ...std, subscriptionStatus: 'Pending Approval' };
           if (std.id === currentStudent.id) {
             setCurrentStudent(updated);
           }
@@ -1088,22 +1213,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    addAuditLog('Tuition Payment Processed', `Payment ref ${ref} of ₦${amount.toLocaleString()} for ${student.fullName}`);
-
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.5 },
-      });
-    } catch {
-      // Ignore
-    }
-
+    addAuditLog('Tuition Payment Submitted', `Payment ref ${ref} of ₦${amount.toLocaleString()} for ${student.fullName} submitted for Directorate clearance.`);
     showToast(
-      'success',
-      'Payment Confirmed!',
-      `Receipt #${ref} generated for ₦${amount.toLocaleString()}. Balance updated.`
+      'info',
+      'Payment Submitted for Clearance',
+      `Payment ref ${ref} logged. Awaiting approval by Directorate (Mr. Akinjo Rotimi).`
     );
 
     return ref;
@@ -1504,7 +1618,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     method: TransactionRecord['paymentMethod'] = 'Bank Transfer'
   ): string => {
     const student = studentsList.find((s) => s.id === studentId) || currentStudent;
-    const amount = shift === 'Morning' ? 20000 : 15000;
+    const progStr = (student.program || '').toUpperCase();
+    const amount = progStr.includes('IELTS')
+      ? 70000
+      : progStr.includes('ADULT')
+      ? 60000
+      : 20000; // JAMB, WAEC, NECO, GCE
     const now = new Date();
     const monthPeriod = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -1577,8 +1696,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const student = studentsList.find((s) => s.id === tx.studentId) || currentStudent;
     const shift = tx.studentShift || student.studentShift || 'Morning';
-    const amount = tx.amount || (shift === 'Morning' ? 20000 : 15000);
-    const amountInWords = shift === 'Morning' ? 'TWENTY THOUSAND NAIRA ONLY' : 'FIFTEEN THOUSAND NAIRA ONLY';
+    const progStr = (student.program || '').toUpperCase();
+    const amount = tx.amount || (progStr.includes('IELTS') ? 70000 : progStr.includes('ADULT') ? 60000 : 20000);
+    const amountInWords = amount === 70000
+      ? 'SEVENTY THOUSAND NAIRA ONLY'
+      : amount === 60000
+      ? 'SIXTY THOUSAND NAIRA ONLY'
+      : 'TWENTY THOUSAND NAIRA ONLY';
     const now = new Date();
     const monthPeriod = tx.monthPeriod || now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
@@ -1612,7 +1736,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       monthPeriod,
       validUntil,
       issueDate: tx.timestamp,
-      approvedBy: 'Dr. Anthony Adeleke (Director of Academic Affairs)',
+      approvedBy: 'Mr. Akinjo Rotimi (Directorate & Super Admin)',
       approvedAt: approvedAtFormatted,
       qrPayload,
       status: 'Approved',

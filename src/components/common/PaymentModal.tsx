@@ -16,6 +16,7 @@ import {
   ArrowRight,
   AlertCircle,
   FileText,
+  Clock,
 } from 'lucide-react';
 
 export const PaymentModal: React.FC = () => {
@@ -122,29 +123,32 @@ export const PaymentModal: React.FC = () => {
         {/* Content Body */}
         <div className="p-6">
           {completedReceipt ? (
-            /* Successful Receipt View */
+            /* Submitted for Approval View */
             <div className="text-center py-4 space-y-4">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto ring-8 ring-emerald-50">
-                <CheckCircle2 className="w-9 h-9" />
+              <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto ring-8 ring-amber-50">
+                <Clock className="w-9 h-9 animate-pulse" />
               </div>
 
               <div>
-                <h4 className="text-xl font-bold text-slate-900">Payment Successful!</h4>
-                <p className="text-sm text-slate-600 mt-1">
-                  Tuition has been verified and updated in your student record.
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                  Awaiting Admin Clearance
+                </span>
+                <h4 className="text-xl font-black text-[#25166B] mt-2">Payment Submitted for Approval</h4>
+                <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto leading-relaxed">
+                  Your tuition payment has been logged. In accordance with academy regulations, the Admin Directorate (Mr. Akinjo Rotimi) will verify and approve your payment before full features, ID cards, and receipts are released.
                 </p>
               </div>
 
-              {/* Receipt Card */}
+              {/* Receipt Summary Card */}
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left space-y-2 text-xs">
                 <div className="flex justify-between border-b border-slate-200 pb-2">
                   <span className="text-slate-500">Transaction Reference:</span>
-                  <span className="font-mono font-bold text-slate-900">
+                  <span className="font-mono font-bold text-[#098CD0]">
                     {completedReceipt.reference}
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500">Student Name:</span>
+                  <span className="text-slate-500">Candidate:</span>
                   <span className="font-semibold text-slate-800">{currentStudent.fullName}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200 pb-2">
@@ -152,42 +156,35 @@ export const PaymentModal: React.FC = () => {
                   <span className="font-semibold text-slate-800">{currentStudent.program}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500">Amount Paid:</span>
-                  <span className="font-bold text-emerald-700">
+                  <span className="text-slate-500">Amount Submitted:</span>
+                  <span className="font-black text-[#D5241B] font-mono">
                     ₦{completedReceipt.amount.toLocaleString()}
                   </span>
                 </div>
+                <div className="flex justify-between border-b border-slate-200 pb-2">
+                  <span className="text-slate-500">Academy Account:</span>
+                  <span className="font-bold text-slate-800">OPAY • 6111753209</span>
+                </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Date & Time:</span>
-                  <span className="text-slate-700">{completedReceipt.date}</span>
+                  <span className="text-slate-500">Status:</span>
+                  <span className="font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded text-[10px]">
+                    Pending Admin Approval
+                  </span>
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2">
+              <div className="pt-2">
                 <button
                   type="button"
-                  onClick={handleOpenGeneratedReceipt}
-                  className="w-full py-3 px-4 rounded-xl bg-[#25166B] hover:bg-[#1b104d] text-[#FFC600] font-black text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  onClick={closePaymentModal}
+                  className="w-full py-3 px-4 rounded-xl bg-[#25166B] hover:bg-[#1b104d] text-white font-black text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all border border-[#FFC600]"
                 >
-                  <FileText className="w-4 h-4 text-[#FFC600]" />
-                  <span>View Cryptographic Receipt & ID Card</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#FFC600]" />
+                  <span>Return to Portal &amp; Await Clearance</span>
                 </button>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    Print Receipt
-                  </button>
-                  <button
-                    onClick={closePaymentModal}
-                    className="flex-1 py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
-                  >
-                    Done & Return to Portal
-                  </button>
-                </div>
+                <p className="text-[10px] text-slate-500 mt-2">
+                  Once approved by the Directorate on the admin dashboard, this payment will be automatically reflected in your Payment History.
+                </p>
               </div>
             </div>
           ) : (
@@ -321,17 +318,17 @@ export const PaymentModal: React.FC = () => {
                     <div className="bg-white p-3 rounded-lg border border-blue-200 flex items-center justify-between">
                       <div>
                         <p className="text-[10px] text-slate-500 uppercase font-semibold">
-                          Wema Bank / Paystack Dynamic
+                          Bank: OPAY
                         </p>
                         <p className="font-mono text-base font-bold text-slate-900 tracking-wider">
-                          7820194823
+                          6111753209
                         </p>
-                        <p className="text-[11px] text-slate-600">
-                          D Ensured Consult - {currentStudent.fullName}
+                        <p className="text-[11px] text-slate-600 font-bold">
+                          D Ensured Consult Enterprise
                         </p>
                       </div>
                       <button
-                        onClick={() => copyToClipboard('7820194823')}
+                        onClick={() => copyToClipboard('6111753209')}
                         className="px-2.5 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-semibold flex items-center gap-1 transition-colors"
                       >
                         {copiedAccount ? (

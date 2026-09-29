@@ -1,11 +1,14 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { PageImageShowcase } from '../common/PageImageShowcase';
 import {
   GraduationCap,
   Target,
   ArrowRight,
   Compass,
+  Award,
+  BookOpen,
+  CheckCircle2,
+  Users,
 } from 'lucide-react';
 
 export const AboutPage: React.FC = () => {
@@ -14,48 +17,52 @@ export const AboutPage: React.FC = () => {
   const teamMembers = [
     {
       name: 'Mr. Akinjo Rotimi',
-      role: 'Founder & Managing Director',
+      role: 'Directorate & Super Admin',
       credentials: 'B.Sc. Mathematics & Statistics (OAU), Pioneer Educational Consultant',
-      bio: 'Visionary founder of D Ensured Consult. With over 15 years pioneering standardized examination tutoring, CBT diagnostics, and student mentorship in Lagos, he has guided thousands to top university admissions.',
-      image: 'https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=300&auto=format&fit=crop&q=80',
+      bio: 'Visionary founder and Directorate of D Ensured Consult. With over 15 years pioneering standardized examination tutoring, CBT diagnostics, and student mentorship in Lagos, he has guided thousands to top university admissions.',
+      initials: 'AR',
+      accentColor: 'bg-sky-100 text-sky-700 border-sky-300',
     },
     {
       name: 'Mrs. Abigail Mensah',
       role: 'Lead IELTS Examiner & International Studies Dean',
       credentials: 'MA Applied Linguistics (Manchester), British Council Certified Trainer',
       bio: 'Specialist in English phonetics, academic writing cohesion, and UKVI language clearance with hundreds of Band 8.0+ scholars.',
-      image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
+      initials: 'AM',
+      accentColor: 'bg-indigo-100 text-indigo-700 border-indigo-300',
     },
     {
       name: 'Dr. Kelechi Okafor',
       role: 'Head of STEM & Medical Pre-Degree Track',
       credentials: 'M.Sc. Physics (UNN), Ph.D. Applied Biophysics',
       bio: 'Architect of our renowned UTME physics and chemistry shortcuts. Has mentored more than 140 students who gained admission into Medicine & Surgery.',
-      image: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=300&auto=format&fit=crop&q=80',
+      initials: 'KO',
+      accentColor: 'bg-emerald-100 text-emerald-700 border-emerald-300',
     },
     {
       name: 'Engr. Taiwo Balogun',
       role: 'Chief Examiner WAEC & NECO Mathematics',
       credentials: 'B.Eng. Mechanical Engineering (OAU), WAEC Marking Team Leader',
       bio: 'Transforms students from mathematics anxiety to straight A1s in General Mathematics, Further Maths, and Technical Drawing.',
-      image: 'https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=300&auto=format&fit=crop&q=80',
+      initials: 'TB',
+      accentColor: 'bg-amber-100 text-amber-800 border-amber-300',
     },
   ];
 
   return (
     <div className="space-y-16 pb-16 bg-slate-50/60">
-      {/* Hero Banner - Attractive Light Colors */}
+      {/* Hero Banner - Attractive Light Colors (No Images) */}
       <section className="bg-gradient-to-b from-sky-50 via-white to-sky-50 py-14 sm:py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-b-2 border-sky-200">
         <div className="max-w-7xl mx-auto space-y-4 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-black uppercase tracking-wider border border-sky-300">
-            <img src="/logo.jpg" alt="Logo" className="w-4 h-4 rounded-full" />
+            <GraduationCap className="w-4 h-4 text-sky-600" />
             <span>Official 2026/2027 academic session • Education is Power</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight max-w-3xl mx-auto text-sky-600">
             About D Ensured Consult
           </h1>
           <p className="text-sky-800 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-semibold">
-            Bridging the gap between secondary school curriculum and competitive university entry standards for UTME, WAEC, NECO, ATSWA, and international IELTS examinations from our dedicated Lagos center.
+            Bridging the gap between secondary school curriculum and competitive university entry standards for UTME, WAEC, NECO, GCE, Adult Education, and IELTS examinations from our dedicated Lagos center.
           </p>
         </div>
       </section>
@@ -142,7 +149,7 @@ export const AboutPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4-Stage Learning Framework - Attractive Light Box */}
+      {/* 4-Stage Learning Framework - Clean Design */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-br from-sky-50 via-white to-blue-50/70 rounded-3xl p-8 sm:p-12 space-y-8 border-2 border-sky-200 shadow-md">
           <div className="max-w-3xl space-y-2">
@@ -193,7 +200,7 @@ export const AboutPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Leadership Team */}
+      {/* Leadership Team (Typography & Badges - No Images) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3.5 py-1 rounded-full">
@@ -203,7 +210,7 @@ export const AboutPage: React.FC = () => {
             Academic Leadership &amp; Faculty
           </h2>
           <p className="text-sky-800 text-sm font-semibold">
-            Taught by certified examiners, university lecturers, and international test consultants.
+            Guided by certified examiners, education directors, and international test consultants.
           </p>
         </div>
 
@@ -211,15 +218,11 @@ export const AboutPage: React.FC = () => {
           {teamMembers.map((member) => (
             <div
               key={member.name}
-              className="bg-white rounded-2xl p-5 border-2 border-sky-100 hover:border-sky-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="bg-white rounded-2xl p-6 border-2 border-sky-100 hover:border-sky-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
             >
               <div className="space-y-3">
-                <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-3 border border-slate-200">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover"
-                  />
+                <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center font-black text-xl shadow-xs ${member.accentColor}`}>
+                  {member.initials}
                 </div>
                 <div>
                   <h4 className="font-black text-sky-600 text-base">{member.name}</h4>
@@ -228,18 +231,51 @@ export const AboutPage: React.FC = () => {
                 <p className="text-[11px] text-slate-700 font-bold">{member.credentials}</p>
                 <p className="text-xs text-slate-700 leading-relaxed font-medium">{member.bio}</p>
               </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Verified Faculty Lead</span>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Dynamic Images Added by Admin for About Page */}
+      {/* Program Tuition Overview Banner */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <PageImageShowcase
-          page="about"
-          title="Campus Life, Lecture Suites & Achievements"
-          subtitle="Direct highlights from our lecture halls, study clinics, and matriculation ceremonies."
-        />
+        <div className="bg-white rounded-3xl border-2 border-sky-200 p-8 shadow-sm space-y-6">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3 py-1 rounded-full">
+              Official Center Tuition
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-black text-sky-600">
+              Affordable, High-Standard Academic Fees
+            </h3>
+            <p className="text-slate-600 text-xs sm:text-sm font-medium">
+              Transparent program tuition fees for the Official 2026/2027 Academic Session:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="p-6 rounded-2xl bg-sky-50/70 border border-sky-200 text-center space-y-2">
+              <span className="text-xs font-bold text-sky-800 uppercase block">JAMB • WAEC • NECO • GCE</span>
+              <p className="text-3xl font-black text-[#D5241B]">₦20,000</p>
+              <p className="text-xs text-slate-600 font-medium">Full intensive coaching &amp; CBT drills</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-sky-50/70 border border-sky-200 text-center space-y-2">
+              <span className="text-xs font-bold text-sky-800 uppercase block">IELTS Academic &amp; General</span>
+              <p className="text-3xl font-black text-[#25166B]">₦70,000</p>
+              <p className="text-xs text-slate-600 font-medium">Audio listening lab &amp; Band 8+ coaching</p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-sky-50/70 border border-sky-200 text-center space-y-2">
+              <span className="text-xs font-bold text-sky-800 uppercase block">Adult Education</span>
+              <p className="text-3xl font-black text-[#028D3B]">₦60,000</p>
+              <p className="text-xs text-slate-600 font-medium">Flexible evening &amp; executive modules</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Bottom CTA */}
@@ -249,7 +285,7 @@ export const AboutPage: React.FC = () => {
             Join the Next Generation of High Achievers
           </h3>
           <p className="text-slate-700 text-sm max-w-xl mx-auto font-medium">
-            Admissions for our upcoming morning and evening batches at our Lagos Center are currently being processed for the <strong>Official 2026/2027 academic session</strong>. Secure your seat today.
+            Admissions for our upcoming morning and evening batches at Doyin Plaza, Okomaiko, Lagos are currently ongoing for the <strong>Official 2026/2027 academic session</strong>. Secure your seat today.
           </p>
           <button
             type="button"

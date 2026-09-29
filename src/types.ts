@@ -8,7 +8,7 @@ export type PageId =
   | 'student-portal'
   | 'admin-portal';
 
-export type ExamProgram = 'UTME' | 'WAEC' | 'NECO' | 'IELTS' | 'COMBINED_OLEVEL_UTME' | 'ATSWA' | 'TOEFL' | 'SAT';
+export type ExamProgram = 'UTME' | 'WAEC' | 'NECO' | 'GCE' | 'IELTS' | 'ADULT_EDUCATION' | 'COMBINED_OLEVEL_UTME' | 'ATSWA' | 'TOEFL' | 'SAT' | string;
 
 export type StudyMode = 'Physical Weekday' | 'Weekend Intensive' | 'Online Virtual Live' | 'Private 1-on-1';
 

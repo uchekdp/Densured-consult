@@ -547,7 +547,7 @@ export const StudentPortal: React.FC = () => {
                     e-portal Features Locked: Monthly Tuition Access Required
                   </h3>
                   <p className="text-[#1D1918]/80 text-xs mt-0.5">
-                    Morning students: <strong>₦20,000 / month</strong> • Evening students: <strong>₦15,000 / month</strong>. This payment is monthly and expires at the end of the month. If payment is not renewed, all features in the portal are locked automatically.
+                    JAMB, WAEC, NECO, GCE: <strong>₦20,000</strong> • IELTS: <strong>₦70,000</strong> • Adult Education: <strong>₦60,000</strong>. This tuition payment must be approved by the admin on the admin dashboard before full access to study materials, ID cards, CBT practice, and receipts is granted.
                   </p>
                 </div>
               </div>
@@ -639,101 +639,116 @@ export const StudentPortal: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Shift Choice Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                  {/* Morning Student Card */}
-                  <div
-                    onClick={() => setSelectedShift('Morning')}
-                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative ${
-                      selectedShift === 'Morning'
-                        ? 'border-[#25166B] bg-[#25166B]/5 shadow-md'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#25166B] text-white">
-                        Morning Student
-                      </span>
-                      <span className="text-xl font-black font-mono text-[#25166B]">₦20,000</span>
-                    </div>
-                    <p className="text-xs text-slate-500 font-medium mb-2">
-                      Lecture Hours: <strong>09:00 AM – 01:30 PM</strong> (Monday – Friday)
-                    </p>
-                    <ul className="text-xs text-slate-600 space-y-1">
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                        <span>Daily morning intensive syllabus coverage</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                        <span>Air-conditioned CBT computer laboratory access</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                        <span>Full e-portal access, weekly mock tests & lectures</span>
-                      </li>
-                    </ul>
-                  </div>
+                {/* Program & Shift Choice Cards */}
+                {(() => {
+                  const progUpper = (currentStudent.program || '').toUpperCase();
+                  const programTuition = currentStudent.monthlyFee || (
+                    progUpper.includes('IELTS') ? 70000 : progUpper.includes('ADULT') ? 60000 : 20000
+                  );
 
-                  {/* Evening Student Card */}
-                  <div
-                    onClick={() => setSelectedShift('Evening')}
-                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative ${
-                      selectedShift === 'Evening'
-                        ? 'border-[#25166B] bg-[#25166B]/5 shadow-md'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#098CD0] text-white">
-                        Evening Student
-                      </span>
-                      <span className="text-xl font-black font-mono text-[#25166B]">₦15,000</span>
-                    </div>
-                    <p className="text-xs text-slate-500 font-medium mb-2">
-                      Lecture Hours: <strong>02:00 PM – 06:30 PM</strong> (Monday – Friday)
-                    </p>
-                    <ul className="text-xs text-slate-600 space-y-1">
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                        <span>Evening accelerated coaching & past question drill</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                        <span>Weekend intensive mock test clinics</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                        <span>Full e-portal access, digital library & materials</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                  return (
+                    <div className="space-y-4 max-w-2xl mx-auto">
+                      <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-300 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider">Enrolled Program</span>
+                          <h4 className="text-base font-black text-[#25166B]">{currentStudent.program || 'JAMB / WAEC / NECO / GCE'}</h4>
+                          <p className="text-xs text-slate-600">Official 2026/2027 Academic Session Tuition Fee</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-2xl font-black font-mono text-[#D5241B]">₦{programTuition.toLocaleString()}</span>
+                          <span className="block text-[10px] font-bold text-slate-500 uppercase">Clearance Fee</span>
+                        </div>
+                      </div>
 
-                {/* Bank Account Details Box */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Morning Student Card */}
+                        <div
+                          onClick={() => setSelectedShift('Morning')}
+                          className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative ${
+                            selectedShift === 'Morning'
+                              ? 'border-[#25166B] bg-[#25166B]/5 shadow-md'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#25166B] text-white">
+                              Morning Shift
+                            </span>
+                            <span className="text-sm font-black font-mono text-[#25166B]">09:00 AM – 01:30 PM</span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium mb-2">
+                            Monday – Friday intensive lectures &amp; CBT laboratory drills
+                          </p>
+                          <ul className="text-xs text-slate-600 space-y-1">
+                            <li className="flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
+                              <span>Daily morning intensive syllabus coverage</span>
+                            </li>
+                            <li className="flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
+                              <span>Air-conditioned CBT computer laboratory access</span>
+                            </li>
+                          </ul>
+                        </div>
+
+                        {/* Evening Student Card */}
+                        <div
+                          onClick={() => setSelectedShift('Evening')}
+                          className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative ${
+                            selectedShift === 'Evening'
+                              ? 'border-[#25166B] bg-[#25166B]/5 shadow-md'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#098CD0] text-white">
+                              Evening Shift
+                            </span>
+                            <span className="text-sm font-black font-mono text-[#25166B]">02:00 PM – 06:30 PM</span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium mb-2">
+                            Monday – Friday evening lectures &amp; mock test clinics
+                          </p>
+                          <ul className="text-xs text-slate-600 space-y-1">
+                            <li className="flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
+                              <span>Evening accelerated coaching &amp; past question drill</span>
+                            </li>
+                            <li className="flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
+                              <span>Full e-portal access, digital library &amp; materials</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Bank Account Details Box - OPAY Dedicated Official Account */}
                 <div className="max-w-2xl mx-auto bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-3 text-xs">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <span className="font-extrabold text-[#25166B] uppercase text-[11px]">Official Tuition Bank Account</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#028D3B]/10 text-[#028D3B]">
-                      Verified Corporate Account
+                      Verified Academy Account
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-bold">Bank Name</span>
-                      <strong className="text-[#1D1918] text-sm">Zenith Bank PLC</strong>
+                      <strong className="text-[#1D1918] text-sm">OPAY</strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-bold">Account Name</span>
-                      <strong className="text-[#1D1918] text-sm">D ENSURED CONSULT</strong>
+                      <strong className="text-[#1D1918] text-sm">D Ensured Consult Enterprise</strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-bold">Account Number</span>
-                      <strong className="font-mono text-[#25166B] text-base tracking-wider font-black">1014892014</strong>
+                      <strong className="font-mono text-[#25166B] text-base tracking-wider font-black">6111753209</strong>
                     </div>
                   </div>
                   <p className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
-                    Location: Doyin Plaza, Igboelerin Bus Stop, beside Prime-Mart, Okomaiko, Lagos.
+                    Location: Doyin Plaza, Igboelerin Bus Stop, beside Prime-Mart, Okomaiko, Lagos. Tuition payment must be made to this official OPAY account only.
                   </p>
                 </div>
 
@@ -776,7 +791,14 @@ export const StudentPortal: React.FC = () => {
                     <span>
                       {isSubmittingMonthly
                         ? 'Logging Payment Submission...'
-                        : `Submit ₦${(selectedShift === 'Morning' ? 20000 : 15000).toLocaleString()} for Admin Clearance`}
+                        : `Submit ₦${(
+                            currentStudent.monthlyFee ||
+                            ((currentStudent.program || '').toUpperCase().includes('IELTS')
+                              ? 70000
+                              : (currentStudent.program || '').toUpperCase().includes('ADULT')
+                              ? 60000
+                              : 20000)
+                          ).toLocaleString()} for Admin Clearance`}
                     </span>
                   </button>
                   <p className="text-[11px] text-slate-500">
@@ -2220,35 +2242,58 @@ export const StudentPortal: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                     {studentTransactions.length > 0 ? (
-                      studentTransactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-50">
-                          <td className="py-3.5 px-4 font-mono font-bold text-[#0a192f]">{tx.reference}</td>
-                          <td className="py-3.5 px-4 text-slate-500">{tx.timestamp}</td>
-                          <td className="py-3.5 px-4">{tx.paymentMethod}</td>
-                          <td className="py-3.5 px-4 font-bold text-[#0a192f] font-mono">
-                            ₦{tx.amount.toLocaleString()}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                              {tx.status}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenOfficialReceipt(tx)}
-                              className="px-3.5 py-1.5 rounded-lg bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] text-xs font-bold cursor-pointer transition-all inline-flex items-center gap-1.5 shadow-2xs"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-[#FFC600]" />
-                              <span>View Receipt (with QR)</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      studentTransactions.map((tx) => {
+                        const isApproved = tx.status === 'Successful';
+
+                        return (
+                          <tr key={tx.id} className="hover:bg-slate-50">
+                            <td className="py-3.5 px-4 font-mono font-bold text-[#0a192f]">
+                              {tx.receiptNumber || tx.reference}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-500">{tx.approvedAt || tx.timestamp}</td>
+                            <td className="py-3.5 px-4">{tx.paymentMethod}</td>
+                            <td className="py-3.5 px-4 font-bold text-[#0a192f] font-mono">
+                              ₦{tx.amount.toLocaleString()}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                  isApproved
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                                }`}
+                              >
+                                {isApproved ? 'Approved by Admin' : 'Pending Admin Clearance'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              {isApproved ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenOfficialReceipt(tx)}
+                                  className="px-3.5 py-1.5 rounded-lg bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] text-xs font-bold cursor-pointer transition-all inline-flex items-center gap-1.5 shadow-2xs"
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-[#FFC600]" />
+                                  <span>View Receipt (with QR)</span>
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-amber-700 font-bold italic">
+                                  Awaiting Clearance
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400">
-                          No previous transaction records found for this student.
+                        <td colSpan={6} className="py-10 text-center">
+                          <div className="max-w-md mx-auto space-y-2">
+                            <p className="font-bold text-slate-700 text-sm">No Recorded Payment History Yet</p>
+                            <p className="text-slate-400 text-xs">
+                              All initial dummy payments have been removed. Once you make your tuition payment and it is approved by the admin, your official verified receipt will appear here.
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     )}

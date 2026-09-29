@@ -888,13 +888,13 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200">
                       <div>
                         <span className="text-[10px] text-slate-500 uppercase font-bold block">Account Number</span>
-                        <strong className="font-mono text-base font-bold text-[#25166B]">8147896930</strong>
-                        <span className="text-[11px] text-slate-600 block">Moniepoint Microfinance Bank</span>
+                        <strong className="font-mono text-base font-bold text-[#25166B]">6111753209</strong>
+                        <span className="text-[11px] text-slate-600 block">Bank: OPAY</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText('8147896930');
+                          navigator.clipboard.writeText('6111753209');
                           setCopiedAccount(true);
                           setTimeout(() => setCopiedAccount(false), 2000);
                         }}
@@ -905,7 +905,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                       </button>
                     </div>
                     <p className="text-[11px] text-slate-500">
-                      Account Name: <strong>D Ensured Consult Educational Services</strong>
+                      Account Name: <strong>D Ensured Consult Enterprise</strong>
                     </p>
                   </div>
                 )}

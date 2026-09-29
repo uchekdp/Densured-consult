@@ -354,53 +354,132 @@ export const AdmissionPage: React.FC = () => {
       </section>
 
       {/* Main Container */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {submittedApplicationId && submittedRegData ? (
-          /* ============================================================ */
-          /* PRINTABLE & DOWNLOADABLE REGISTRATION CONFIRMATION SLIP     */
-          /* ============================================================ */
-          <div className="bg-white rounded-3xl border-2 border-[#D5241B] shadow-2xl overflow-hidden animate-in fade-in duration-300">
-            {/* Action Top Bar */}
-            <div className="bg-[#D5241B] text-white px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-[#FFC600] print:hidden">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white p-1 border border-[#FFC600] shrink-0">
-                  <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain rounded-full" />
-                </div>
-                <div>
-                  <span className="font-black text-sm block">Registration Confirmed</span>
-                  <span className="text-[10px] text-[#FFC600] font-bold uppercase tracking-wider">
-                    Official 2026/2027 academic session
-                  </span>
-                </div>
-              </div>
+          <>
+            {/* MANDATORY TUITION PAYMENT NOTICE */}
+            {(() => {
+              const progUpper = (submittedRegData.program || '').toUpperCase();
+              const tuitionFee = progUpper.includes('IELTS')
+                ? 70000
+                : progUpper.includes('ADULT')
+                ? 60000
+                : 20000;
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleDownloadSlip}
-                  className="px-4 py-2 rounded-xl bg-[#FFC600] text-[#25166B] font-black text-xs flex items-center gap-2 shadow-xs cursor-pointer hover:bg-[#e6b300]"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download Slip</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-white/20 text-white font-black text-xs flex items-center gap-2 shadow-xs cursor-pointer hover:bg-white/30 border border-white/20"
-                >
-                  <Printer className="w-4 h-4 text-[#FFC600]" />
-                  <span>Print Slip</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSignInDirectly}
-                  className="px-5 py-2 rounded-xl bg-white text-[#D5241B] font-black text-xs flex items-center gap-2 shadow-xs cursor-pointer hover:bg-slate-100"
-                >
-                  <UserCheck className="w-4 h-4 text-[#D5241B]" />
-                  <span>Enter E-Portal</span>
-                </button>
+              return (
+                <div className="bg-amber-500/10 border-2 border-amber-500/50 p-6 rounded-3xl space-y-4 shadow-sm print:hidden">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+                        <Lock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Tuition Fee Payment Required for Clearance</span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-[#25166B]">
+                        Payment Required to Access ID Card, CBT &amp; Study Materials
+                      </h3>
+                      <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed max-w-3xl">
+                        Candidate registration is successfully submitted. In accordance with academy policy, <strong>access to your Student ID card, CBT practice questions, study materials, receipts, and individual portal features remains strictly locked</strong> until your tuition fee is transferred to the academy&apos;s OPAY account and approved by the Directorate.
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="text-xs text-slate-500 font-bold block uppercase">{submittedRegData.program} Tuition Fee</span>
+                      <span className="text-3xl font-black font-mono text-[#D5241B]">
+                        ₦{tuitionFee.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Academy Official Bank Account Box */}
+                  <div className="p-4 bg-white rounded-2xl border-2 border-amber-300 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Designated Bank</span>
+                      <strong className="text-slate-900 text-sm font-black">OPAY</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Account Name</span>
+                      <strong className="text-slate-900 text-sm font-black">D Ensured Consult Enterprise</strong>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Account Number</span>
+                        <strong className="font-mono text-slate-900 text-base font-black tracking-wider">6111753209</strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('6111753209');
+                          alert('Account Number 6111753209 copied to clipboard!');
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs cursor-pointer transition-colors"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <span className="text-xs text-slate-600 font-medium">
+                      After transfer, the Admin Directorate (Mr Akinjo Rotimi) will verify and approve your payment to unlock your portal features.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSignInDirectly}
+                      className="px-6 py-3 rounded-xl bg-[#D5241B] hover:bg-[#b81d15] text-white font-black text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4 text-white" />
+                      <span>Proceed to Pay Tuition &amp; Await Approval</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ============================================================ */
+            /* PRINTABLE & DOWNLOADABLE REGISTRATION CONFIRMATION SLIP     */
+            /* ============================================================ */}
+            <div className="bg-white rounded-3xl border-2 border-[#D5241B] shadow-2xl overflow-hidden animate-in fade-in duration-300">
+              {/* Action Top Bar */}
+              <div className="bg-[#D5241B] text-white px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-[#FFC600] print:hidden">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white p-1 border border-[#FFC600] shrink-0">
+                    <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain rounded-full" />
+                  </div>
+                  <div>
+                    <span className="font-black text-sm block">Registration Confirmed</span>
+                    <span className="text-[10px] text-[#FFC600] font-bold uppercase tracking-wider">
+                      Official 2026/2027 academic session
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleDownloadSlip}
+                    className="px-4 py-2 rounded-xl bg-[#FFC600] text-[#25166B] font-black text-xs flex items-center gap-2 shadow-xs cursor-pointer hover:bg-[#e6b300]"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Slip</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-4 py-2 rounded-xl bg-white/20 text-white font-black text-xs flex items-center gap-2 shadow-xs cursor-pointer hover:bg-white/30 border border-white/20"
+                  >
+                    <Printer className="w-4 h-4 text-[#FFC600]" />
+                    <span>Print Slip</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSignInDirectly}
+                    className="px-5 py-2 rounded-xl bg-white text-[#D5241B] font-black text-xs flex items-center gap-2 shadow-xs cursor-pointer hover:bg-slate-100"
+                  >
+                    <Lock className="w-4 h-4 text-[#D5241B]" />
+                    <span>Pay Tuition &amp; Access Portal</span>
+                  </button>
+                </div>
               </div>
-            </div>
 
             {/* Printable Registration Slip Body - LIGHT DESIGN */}
             <div id="printable-registration-slip" className="p-6 sm:p-10 space-y-6 bg-white text-[#1D1918]">
@@ -573,30 +652,46 @@ export const AdmissionPage: React.FC = () => {
               </div>
 
               {/* Bottom CTAs */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center gap-3 print:hidden">
-                <button
-                  type="button"
-                  onClick={handleSignInDirectly}
-                  className="w-full sm:flex-1 py-4 px-6 rounded-xl bg-[#D5241B] hover:bg-[#b81d15] text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-all border border-[#FFC600]"
-                >
-                  <UserCheck className="w-4 h-4" />
-                  <span>Access Your Student Portal &amp; Download ID Card</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const fee = submittedRegData.studentShift === 'Morning' ? 20000 : 15000;
-                    openPaymentModal(fee, `Tuition Clearance for ${submittedRegData.studentShift} Student (${submittedApplicationId})`);
-                  }}
-                  className="w-full sm:w-auto py-4 px-6 rounded-xl bg-[#FFC600] text-[#25166B] font-black text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer hover:bg-[#e6b300]"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Pay Tuition Clearance (₦{submittedRegData.studentShift === 'Morning' ? '20,000' : '15,000'})</span>
-                </button>
-              </div>
+              {(() => {
+                const progUpper = (submittedRegData.program || '').toUpperCase();
+                const tuitionFee = progUpper.includes('IELTS')
+                  ? 70000
+                  : progUpper.includes('ADULT')
+                  ? 60000
+                  : 20000;
+
+                return (
+                  <div className="pt-4 space-y-3 print:hidden">
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          openPaymentModal(tuitionFee, `Tuition Clearance for ${submittedRegData.program || 'Student'} (${submittedApplicationId})`);
+                        }}
+                        className="w-full sm:flex-1 py-4 px-6 rounded-xl bg-[#FFC600] hover:bg-[#e6b300] text-[#25166B] font-black text-xs flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-all border-2 border-[#25166B]"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Pay Program Tuition Clearance (₦{tuitionFee.toLocaleString()})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSignInDirectly}
+                        className="w-full sm:w-auto py-4 px-6 rounded-xl bg-[#25166B] hover:bg-[#1a0f4d] text-white font-black text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all border border-sky-300"
+                      >
+                        <UserCheck className="w-4 h-4" />
+                        <span>Proceed to Student Portal</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-center text-slate-500 font-medium">
+                      Notice: Official ID card, CBT practice tests, study materials, and printable receipt will be activated once your tuition fee (₦{tuitionFee.toLocaleString()}) to OPAY Account <strong>6111753209</strong> (D Ensured Consult Enterprise) is approved by Admin Directorate (Mr Akinjo Rotimi).
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
+          </>
         ) : (
           /* ============================================================ */
           /* ULTRA-DETAILED CANDIDATE REGISTRATION FORM                  */
