@@ -627,7 +627,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         transactionReference: 'ZEN-TRF-9021849',
         submittedAt: '2026-09-24 08:30',
         status: 'Pending Review',
-        proofNotes: 'Paid through Zenith Bank mobile app to D Ensured Consult account.',
+        proofNotes: 'Paid through OPAY mobile app to D Ensured Consult Enterprise account.',
       },
     ];
   });

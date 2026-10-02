@@ -531,7 +531,7 @@ function seedInitialDatabase(): DatabaseSchema {
     payment_month: 'October 2026',
     payment_date: now.toISOString().split('T')[0],
     reference: 'PAY-DEC-2026-1088',
-    method: 'Bank Transfer (GTBank)',
+    method: 'Bank Transfer (OPAY)',
     status: 'Pending',
     notes: 'Newly submitted payment proof awaiting administrative verification',
   };

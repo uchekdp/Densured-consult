@@ -252,14 +252,18 @@ export const AdmissionPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-1 text-xs">
               <span className="text-slate-400 font-bold block text-[10px] uppercase">Bank</span>
-              <span className="font-bold text-slate-900 text-sm">Guaranty Trust Bank</span>
+              <span className="font-bold text-slate-900 text-sm">OPAY</span>
             </div>
             <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-1 text-xs">
               <span className="text-slate-400 font-bold block text-[10px] uppercase">Account Name</span>
-              <span className="font-bold text-slate-900 text-sm">D Ensured Consult Academy</span>
+              <span className="font-bold text-slate-900 text-sm">D Ensured Consult Enterprise</span>
+            </div>
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-1 text-xs">
+              <span className="text-slate-400 font-bold block text-[10px] uppercase">Account Number</span>
+              <span className="font-mono font-bold text-[#0284c7] text-sm">6111753209</span>
             </div>
             <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-1 text-xs">
               <span className="text-slate-400 font-bold block text-[10px] uppercase">Standard Monthly Fee</span>

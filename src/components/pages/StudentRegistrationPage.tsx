@@ -297,14 +297,18 @@ export const StudentRegistrationPage: React.FC = () => {
               </div>
 
               {/* Academy Bank Details */}
-              <div className="p-4 bg-white rounded-xl border border-sky-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-4 bg-white rounded-xl border border-sky-200 grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                 <div>
                   <span className="text-slate-500 font-semibold block text-[11px]">Bank Name</span>
-                  <span className="font-bold text-slate-900">Guaranty Trust Bank (GTBank)</span>
+                  <span className="font-bold text-slate-900">OPAY</span>
                 </div>
                 <div>
                   <span className="text-slate-500 font-semibold block text-[11px]">Account Name</span>
-                  <span className="font-bold text-slate-900">D Ensured Consult Academy</span>
+                  <span className="font-bold text-slate-900">D Ensured Consult Enterprise</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-semibold block text-[11px]">Account Number</span>
+                  <span className="font-mono font-bold text-[#0284c7] text-sm">6111753209</span>
                 </div>
                 <div>
                   <span className="text-slate-500 font-semibold block text-[11px]">Standard Monthly Fee</span>

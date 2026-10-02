@@ -737,7 +737,7 @@ export const StudentPortal: React.FC = () => {
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <span className="font-extrabold text-[#25166B] uppercase text-[11px]">Official Tuition Bank Account</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#028D3B]/10 text-[#028D3B]">
-                      Verified Academy Account
+                      Verified Official Account
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

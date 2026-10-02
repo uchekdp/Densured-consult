@@ -162,7 +162,7 @@ export const PaymentModal: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="text-slate-500">Academy Account:</span>
+                  <span className="text-slate-500">Official Account:</span>
                   <span className="font-bold text-slate-800">OPAY • 6111753209</span>
                 </div>
                 <div className="flex justify-between">
@@ -375,6 +375,10 @@ export const PaymentModal: React.FC = () => {
                     Dial any of the USSD strings below from your registered bank phone line to authenticate the payment of ₦{amount.toLocaleString()}:
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg col-span-2">
+                      <p className="font-bold text-emerald-900">OPAY (Official Academy Account)</p>
+                      <p className="text-emerald-700 font-semibold mt-0.5">*955# • Transfer to 6111753209</p>
+                    </div>
                     <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                       <p className="font-bold text-slate-800">GTBank</p>
                       <p className="text-emerald-700 font-semibold mt-0.5">*737*50*014#</p>
