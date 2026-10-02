@@ -80,7 +80,7 @@ export const PageImageShowcase: React.FC<PageImageShowcaseProps> = ({
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src =
-                  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop&q=80';
+                  'https://i.ibb.co/WNYJfXGK/de-ensured-3.jpg';
               }}
             />
             {/* Gradient Overlay */}

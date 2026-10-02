@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { PageImageShowcase } from '../common/PageImageShowcase';
 import { ExamProgram } from '../../types';
 import {
   GraduationCap,
@@ -426,15 +425,6 @@ export const ServicesPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Dynamic Images Added by Admin for Services Page */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <PageImageShowcase
-          page="services"
-          title="Facility Highlights & Program Laboratories"
-          subtitle="Explore our computer laboratories, physical science practical desks, and lecture spaces."
-        />
-      </section>
-
       {/* Bottom Contact Help */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
         <p className="text-xs text-slate-500 font-semibold">
@@ -442,7 +432,7 @@ export const ServicesPage: React.FC = () => {
         </p>
         <button
           onClick={() => setCurrentPage('contact')}
-          className="inline-flex items-center gap-2 text-sm font-bold text-[#D5241B] hover:underline cursor-pointer transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-bold text-[#0284c7] hover:text-[#ea580c] hover:underline cursor-pointer transition-colors"
         >
           <span>Speak directly with our Chief Academic Counselor</span>
           <ArrowRight className="w-4 h-4" />

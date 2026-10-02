@@ -3,301 +3,196 @@ import { useApp } from '../../context/AppContext';
 import {
   GraduationCap,
   Target,
-  ArrowRight,
   Compass,
   Award,
-  BookOpen,
+  ShieldCheck,
   CheckCircle2,
+  ArrowRight,
+  BookOpen,
   Users,
+  Flame,
 } from 'lucide-react';
 
 export const AboutPage: React.FC = () => {
   const { setCurrentPage } = useApp();
 
-  const teamMembers = [
+  const coreValues = [
     {
-      name: 'Mr. Akinjo Rotimi',
-      role: 'Directorate & Super Admin',
-      credentials: 'B.Sc. Mathematics & Statistics (OAU), Pioneer Educational Consultant',
-      bio: 'Visionary founder and Directorate of D Ensured Consult. With over 15 years pioneering standardized examination tutoring, CBT diagnostics, and student mentorship in Lagos, he has guided thousands to top university admissions.',
-      initials: 'AR',
-      accentColor: 'bg-sky-100 text-sky-700 border-sky-300',
+      title: 'Excellence',
+      desc: 'Unrelenting focus on top-tier examination performance, conceptual depth, and mastery of marking rubrics.',
+      num: '01',
     },
     {
-      name: 'Mrs. Abigail Mensah',
-      role: 'Lead IELTS Examiner & International Studies Dean',
-      credentials: 'MA Applied Linguistics (Manchester), British Council Certified Trainer',
-      bio: 'Specialist in English phonetics, academic writing cohesion, and UKVI language clearance with hundreds of Band 8.0+ scholars.',
-      initials: 'AM',
-      accentColor: 'bg-indigo-100 text-indigo-700 border-indigo-300',
+      title: 'Discipline',
+      desc: 'Structured daily attendance, punctual shifts, and regular assessments that instill focused study habits.',
+      num: '02',
     },
     {
-      name: 'Dr. Kelechi Okafor',
-      role: 'Head of STEM & Medical Pre-Degree Track',
-      credentials: 'M.Sc. Physics (UNN), Ph.D. Applied Biophysics',
-      bio: 'Architect of our renowned UTME physics and chemistry shortcuts. Has mentored more than 140 students who gained admission into Medicine & Surgery.',
-      initials: 'KO',
-      accentColor: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+      title: 'Integrity',
+      desc: 'Strict zero-malpractice ethics. We build genuine student ability that stands firm in any national examination.',
+      num: '03',
     },
     {
-      name: 'Engr. Taiwo Balogun',
-      role: 'Chief Examiner WAEC & NECO Mathematics',
-      credentials: 'B.Eng. Mechanical Engineering (OAU), WAEC Marking Team Leader',
-      bio: 'Transforms students from mathematics anxiety to straight A1s in General Mathematics, Further Maths, and Technical Drawing.',
-      initials: 'TB',
-      accentColor: 'bg-amber-100 text-amber-800 border-amber-300',
+      title: 'Commitment',
+      desc: 'Dedicated subject tutors and academic leaders invested in every candidate\'s individual score improvement.',
+      num: '04',
+    },
+    {
+      title: 'Accountability',
+      desc: 'Transparent score tracking, regular attendance logs, and open progress feedback for parents and sponsors.',
+      num: '05',
+    },
+    {
+      title: 'Student Success',
+      desc: 'Our ultimate yardstick: university admissions, distinction results, and confident scholarly growth.',
+      num: '06',
     },
   ];
 
   return (
-    <div className="space-y-16 pb-16 bg-slate-50/60">
-      {/* Hero Banner - Attractive Light Colors (No Images) */}
-      <section className="bg-gradient-to-b from-sky-50 via-white to-sky-50 py-14 sm:py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-b-2 border-sky-200">
-        <div className="max-w-7xl mx-auto space-y-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-100 text-sky-700 text-xs font-black uppercase tracking-wider border border-sky-300">
-            <GraduationCap className="w-4 h-4 text-sky-600" />
-            <span>Official 2026/2027 academic session • Education is Power</span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight max-w-3xl mx-auto text-sky-600">
-            About D Ensured Consult
+    <div className="w-full bg-[#f8fafc] pb-20 font-['Poppins',sans-serif]">
+      {/* Hero Header */}
+      <section className="bg-gradient-to-b from-sky-50 via-white to-sky-50 py-14 sm:py-20 px-4 sm:px-6 lg:px-8 text-center space-y-4 border-b-2 border-sky-100">
+        <div className="max-w-4xl mx-auto space-y-3">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-100 text-[#0284c7] text-xs font-bold border border-sky-200">
+            <GraduationCap className="w-4 h-4 text-[#0284c7]" />
+            <span>Official 2026/2027 Academic Session • Learn, Emerge and Succeed.</span>
+          </span>
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+            About D Ensured Consult Academy
           </h1>
-          <p className="text-sky-800 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-semibold">
-            Bridging the gap between secondary school curriculum and competitive university entry standards for UTME, WAEC, NECO, GCE, Adult Education, and IELTS examinations from our dedicated Lagos center.
+          <p className="text-xs sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            A premier academic tutorial centre committed to rigorous student preparation, discipline, and outstanding
+            examination results in Lagos, Nigeria.
           </p>
         </div>
       </section>
 
-      {/* Mission & Vision */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Mission Card */}
-          <div className="bg-white rounded-3xl p-8 border-2 border-sky-100 hover:border-sky-300 shadow-sm space-y-4 transition-all">
-            <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center">
-              <Target className="w-6 h-6 text-sky-600" />
-            </div>
-            <h3 className="text-2xl font-black text-sky-600">Our Mission</h3>
-            <p className="text-slate-700 text-sm leading-relaxed font-medium">
-              To dismantle exam failure by providing high-precision coaching, authentic computer-based testing technology, and personalized academic counseling that guarantees admissions into world-class universities in Nigeria and abroad.
-            </p>
-          </div>
-
-          {/* Vision Card */}
-          <div className="bg-white rounded-3xl p-8 border-2 border-sky-100 hover:border-sky-300 shadow-sm space-y-4 transition-all">
-            <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center">
-              <Compass className="w-6 h-6 text-sky-600" />
-            </div>
-            <h3 className="text-2xl font-black text-sky-600">Our Vision</h3>
-            <p className="text-slate-700 text-sm leading-relaxed font-medium">
-              To be Africa&apos;s most reputable and technologically advanced educational consultancy, renowned for unmatched pass rates, academic integrity, and holistic scholar development.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Core Values */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3.5 py-1 rounded-full">
-            Ethos &amp; Foundation
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16 mt-12">
+        {/* ========================================================================= */}
+        {/* 1. WHO WE ARE (Requirement 11)                                            */}
+        {/* ========================================================================= */}
+        <section className="bg-white rounded-3xl p-6 sm:p-10 border-2 border-slate-200 shadow-sm space-y-4">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3.5 py-1.5 rounded-full inline-block">
+            Who We Are
           </span>
-          <h2 className="text-3xl font-black text-sky-600 tracking-tight">Our Core Values</h2>
-          <p className="text-sky-800 text-sm font-semibold">
-            Guiding principles powering exceptional student performance and academic excellence.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-white rounded-2xl border-2 border-sky-100 hover:border-sky-300 space-y-2 transition-all shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-black">
-              1
-            </div>
-            <h4 className="font-black text-sky-600 text-base">Academic Rigor</h4>
-            <p className="text-slate-700 text-xs leading-relaxed font-medium">
-              No shortcuts or compromises. We teach deep conceptual understanding that enables students to solve any question variation.
-            </p>
-          </div>
-
-          <div className="p-6 bg-white rounded-2xl border-2 border-sky-100 hover:border-sky-300 space-y-2 transition-all shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-black">
-              2
-            </div>
-            <h4 className="font-black text-sky-600 text-base">Zero Malpractice</h4>
-            <p className="text-slate-700 text-xs leading-relaxed font-medium">
-              We uphold uncompromised examination ethics. Our students achieve 300+ and straight A1s through sheer mastery and disciplined practice.
-            </p>
-          </div>
-
-          <div className="p-6 bg-white rounded-2xl border-2 border-sky-100 hover:border-sky-300 space-y-2 transition-all shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-black">
-              3
-            </div>
-            <h4 className="font-black text-sky-600 text-base">Technological Leadership</h4>
-            <p className="text-slate-700 text-xs leading-relaxed font-medium">
-              From automated CBT engines to our dedicated student e-portal, modern technology is woven into our everyday student journey.
-            </p>
-          </div>
-
-          <div className="p-6 bg-white rounded-2xl border-2 border-sky-100 hover:border-sky-300 space-y-2 transition-all shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-black">
-              4
-            </div>
-            <h4 className="font-black text-sky-600 text-base">Individualized Mentorship</h4>
-            <p className="text-slate-700 text-xs leading-relaxed font-medium">
-              Every student is assigned a personal academic advisor who tracks diagnostic weak points, study habits, and psychological exam readiness.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 4-Stage Learning Framework - Clean Design */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-br from-sky-50 via-white to-blue-50/70 rounded-3xl p-8 sm:p-12 space-y-8 border-2 border-sky-200 shadow-md">
-          <div className="max-w-3xl space-y-2">
-            <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3 py-1 rounded-full">
-              Our Proven Formula
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-black text-sky-600">
-              The D Ensured 4-Stage Mastery Framework
-            </h3>
-            <p className="text-sky-800 text-xs sm:text-sm font-semibold">
-              How we systematically elevate candidate scores across all exam categories for the Official 2026/2027 academic session:
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="p-5 rounded-2xl bg-white border border-sky-200 space-y-3 shadow-xs">
-              <div className="text-sky-600 font-black font-mono text-xs">STAGE 01</div>
-              <h4 className="text-base font-bold text-sky-600">Diagnostic Entry Audit</h4>
-              <p className="text-slate-700 text-xs leading-relaxed font-medium">
-                Every enrollee sits for a baseline assessment to uncover specific cognitive blind spots across each syllabus topic.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-sky-200 space-y-3 shadow-xs">
-              <div className="text-sky-600 font-black font-mono text-xs">STAGE 02</div>
-              <h4 className="text-base font-bold text-sky-600">Syllabus Deconstruction</h4>
-              <p className="text-slate-700 text-xs leading-relaxed font-medium">
-                Intensive lectures conducted by seasoned examiners covering 100% of the prescribed curriculum with formula breakdowns.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-sky-200 space-y-3 shadow-xs">
-              <div className="text-sky-600 font-black font-mono text-xs">STAGE 03</div>
-              <h4 className="text-base font-bold text-sky-600">High-Pressure CBT Drills</h4>
-              <p className="text-slate-700 text-xs leading-relaxed font-medium">
-                Weekly timed computer assessments that condition students to answer 40 questions in under 30 minutes without panic.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-sky-200 space-y-3 shadow-xs">
-              <div className="text-sky-600 font-black font-mono text-xs">STAGE 04</div>
-              <h4 className="text-base font-bold text-sky-600">Admission Placement Advisory</h4>
-              <p className="text-slate-700 text-xs leading-relaxed font-medium">
-                Post-exam guidance on subject combination matching, university catchment quotas, and Post-UTME screening applications.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Leadership Team (Typography & Badges - No Images) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3.5 py-1 rounded-full">
-            Faculty of Authorities
-          </span>
-          <h2 className="text-3xl font-black text-sky-600 tracking-tight">
-            Academic Leadership &amp; Faculty
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            A Leading Academic Preparation &amp; Tutorial Centre
           </h2>
-          <p className="text-sky-800 text-sm font-semibold">
-            Guided by certified examiners, education directors, and international test consultants.
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            D Ensured Consult Academy is an educational tutorial and academic preparation centre focused on helping
+            students prepare for examinations and admission opportunities. Located at Doyin Plaza, Igboelerin Bus Stop,
+            Okomaiko, Lagos, the academy provides targeted coaching for UTME (JAMB CBT), WAEC (WASSCE), NECO, JUPEB,
+            Post-UTME, and Adult Education.
           </p>
-        </div>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Under the experienced leadership of our directorate, we combine classroom teaching by certified examiners
+            with a dedicated 120-seat computer testing laboratory, continuous assessment tracking, and structured morning
+            and evening shifts.
+          </p>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {teamMembers.map((member) => (
-            <div
-              key={member.name}
-              className="bg-white rounded-2xl p-6 border-2 border-sky-100 hover:border-sky-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
-            >
-              <div className="space-y-3">
-                <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center font-black text-xl shadow-xs ${member.accentColor}`}>
-                  {member.initials}
-                </div>
-                <div>
-                  <h4 className="font-black text-sky-600 text-base">{member.name}</h4>
-                  <p className="text-xs font-bold text-sky-700">{member.role}</p>
-                </div>
-                <p className="text-[11px] text-slate-700 font-bold">{member.credentials}</p>
-                <p className="text-xs text-slate-700 leading-relaxed font-medium">{member.bio}</p>
+        {/* ========================================================================= */}
+        {/* 2. MISSION & VISION (Requirement 11)                                      */}
+        {/* ========================================================================= */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          {/* Mission */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-sky-200 shadow-xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center border border-sky-100">
+                <Target className="w-6 h-6 text-[#0284c7]" />
               </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Verified Faculty Lead</span>
-              </div>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">Our Mission</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                To provide structured academic preparation, learning resources, assessment and student support that
+                enable students to master examination curricula, eliminate cognitive anxiety, and gain direct admission
+                into competitive tertiary institutions.
+              </p>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="pt-2 text-xs font-bold text-[#0284c7] flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Structured Learning &amp; Mentoring</span>
+            </div>
+          </div>
 
-      {/* Program Tuition Overview Banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl border-2 border-sky-200 p-8 shadow-sm space-y-6">
+          {/* Vision */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-200 shadow-xs space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-[#ea580c] flex items-center justify-center border border-orange-100">
+                <Compass className="w-6 h-6 text-[#ea580c]" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">Our Vision</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                To support students in becoming academically prepared, confident and disciplined learners who embody
+                intellectual rigor, ethical excellence, and self-reliance in their higher education pursuits and future
+                careers.
+              </p>
+            </div>
+            <div className="pt-2 text-xs font-bold text-[#ea580c] flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Confidence &amp; Academic Discipline</span>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================================================= */}
+        {/* 3. OUR CORE VALUES (Requirement 11)                                       */}
+        {/* ========================================================================= */}
+        <section className="space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-black uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-300 px-3 py-1 rounded-full">
-              Official Center Tuition
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3.5 py-1.5 rounded-full inline-block">
+              Foundational Principles
             </span>
-            <h3 className="text-2xl sm:text-3xl font-black text-sky-600">
-              Affordable, High-Standard Academic Fees
-            </h3>
-            <p className="text-slate-600 text-xs sm:text-sm font-medium">
-              Transparent program tuition fees for the Official 2026/2027 Academic Session:
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Our Core Values
+            </h2>
+            <p className="text-slate-600 text-xs sm:text-sm">
+              The fundamental standards that guide our instruction, staff conduct, and student engagement daily.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-sky-50/70 border border-sky-200 text-center space-y-2">
-              <span className="text-xs font-bold text-sky-800 uppercase block">JAMB • WAEC • NECO • GCE</span>
-              <p className="text-3xl font-black text-[#D5241B]">₦20,000</p>
-              <p className="text-xs text-slate-600 font-medium">Full intensive coaching &amp; CBT drills</p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-sky-50/70 border border-sky-200 text-center space-y-2">
-              <span className="text-xs font-bold text-sky-800 uppercase block">IELTS Academic &amp; General</span>
-              <p className="text-3xl font-black text-[#25166B]">₦70,000</p>
-              <p className="text-xs text-slate-600 font-medium">Audio listening lab &amp; Band 8+ coaching</p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-sky-50/70 border border-sky-200 text-center space-y-2">
-              <span className="text-xs font-bold text-sky-800 uppercase block">Adult Education</span>
-              <p className="text-3xl font-black text-[#028D3B]">₦60,000</p>
-              <p className="text-xs text-slate-600 font-medium">Flexible evening &amp; executive modules</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {coreValues.map((val, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-3xl p-6 border-2 border-slate-200 hover:border-sky-300 shadow-xs space-y-3 transition-all hover:translate-y-[-2px]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-[#0284c7] bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-100">
+                    {val.num}
+                  </span>
+                  <ShieldCheck className="w-4 h-4 text-slate-400" />
+                </div>
+                <h4 className="font-extrabold text-base text-slate-900">{val.title}</h4>
+                <p className="text-xs text-slate-600 leading-relaxed font-normal">{val.desc}</p>
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Bottom CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-sky-50 via-white to-blue-50 border-2 border-sky-200 rounded-3xl p-8 sm:p-10 text-center space-y-4 shadow-md">
-          <h3 className="text-2xl sm:text-3xl font-black text-sky-600">
-            Join the Next Generation of High Achievers
+        {/* Bottom CTA Banner */}
+        <section className="bg-gradient-to-r from-sky-50 via-white to-blue-50 border-2 border-sky-200 rounded-3xl p-6 sm:p-10 text-center space-y-4 shadow-sm">
+          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+            Begin Your Academic Journey With Us
           </h3>
-          <p className="text-slate-700 text-sm max-w-xl mx-auto font-medium">
-            Admissions for our upcoming morning and evening batches at Doyin Plaza, Okomaiko, Lagos are currently ongoing for the <strong>Official 2026/2027 academic session</strong>. Secure your seat today.
+          <p className="text-slate-600 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+            Admissions for the 2026/2027 academic session are active. Secure your seat and join our dedicated tutorial
+            community today.
           </p>
-          <button
-            type="button"
-            onClick={() => setCurrentPage('admission')}
-            className="px-8 py-4 rounded-xl bg-[#D5241B] hover:bg-[#b81d15] text-white font-black text-sm shadow-md transition-all inline-flex items-center gap-2 cursor-pointer border border-[#FFC600]"
-          >
-            <span>Proceed to Admission Form</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </section>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage('register')}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition-all inline-flex items-center justify-center gap-2 cursor-pointer border border-amber-300"
+            >
+              <span>Apply for Admission</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
+
 export default AboutPage;

@@ -1,0 +1,475 @@
+{
+  "users": [
+    {
+      "id": "usr-admin-01",
+      "role": "admin",
+      "email": "Densuredconsult@gmail.com",
+      "name": "Mr Akinjo Rotimi",
+      "password_hash": "d7335ddb9718b8eebc3b8217f4b1c34c94a918de8da808e5952e8a6b580c74de3742f963d838d8e25bf8ff4573a7a023746807c5e19939a2f4eb2ba5fc253dbc",
+      "salt": "5770330f1c3d8337927d62c6fe8a4a9b",
+      "status": "active",
+      "created_at": "2026-10-02T09:36:25.634Z"
+    },
+    {
+      "id": "usr-std-01",
+      "role": "student",
+      "email": "olawale.adebayo@student.dec.ng",
+      "student_id": "DECA-2026-0001",
+      "name": "Olawale Adebayo",
+      "password_hash": "3d1338c56a5fe542ecdd09aa831faf7f9b440d45398244b451a530347a9378add3b67c2213201f60a76abf6ed2722b3230d9b6a19886a604895df133bc8bf08e",
+      "salt": "f1bd6b4df03b9978fa9223caefa1c09b",
+      "status": "active",
+      "created_at": "2026-01-15T00:00:00.000Z"
+    },
+    {
+      "id": "usr-std-02",
+      "role": "student",
+      "email": "chidinma.eze@student.dec.ng",
+      "student_id": "DECA-2026-0002",
+      "name": "Chidinma Eze",
+      "password_hash": "b627c4654c531bd41fec50b77691cf6c902896149bfccabab620a499680d57f77f1c8db99d23b2053d0e0acb9ce897626766b124d812cfba7e3e17a209fe1b78",
+      "salt": "55f3c98f83881404fff4475487f94fca",
+      "status": "active",
+      "created_at": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "usr-std-03",
+      "role": "student",
+      "email": "ibrahim.musa@student.dec.ng",
+      "student_id": "DECA-2026-0003",
+      "name": "Ibrahim Musa",
+      "password_hash": "676c42ac9467cd87e3a853a47fcb0fc5f1919ba4b09c9c9ab8d1a78502f25f4e88aba98e581439f4b5b95a23429fd6578b0f1ecd7b1b27548ea6abb1f1b5fb0d",
+      "salt": "db4b131f0768a1c5582a6592ca6585ed",
+      "status": "pending_payment",
+      "created_at": "2026-02-01T00:00:00.000Z"
+    }
+  ],
+  "students": [
+    {
+      "id": "std-rec-01",
+      "student_id": "DECA-2026-0001",
+      "user_id": "usr-std-01",
+      "first_name": "Olawale",
+      "middle_name": "Babajide",
+      "last_name": "Adebayo",
+      "full_name": "Olawale Adebayo",
+      "date_of_birth": "2007-04-12",
+      "gender": "Male",
+      "phone": "+234 803 245 8891",
+      "email": "olawale.adebayo@student.dec.ng",
+      "residential_address": "12 Doyin Plaza Road, Okomaiko, Lagos State",
+      "state": "Lagos",
+      "lga": "Ojo",
+      "photo_url": "",
+      "parent_name": "Chief Emmanuel Adebayo",
+      "parent_relationship": "Father",
+      "parent_phone": "+234 802 331 9901",
+      "parent_email": "e.adebayo@gmail.com",
+      "parent_address": "Block 4, Flat 2, Federal Housing Estate, Okomaiko, Lagos",
+      "emergency_contact": "+234 802 331 9901",
+      "current_school": "Federal Government College, Ijanikin",
+      "current_class": "SS3 / Graduate",
+      "intended_exam": "UTME/JAMB",
+      "preferred_programme": "UTME",
+      "subjects": [
+        "Use of English",
+        "Mathematics",
+        "Physics",
+        "Chemistry"
+      ],
+      "registration_date": "2026-01-15",
+      "status": "Active"
+    },
+    {
+      "id": "std-rec-02",
+      "student_id": "DECA-2026-0002",
+      "user_id": "usr-std-02",
+      "first_name": "Chidinma",
+      "middle_name": "Grace",
+      "last_name": "Eze",
+      "full_name": "Chidinma Eze",
+      "date_of_birth": "2008-01-22",
+      "gender": "Female",
+      "phone": "+234 812 456 7890",
+      "email": "chidinma.eze@student.dec.ng",
+      "residential_address": "8 Igboelerin Road, Okomaiko, Lagos",
+      "state": "Lagos",
+      "lga": "Ojo",
+      "photo_url": "",
+      "parent_name": "Mrs. Ngozi Eze",
+      "parent_relationship": "Mother",
+      "parent_phone": "+234 803 778 9912",
+      "parent_email": "ngozi.eze@yahoo.com",
+      "parent_address": "8 Igboelerin Road, Okomaiko, Lagos",
+      "emergency_contact": "+234 803 778 9912",
+      "current_school": "Queens College, Yaba",
+      "current_class": "SS3",
+      "intended_exam": "WAEC",
+      "preferred_programme": "WAEC",
+      "subjects": [
+        "Mathematics",
+        "English Language",
+        "Biology",
+        "Chemistry",
+        "Physics"
+      ],
+      "registration_date": "2026-01-10",
+      "status": "Payment Expired"
+    },
+    {
+      "id": "std-rec-03",
+      "student_id": "DECA-2026-0003",
+      "user_id": "usr-std-03",
+      "first_name": "Ibrahim",
+      "middle_name": "Aliyu",
+      "last_name": "Musa",
+      "full_name": "Ibrahim Musa",
+      "date_of_birth": "2007-09-05",
+      "gender": "Male",
+      "phone": "+234 809 334 1122",
+      "email": "ibrahim.musa@student.dec.ng",
+      "residential_address": "15 Alaba Rago, Ojo, Lagos",
+      "state": "Kano",
+      "lga": "Nassarawa",
+      "photo_url": "",
+      "parent_name": "Alhaji Aliyu Musa",
+      "parent_relationship": "Father",
+      "parent_phone": "+234 803 112 3344",
+      "parent_email": "aliyu.musa@gmail.com",
+      "parent_address": "15 Alaba Rago, Ojo, Lagos",
+      "emergency_contact": "+234 803 112 3344",
+      "current_school": "King's College, Lagos",
+      "current_class": "SS3",
+      "intended_exam": "UTME/JAMB",
+      "preferred_programme": "UTME",
+      "subjects": [
+        "Use of English",
+        "Mathematics",
+        "Economics",
+        "Government"
+      ],
+      "registration_date": "2026-02-01",
+      "status": "Payment Expired"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-001",
+      "student_id": "DECA-2026-0001",
+      "student_name": "Olawale Adebayo",
+      "amount": 20000,
+      "payment_month": "October 2026",
+      "payment_date": "2026-10-02",
+      "reference": "PAY-DEC-2026-1049",
+      "method": "Bank Transfer (Direct)",
+      "status": "Approved",
+      "approval_date": "2026-10-02",
+      "expiry_date": "2026-11-01",
+      "approved_by": "Mr Akinjo Rotimi",
+      "notes": "October 2026 Tuition Verified & Cleared"
+    },
+    {
+      "id": "pay-002",
+      "student_id": "DECA-2026-0002",
+      "student_name": "Chidinma Eze",
+      "amount": 20000,
+      "payment_month": "August 2026",
+      "payment_date": "2026-08-01",
+      "reference": "PAY-DEC-2026-0812",
+      "method": "POS Terminal",
+      "status": "Expired",
+      "approval_date": "2026-08-01",
+      "expiry_date": "2026-08-31",
+      "approved_by": "Mr Akinjo Rotimi",
+      "notes": "August Tuition - Expired on 31st August 2026"
+    },
+    {
+      "id": "pay-003",
+      "student_id": "DECA-2026-0003",
+      "student_name": "Ibrahim Musa",
+      "amount": 20000,
+      "payment_month": "October 2026",
+      "payment_date": "2026-10-02",
+      "reference": "PAY-DEC-2026-1088",
+      "method": "Bank Transfer (GTBank)",
+      "status": "Pending",
+      "notes": "Newly submitted payment proof awaiting administrative verification"
+    }
+  ],
+  "attendance": [
+    {
+      "id": "att-rec-01",
+      "student_id": "DECA-2026-0001",
+      "student_name": "Olawale Adebayo",
+      "date": "2026-10-02",
+      "programme": "UTME",
+      "class_name": "Science Track",
+      "session": "Morning",
+      "status": "Present",
+      "marked_by": "Admin Directorate",
+      "created_at": "2026-10-02T09:36:25.636Z"
+    },
+    {
+      "id": "att-rec-02",
+      "student_id": "DECA-2026-0002",
+      "student_name": "Chidinma Eze",
+      "date": "2026-10-02",
+      "programme": "WAEC",
+      "class_name": "Science Track",
+      "session": "Morning",
+      "status": "Late",
+      "marked_by": "Admin Directorate",
+      "created_at": "2026-10-02T09:36:25.636Z"
+    }
+  ],
+  "cbt_tests": [
+    {
+      "id": "cbt-01",
+      "title": "UTME 2026 Grand Simulation Mock 1",
+      "examination_type": "UTME/JAMB",
+      "subject": "Physics",
+      "instructions": "JAMB 8-key CBT simulation. Answer all questions within the allocated time. Calculator not permitted.",
+      "duration_minutes": 30,
+      "question_count": 5,
+      "status": "published",
+      "created_at": "2026-02-10"
+    },
+    {
+      "id": "cbt-02",
+      "title": "WAEC WASSCE General Mathematics Objective Drill",
+      "examination_type": "WAEC",
+      "subject": "Mathematics",
+      "instructions": "Standard WAEC Paper 1 format. Select the correct option for each question.",
+      "duration_minutes": 25,
+      "question_count": 4,
+      "status": "published",
+      "created_at": "2026-02-15"
+    }
+  ],
+  "cbt_questions": [
+    {
+      "id": "q-101",
+      "test_id": "cbt-01",
+      "question": "A car accelerates uniformly from rest at 3 m/s² for 8 seconds. What distance does it cover in this time?",
+      "option_a": "48 m",
+      "option_b": "96 m",
+      "option_c": "192 m",
+      "option_d": "24 m",
+      "correct_answer": "B",
+      "explanation": "Using s = ut + 0.5*a*t² with u = 0: s = 0.5 * 3 * 8² = 0.5 * 3 * 64 = 96 meters."
+    },
+    {
+      "id": "q-102",
+      "test_id": "cbt-01",
+      "question": "Which of the following devices transforms electrical energy into mechanical energy?",
+      "option_a": "Dynamo",
+      "option_b": "Electric Motor",
+      "option_c": "Transformer",
+      "option_d": "Battery",
+      "correct_answer": "B",
+      "explanation": "An electric motor converts electrical energy into mechanical energy."
+    },
+    {
+      "id": "q-103",
+      "test_id": "cbt-01",
+      "question": "The unit of electric potential difference is the:",
+      "option_a": "Ampere",
+      "option_b": "Ohm",
+      "option_c": "Volt",
+      "option_d": "Coulomb",
+      "correct_answer": "C",
+      "explanation": "The SI unit of electric potential difference (voltage) is the Volt (V)."
+    },
+    {
+      "id": "q-104",
+      "test_id": "cbt-01",
+      "question": "What is the frequency of a wave with velocity 340 m/s and wavelength 0.85 m?",
+      "option_a": "400 Hz",
+      "option_b": "289 Hz",
+      "option_c": "200 Hz",
+      "option_d": "800 Hz",
+      "correct_answer": "A",
+      "explanation": "v = f * λ => f = v / λ = 340 / 0.85 = 400 Hz."
+    },
+    {
+      "id": "q-105",
+      "test_id": "cbt-01",
+      "question": "Which of the following electromagnetic radiations has the shortest wavelength?",
+      "option_a": "Radio waves",
+      "option_b": "Infrared rays",
+      "option_c": "Ultraviolet rays",
+      "option_d": "Gamma rays",
+      "correct_answer": "D",
+      "explanation": "Gamma rays have the highest frequency and therefore the shortest wavelength in the electromagnetic spectrum."
+    },
+    {
+      "id": "q-201",
+      "test_id": "cbt-02",
+      "question": "If log₁₀(2) = 0.3010 and log₁₀(3) = 0.4771, calculate log₁₀(18).",
+      "option_a": "1.2552",
+      "option_b": "1.5642",
+      "option_c": "0.9821",
+      "option_d": "1.1450",
+      "correct_answer": "A",
+      "explanation": "log₁₀(18) = log₁₀(2 * 3²) = log₁₀(2) + 2*log₁₀(3) = 0.3010 + 2(0.4771) = 1.2552."
+    },
+    {
+      "id": "q-202",
+      "test_id": "cbt-02",
+      "question": "Solve for x in the equation 2^(2x - 1) = 32.",
+      "option_a": "2",
+      "option_b": "3",
+      "option_c": "4",
+      "option_d": "5",
+      "correct_answer": "B",
+      "explanation": "32 = 2^5. So 2x - 1 = 5 => 2x = 6 => x = 3."
+    },
+    {
+      "id": "q-203",
+      "test_id": "cbt-02",
+      "question": "Find the quadratic equation whose roots are -3 and 5.",
+      "option_a": "x² - 2x - 15 = 0",
+      "option_b": "x² + 2x - 15 = 0",
+      "option_c": "x² - 8x + 15 = 0",
+      "option_d": "x² + 8x - 15 = 0",
+      "correct_answer": "A",
+      "explanation": "(x - (-3))(x - 5) = (x + 3)(x - 5) = x² - 2x - 15 = 0."
+    },
+    {
+      "id": "q-204",
+      "test_id": "cbt-02",
+      "question": "The interior angles of a hexagon add up to:",
+      "option_a": "360°",
+      "option_b": "540°",
+      "option_c": "720°",
+      "option_d": "900°",
+      "correct_answer": "C",
+      "explanation": "Sum = (n - 2) * 180° = (6 - 2) * 180° = 4 * 180° = 720°."
+    }
+  ],
+  "cbt_attempts": [],
+  "study_materials": [
+    {
+      "id": "mat-01",
+      "title": "UTME 2026 Physics Formula Sheet & Calculation Shortcuts",
+      "description": "Comprehensive formula compilation and derivation shortcuts for kinematics, optics, mechanics and nuclear physics.",
+      "subject": "Physics",
+      "programme": "UTME",
+      "class_name": "Science Track",
+      "file_url": "/uploads/materials/physics-shortcuts-2026.pdf",
+      "file_name": "physics-shortcuts-2026.pdf",
+      "file_size": "2.4 MB",
+      "file_type": "PDF",
+      "status": "published",
+      "uploaded_at": "2026-02-12",
+      "uploaded_by": "Engr. Chidi Okafor",
+      "downloads_count": 142
+    },
+    {
+      "id": "mat-02",
+      "title": "WAEC WASSCE Chemistry Practical Titration & Qualitative Analysis Manual",
+      "description": "Step-by-step laboratory guidebook for acid-base titrations, redox reactions, gas testing, and flame tests.",
+      "subject": "Chemistry",
+      "programme": "WAEC",
+      "class_name": "Science Track",
+      "file_url": "/uploads/materials/chemistry-practical-guide.pdf",
+      "file_name": "chemistry-practical-guide.pdf",
+      "file_size": "3.1 MB",
+      "file_type": "PDF",
+      "status": "published",
+      "uploaded_at": "2026-02-18",
+      "uploaded_by": "Mrs. Folashade Adeleke",
+      "downloads_count": 98
+    },
+    {
+      "id": "mat-03",
+      "title": "Use of English: 250 Idioms, Registers and Lexical Pairs",
+      "description": "High-frequency grammar rules, subject-verb agreement exceptions, and register vocabulary for JAMB and WAEC.",
+      "subject": "Use of English",
+      "programme": "UTME",
+      "class_name": "All Classes",
+      "file_url": "/uploads/materials/english-lexical-rules.pdf",
+      "file_name": "english-lexical-rules.pdf",
+      "file_size": "1.8 MB",
+      "file_type": "PDF",
+      "status": "published",
+      "uploaded_at": "2026-02-25",
+      "uploaded_by": "Barrister T. Balogun",
+      "downloads_count": 210
+    }
+  ],
+  "announcements": [
+    {
+      "id": "ann-01",
+      "title": "Mandatory 2026 Grand National CBT Mock Examination",
+      "message": "All registered UTME candidates are required to report to the CBT lab at 08:30 AM this Saturday. Biometric screening and photo ID clearance will be enforced.",
+      "target_audience": "utme",
+      "status": "published",
+      "created_at": "2026-03-01"
+    },
+    {
+      "id": "ann-02",
+      "title": "Official 2026/2027 Academic Session Timetable Released",
+      "message": "Morning Shift (09:00 AM – 01:30 PM) and Evening Shift (02:00 PM – 06:30 PM) lectures have resumed in full swing. Check your subject timetables inside the portal.",
+      "target_audience": "all",
+      "status": "published",
+      "created_at": "2026-03-05"
+    }
+  ],
+  "academic_progress": [
+    {
+      "id": "prog-rec-01",
+      "student_id": "DECA-2026-0001",
+      "student_name": "Olawale Adebayo",
+      "subject": "Physics",
+      "assessment_type": "CBT Practice",
+      "score": 85,
+      "maximum_score": 100,
+      "percentage": 85,
+      "comment": "Excellent understanding of kinematics and projectile motion.",
+      "date": "2026-02-28"
+    },
+    {
+      "id": "prog-rec-02",
+      "student_id": "DECA-2026-0001",
+      "student_name": "Olawale Adebayo",
+      "subject": "Chemistry",
+      "assessment_type": "Class Test",
+      "score": 78,
+      "maximum_score": 100,
+      "percentage": 78,
+      "comment": "Strong grasp of stoichiometry; revise organic reaction mechanisms.",
+      "date": "2026-03-02"
+    }
+  ],
+  "gallery": [
+    {
+      "id": "gal-01",
+      "title": "120-Seat Computer-Based Testing Simulation Hall",
+      "description": "Accredited CBT testing facility equipped with authentic JAMB 8-key interface workstations.",
+      "category": "CBT Lab",
+      "image_url": "",
+      "status": "published",
+      "created_at": "2026-01-20"
+    },
+    {
+      "id": "gal-02",
+      "title": "Science Practical Demonstration Laboratory",
+      "description": "Hands-on practical apparatus for WAEC, NECO and GCE science candidate calibration.",
+      "category": "Classrooms",
+      "image_url": "",
+      "status": "published",
+      "created_at": "2026-01-22"
+    }
+  ],
+  "videos": [],
+  "settings": {
+    "academy_name": "D Ensured Consult",
+    "tagline": "Learn, Emerge and Succeed.",
+    "address": "Doyin Plaza, Igboelerin Bus Stop, Beside Prime-Mart, Okomaiko, Lagos State",
+    "phone": "08147896930",
+    "email": "Densuredconsult@gmail.com",
+    "academic_session": "2026/2027 Academic Session",
+    "default_tuition_fee": 20000
+  }
+}

@@ -17,13 +17,16 @@ import { AdmissionPage } from './components/pages/AdmissionPage';
 import { ContactPage } from './components/pages/ContactPage';
 import { StudentPortal } from './components/portal/StudentPortal';
 import { AdminPortal } from './components/portal/AdminPortal';
+import { StudentRegistrationPage } from './components/pages/StudentRegistrationPage';
+import { StudentLoginPage } from './components/pages/StudentLoginPage';
+import { AdminLoginPage } from './components/pages/AdminLoginPage';
 import { FloatingWhatsApp } from './components/common/FloatingWhatsApp';
 
 const MainContent: React.FC = () => {
   const { currentPage } = useApp();
 
   return (
-    <main className="min-h-screen flex flex-col bg-white text-[#0a192f] selection:bg-[#D5241B] selection:text-white">
+    <main className="min-h-screen flex flex-col bg-white text-[#0f172a] selection:bg-[#0284c7] selection:text-white font-['Poppins',sans-serif]">
       <Navbar />
 
       <div className="flex-1">
@@ -33,6 +36,9 @@ const MainContent: React.FC = () => {
         {currentPage === 'gallery' && <GalleryPage />}
         {currentPage === 'admission' && <AdmissionPage />}
         {currentPage === 'contact' && <ContactPage />}
+        {currentPage === 'register' && <StudentRegistrationPage />}
+        {currentPage === 'student-login' && <StudentLoginPage />}
+        {currentPage === 'admin-login' && <AdminLoginPage />}
         {currentPage === 'student-portal' && <StudentPortal />}
         {currentPage === 'admin-portal' && <AdminPortal />}
       </div>

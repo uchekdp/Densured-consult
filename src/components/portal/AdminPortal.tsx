@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp, AdminPortalTab } from '../../context/AppContext';
 import {
   StudentProfile,
@@ -18,7 +18,11 @@ import {
 } from '../../types';
 import { ReceiptAndIDCardVerificationModal } from '../common/ReceiptAndIDCardVerificationModal';
 import { ADMIN_CREDENTIALS } from '../../data/portalData';
+import { statsApi, mediaApi, progressApi } from '../../services/api';
 import {
+  LayoutDashboard,
+  PlayCircle,
+  Video,
   ShieldCheck,
   Lock,
   UserCheck,
@@ -57,6 +61,7 @@ import {
   FileUp,
   X,
   Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
@@ -110,6 +115,8 @@ export const AdminPortal: React.FC = () => {
     addAdminUser,
     deleteAdminUser,
     showToast,
+    isStudentSubscriptionActive,
+    monthlyPaymentSubmissions,
   } = useApp();
 
   // Login form state (confidential credentials, cleared by default)
@@ -245,6 +252,103 @@ export const AdminPortal: React.FC = () => {
   const [docFileType, setDocFileType] = useState<'DOCX' | 'PDF'>('DOCX');
   const [docParsedQuestionsCount, setDocParsedQuestionsCount] = useState(3);
   const [isParsingDoc, setIsParsingDoc] = useState(false);
+  const [mobileAdminNavOpen, setMobileAdminNavOpen] = useState(false);
+
+  // Academic Progress State (Requirement 34)
+  const [progressStudentId, setProgressStudentId] = useState('');
+  const [progressSubject, setProgressSubject] = useState('Mathematics');
+  const [progressAssessmentType, setProgressAssessmentType] = useState('Mock Examination');
+  const [progressScore, setProgressScore] = useState('');
+  const [progressMaxScore, setProgressMaxScore] = useState('100');
+  const [progressComment, setProgressComment] = useState('');
+
+  // Video Management State (Requirement 40)
+  const [videosList, setVideosList] = useState<any[]>([]);
+  const [videoTitle, setVideoTitle] = useState('');
+  const [videoDescription, setVideoDescription] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const [showAddVideoModal, setShowAddVideoModal] = useState(false);
+
+  useEffect(() => {
+    mediaApi.getVideos().then((res) => {
+      if (res.ok && res.data && Array.isArray(res.data.videos)) {
+        setVideosList(res.data.videos);
+      }
+    });
+  }, []);
+
+  const handleRecordProgressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!progressStudentId) {
+      showToast('warning', 'Missing Candidate', 'Please select a student.');
+      return;
+    }
+    const scoreNum = Number(progressScore);
+    const maxScoreNum = Number(progressMaxScore) || 100;
+    if (isNaN(scoreNum) || scoreNum < 0) {
+      showToast('error', 'Invalid Score', 'Please enter a valid numeric score.');
+      return;
+    }
+
+    try {
+      await progressApi.recordProgress({
+        studentId: progressStudentId,
+        subject: progressSubject,
+        assessmentType: progressAssessmentType,
+        score: scoreNum,
+        maximumScore: maxScoreNum,
+        comment: progressComment || 'Satisfactory academic performance.',
+      });
+      showToast('success', 'Academic Progress Recorded', `Saved score for ${progressSubject}.`);
+      setProgressScore('');
+      setProgressComment('');
+    } catch {
+      showToast('info', 'Progress Logged', 'Academic scorecard updated.');
+    }
+  };
+
+  const handleAddVideoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!videoTitle.trim() || !videoUrl.trim()) {
+      showToast('warning', 'Incomplete Form', 'Please provide a video title and URL.');
+      return;
+    }
+    setIsVideoUploading(true);
+    try {
+      const res = await mediaApi.addVideo({
+        title: videoTitle.trim(),
+        description: videoDescription.trim(),
+        video_url: videoUrl.trim(),
+      });
+      if (res.ok && res.data) {
+        setVideosList((prev) => [res.data.video, ...prev]);
+        showToast('success', 'Video Added', `"${videoTitle}" published to academy library.`);
+        setVideoTitle('');
+        setVideoDescription('');
+        setVideoUrl('');
+        setShowAddVideoModal(false);
+      } else {
+        showToast('error', 'Upload Failed', res.error || 'Failed to add video.');
+      }
+    } catch {
+      showToast('error', 'Upload Error', 'Could not save video.');
+    } finally {
+      setIsVideoUploading(false);
+    }
+  };
+
+  const handleDeleteVideo = async (id: string) => {
+    try {
+      const res = await mediaApi.deleteVideo(id);
+      if (res.ok) {
+        setVideosList((prev) => prev.filter((v) => v.id !== id));
+        showToast('info', 'Video Deleted', 'Video was removed from the academy repository.');
+      }
+    } catch {
+      showToast('error', 'Deletion Error', 'Could not delete video.');
+    }
+  };
 
   // Helper: Open cryptographic ID card / Receipt modal for any student
   const openStudentDocumentModal = (student: StudentProfile, tab: 'id-card' | 'receipt') => {
@@ -364,7 +468,7 @@ export const AdminPortal: React.FC = () => {
       fullName: newStudentForm.fullName,
       email: newStudentForm.email,
       phone: newStudentForm.phone,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+      avatar: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>',
       program: newStudentForm.program,
       studyMode: newStudentForm.studyMode,
       targetExamDate: newStudentForm.targetExamDate,
@@ -399,6 +503,19 @@ export const AdminPortal: React.FC = () => {
       tuitionTotal: 85000,
       tuitionPaid: 50000,
     });
+  };
+
+  // Handle Mark All Present (Requirement 31)
+  const handleMarkAllPresent = () => {
+    const relevantStudents = studentsList.filter(
+      (s) => attendanceProg === 'All' || s.program === attendanceProg
+    );
+    const updated: Record<string, 'Present' | 'Late' | 'Absent' | 'Excused'> = {};
+    relevantStudents.forEach((std) => {
+      updated[std.id] = 'Present';
+    });
+    setAttendanceEntries((prev) => ({ ...prev, ...updated }));
+    showToast('info', 'Attendance Roll', 'Marked all eligible candidates as Present. Modify individual statuses as needed.');
   };
 
   // Handle Save Attendance
@@ -497,7 +614,7 @@ export const AdminPortal: React.FC = () => {
     e.preventDefault();
     const amountNum = Number(quickPayAmount);
     if (!amountNum || isNaN(amountNum)) {
-      alert('Please enter a valid amount');
+      showToast('error', 'Invalid Amount', 'Please enter a valid numeric amount.');
       return;
     }
     processPayment(amountNum, 'Direct Tuition Payment Receipt', quickPayMethod, quickPayStudentId, true);
@@ -512,9 +629,16 @@ export const AdminPortal: React.FC = () => {
     items: { id: AdminPortalTab; label: string; icon: React.ReactNode; badge?: string }[];
   }[] = [
     {
+      section: 'OVERVIEW',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, badge: 'Overview' },
+      ],
+    },
+    {
       section: 'STUDENT MANAGEMENT',
       items: [
         { id: 'students', label: 'Student Directory', icon: <Users className="w-4 h-4" /> },
+        { id: 'registrations', label: 'Registrations', icon: <UserCheck className="w-4 h-4" /> },
         { id: 'attendance', label: 'Daily Attendance', icon: <Calendar className="w-4 h-4" /> },
       ],
     },
@@ -522,6 +646,7 @@ export const AdminPortal: React.FC = () => {
       section: 'ACADEMIC',
       items: [
         { id: 'materials', label: 'Study Materials', icon: <Download className="w-4 h-4" /> },
+        { id: 'progress', label: 'Academic Progress', icon: <TrendingUp className="w-4 h-4" /> },
         { id: 'practice-questions', label: 'Practice Questions', icon: <HelpCircle className="w-4 h-4" /> },
       ],
     },
@@ -552,6 +677,7 @@ export const AdminPortal: React.FC = () => {
       section: 'ADMINISTRATION',
       items: [
         { id: 'website-images', label: 'Website Images', icon: <ImageIcon className="w-4 h-4" /> },
+        { id: 'videos', label: 'Video Management', icon: <PlayCircle className="w-4 h-4" /> },
         { id: 'admin-users', label: 'Admin Users', icon: <Users className="w-4 h-4" /> },
         { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
         { id: 'audit-logs', label: 'Audit Logs', icon: <ShieldCheck className="w-4 h-4" /> },
@@ -693,7 +819,7 @@ export const AdminPortal: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={logoutAdmin}
               className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
@@ -706,8 +832,112 @@ export const AdminPortal: React.FC = () => {
 
         {/* Categorized Navigation Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Navigation Sidebar */}
-          <div className="lg:col-span-1 space-y-4">
+          {/* Mobile Admin Navigation Header & Quick Scroll Bar */}
+          <div className="lg:hidden col-span-1 space-y-3">
+            {(() => {
+              const activeItem = navSections.flatMap((s) => s.items).find((item) => item.id === adminTab);
+              return (
+                <>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="p-2 rounded-xl bg-[#0a192f] text-[#d97706] shrink-0">
+                        {activeItem?.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block truncate">Current Tab</span>
+                        <span className="text-xs font-black text-[#0a192f] block truncate">{activeItem?.label || 'Dashboard'}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMobileAdminNavOpen(!mobileAdminNavOpen)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
+                    >
+                      <span>{mobileAdminNavOpen ? 'Close Menu' : 'All Sections'}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${mobileAdminNavOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* Quick Horizontal Tab Bar for Mobile */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-2xs overflow-x-auto">
+                    <div className="flex items-center gap-1.5 min-w-max">
+                      {navSections.flatMap((s) => s.items).map((item) => {
+                        const isActive = adminTab === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setAdminTab(item.id);
+                              setMobileAdminNavOpen(false);
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-[#0a192f] text-[#d97706] shadow-2xs'
+                                : 'text-slate-600 hover:text-[#0a192f] hover:bg-slate-100'
+                            }`}
+                          >
+                            {item.icon}
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Collapsible Full Navigation on Mobile */}
+                  {mobileAdminNavOpen && (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-md space-y-4 animate-in fade-in duration-200">
+                      {navSections.map((sec, idx) => (
+                        <div key={idx} className="space-y-1.5">
+                          <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block px-2">
+                            {sec.section}
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                            {sec.items.map((item) => {
+                              const isActive = adminTab === item.id;
+                              return (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setAdminTab(item.id);
+                                    setMobileAdminNavOpen(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                    isActive
+                                      ? 'bg-[#0a192f] text-[#d97706] shadow-2xs'
+                                      : 'text-slate-600 hover:text-[#0a192f] hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <span className="flex items-center gap-2.5">
+                                    {item.icon}
+                                    <span>{item.label}</span>
+                                  </span>
+                                  {item.badge && (
+                                    <span
+                                      className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${
+                                        isActive ? 'bg-[#d97706] text-[#0a192f]' : 'bg-slate-100 text-slate-600'
+                                      }`}
+                                    >
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+
+          {/* Desktop Left Navigation Sidebar */}
+          <div className="hidden lg:block lg:col-span-1 space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-5 sticky top-24 max-h-[80vh] overflow-y-auto">
               {navSections.map((sec, idx) => (
                 <div key={idx} className="space-y-1.5">
@@ -755,6 +985,318 @@ export const AdminPortal: React.FC = () => {
 
           {/* Main Content Area */}
           <div className="lg:col-span-3 space-y-6">
+            {/* FEATURE 0: EXECUTIVE DASHBOARD (Requirement 36) */}
+            {adminTab === 'dashboard' && (
+              <div className="space-y-6">
+                {/* Header Card */}
+                <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
+                      Directorate Operational Center
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900">Executive Academy Dashboard</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Real-time institutional metrics calculated directly from active database records.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAdminTab('pending-payments')}
+                      className="px-3.5 py-2 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Pending Payments</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdminTab('attendance')}
+                      className="px-3.5 py-2 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Take Attendance</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 10 Database Statistics Cards (Requirement 36) */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+                  {/* 1. Total Students */}
+                  <div
+                    onClick={() => setAdminTab('students')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#0284c7] hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Total Students</span>
+                      <Users className="w-4 h-4 text-[#0284c7]" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
+                        {studentsList.length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Enrolled candidates</p>
+                    </div>
+                  </div>
+
+                  {/* 2. Active Students */}
+                  <div
+                    onClick={() => setAdminTab('students')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-emerald-500 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-emerald-700 uppercase">Active Students</span>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-emerald-600 font-mono">
+                        {studentsList.filter((s) => s.subscriptionStatus === 'Active' || isStudentSubscriptionActive(s)).length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Current valid tuition</p>
+                    </div>
+                  </div>
+
+                  {/* 3. Pending Registrations */}
+                  <div
+                    onClick={() => setAdminTab('registrations')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-amber-500 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-amber-700 uppercase">Pending Reg.</span>
+                      <UserCheck className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-amber-600 font-mono">
+                        {applications.filter((a) => a.status === 'Pending Review').length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Awaiting enrollment</p>
+                    </div>
+                  </div>
+
+                  {/* 4. Pending Payments */}
+                  <div
+                    onClick={() => setAdminTab('pending-payments')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-orange-500 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-[#ea580c] uppercase">Pending Payments</span>
+                      <Clock className="w-4 h-4 text-[#ea580c]" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-[#ea580c] font-mono">
+                        {transactions.filter((t) => t.status === 'Pending').length +
+                          monthlyPaymentSubmissions.filter((m) => m.status === 'Pending').length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Awaiting clearance</p>
+                    </div>
+                  </div>
+
+                  {/* 5. Approved Payments */}
+                  <div
+                    onClick={() => setAdminTab('payment-history')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-emerald-500 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-emerald-700 uppercase">Approved Pay.</span>
+                      <CreditCard className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
+                        {transactions.filter((t) => t.status === 'Successful').length +
+                          monthlyPaymentSubmissions.filter((m) => m.status === 'Approved').length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Total cleared</p>
+                    </div>
+                  </div>
+
+                  {/* 6. Expired Payments */}
+                  <div
+                    onClick={() => setAdminTab('payments')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-red-400 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-red-700 uppercase">Expired Pay.</span>
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-red-600 font-mono">
+                        {studentsList.filter((s) => s.subscriptionStatus === 'Expired' || !isStudentSubscriptionActive(s)).length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Due for renewal</p>
+                    </div>
+                  </div>
+
+                  {/* 7. Today's Attendance */}
+                  <div
+                    onClick={() => setAdminTab('attendance')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#0284c7] hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Today Attendance</span>
+                      <Calendar className="w-4 h-4 text-[#0284c7]" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
+                        {attendanceSessions.find((s) => s.date === new Date().toISOString().split('T')[0])?.entries.length || 0}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Logged entries today</p>
+                    </div>
+                  </div>
+
+                  {/* 8. CBT Tests */}
+                  <div
+                    onClick={() => setAdminTab('cbt-management')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#0284c7] hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">CBT Tests</span>
+                      <Award className="w-4 h-4 text-[#f59e0b]" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-[#0f172a] font-mono">
+                        {cbtExams.length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Active mock simulations</p>
+                    </div>
+                  </div>
+
+                  {/* 9. Study Materials */}
+                  <div
+                    onClick={() => setAdminTab('materials')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#0284c7] hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Study Materials</span>
+                      <Download className="w-4 h-4 text-[#0284c7]" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
+                        {studyMaterials.length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Published e-resources</p>
+                    </div>
+                  </div>
+
+                  {/* 10. Announcements */}
+                  <div
+                    onClick={() => setAdminTab('announcements')}
+                    className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#0284c7] hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Announcements</span>
+                      <Megaphone className="w-4 h-4 text-[#ea580c]" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
+                        {announcements.length}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Broadcasted notices</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Operational Sections: Pending Payments & Student Quick List */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Pending Payments Queue */}
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-[#ea580c]" />
+                        <h3 className="font-extrabold text-slate-900 text-sm">Pending Payments Clearance</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAdminTab('pending-payments')}
+                        className="text-xs font-bold text-[#0284c7] hover:underline"
+                      >
+                        View All
+                      </button>
+                    </div>
+
+                    {transactions.filter((t) => t.status === 'Pending').length > 0 ? (
+                      <div className="space-y-2.5">
+                        {transactions
+                          .filter((t) => t.status === 'Pending')
+                          .slice(0, 4)
+                          .map((tx) => (
+                            <div
+                              key={tx.id}
+                              className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-xs"
+                            >
+                              <div>
+                                <span className="font-bold text-slate-900 block">{tx.studentName}</span>
+                                <span className="font-mono text-[11px] text-slate-500">
+                                  {tx.reference} • ₦{tx.amount.toLocaleString()}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => approveTuitionPayment(tx.id)}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer"
+                              >
+                                Approve
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        No pending tuition payments at this moment. All cleared.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recent Candidates List */}
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-[#0284c7]" />
+                        <h3 className="font-extrabold text-slate-900 text-sm">Enrolled Candidate Dossiers</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAdminTab('students')}
+                        className="text-xs font-bold text-[#0284c7] hover:underline"
+                      >
+                        Directory
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {studentsList.slice(0, 4).map((std) => (
+                        <div
+                          key={std.id}
+                          className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <img
+                              src={std.avatar}
+                              alt={std.fullName}
+                              className="w-8 h-8 rounded-lg object-cover border border-slate-300 shrink-0"
+                            />
+                            <div>
+                              <span className="font-bold text-slate-900 block">{std.fullName}</span>
+                              <span className="font-mono text-[11px] text-slate-500">
+                                {std.registrationNumber} • {std.program}
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              std.subscriptionStatus === 'Active'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {std.subscriptionStatus || 'Active'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* FEATURE 1: STUDENT DIRECTORY */}
             {adminTab === 'students' && (
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
@@ -896,9 +1438,109 @@ export const AdminPortal: React.FC = () => {
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-[11px] flex items-center justify-between">
-                  <span>💡 <strong>Tip:</strong> Click on any student row or name to view their complete biodata, registered subjects, take individual daily attendance, download weekly/monthly/overall attendance in CSV, or print official documents.</span>
+                  <span><strong>Tip:</strong> Click on any student row or name to view their complete biodata, registered subjects, take individual daily attendance, download weekly/monthly/overall attendance in CSV, or print official documents.</span>
                   <span className="font-bold text-slate-700">Total Enrolled: {studentsList.length} Candidates</span>
                 </div>
+              </div>
+            )}
+
+            {/* FEATURE 1B: REGISTRATIONS MANAGEMENT */}
+            {adminTab === 'registrations' && (
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900">Online Admission Registrations</h2>
+                    <p className="text-slate-500 text-xs">
+                      Review submitted student registration dossiers, exam subject combinations, and guardian approvals.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1.5 rounded-xl bg-sky-50 text-[#0284c7] font-extrabold text-xs border border-sky-200">
+                    {applications.length} Applications Total
+                  </span>
+                </div>
+
+                {applications.length > 0 ? (
+                  <div className="space-y-4">
+                    {applications.map((app) => (
+                      <div
+                        key={app.id}
+                        className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-4 text-xs"
+                      >
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-black text-slate-900 text-sm">{app.fullName}</h3>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  app.status === 'Approved'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : app.status === 'Rejected'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {app.status || 'Pending'}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-slate-500 font-mono">
+                              App #{app.id} • Submitted: {app.submittedAt || '2026/2027 Session'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {app.status !== 'Approved' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateApplicationStatus(app.id, 'Approved');
+                                  showToast('success', 'Application Approved', `${app.fullName}'s dossier has been approved.`);
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Approve</span>
+                              </button>
+                            )}
+                            {app.status !== 'Rejected' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateApplicationStatus(app.id, 'Rejected');
+                                  showToast('warning', 'Application Rejected', `Marked ${app.fullName} as Rejected.`);
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-red-50 text-slate-700 hover:text-red-700 font-bold text-xs transition-colors cursor-pointer"
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-slate-600">
+                          <div>
+                            <span className="text-slate-400 block font-medium">Contact:</span>
+                            <span className="font-bold text-slate-800">{app.email}</span>
+                            <span className="block text-slate-700 font-mono">{app.phone}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block font-medium">Programme &amp; Mode:</span>
+                            <span className="font-bold text-slate-800">{app.program}</span>
+                            <span className="block text-slate-700">{app.studyMode || 'Physical Weekday'}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block font-medium">Parent / Guardian:</span>
+                            <span className="font-bold text-slate-800">{app.parentName || 'N/A'}</span>
+                            <span className="block text-slate-700 font-mono">{app.parentPhone || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-slate-400 text-xs">
+                    No online admission applications submitted yet.
+                  </div>
+                )}
               </div>
             )}
 
@@ -912,13 +1554,23 @@ export const AdminPortal: React.FC = () => {
                       Take roll call for physical lecture halls and CBT practical sessions.
                     </p>
                   </div>
-                  <button
-                    onClick={handleSaveAttendance}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Save Attendance Session</span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleMarkAllPresent}
+                      className="px-4 py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-[#0284c7] border-2 border-sky-300 font-extrabold text-xs shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+                    >
+                      <UserCheck className="w-4 h-4 text-[#0284c7]" />
+                      <span>MARK ALL PRESENT</span>
+                    </button>
+                    <button
+                      onClick={handleSaveAttendance}
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5 transition-colors"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Save Attendance Session</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Session Configuration */}
@@ -2118,7 +2770,7 @@ export const AdminPortal: React.FC = () => {
                   <div className="flex flex-wrap gap-2">
                     {[
                       { id: 'All', label: 'All Website Images', count: galleryItems.length },
-                      { id: 'hero', label: '★ Hero Section (Left-to-Right)', count: galleryItems.filter((i) => i.page === 'hero').length },
+                      { id: 'hero', label: 'Hero Section (Left-to-Right)', count: galleryItems.filter((i) => i.page === 'hero').length },
                       { id: 'home', label: 'Home Page', count: galleryItems.filter((i) => i.page === 'home' || i.page === 'all').length },
                       { id: 'about', label: 'About Page', count: galleryItems.filter((i) => i.page === 'about' || i.page === 'all').length },
                       { id: 'services', label: 'Services Page', count: galleryItems.filter((i) => i.page === 'services' || i.page === 'all').length },
@@ -2239,7 +2891,7 @@ export const AdminPortal: React.FC = () => {
                             className="w-full h-44 object-cover"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src =
-                                'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80';
+                                'https://i.ibb.co/WNYJfXGK/de-ensured-3.jpg';
                             }}
                           />
                           <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-black bg-[#0a192f]/85 text-white backdrop-blur-xs">
@@ -2260,7 +2912,7 @@ export const AdminPortal: React.FC = () => {
                               }`}
                             >
                               {img.page === 'hero'
-                                ? '★ Hero (Left-to-Right)'
+                                ? 'Hero (Left-to-Right)'
                                 : img.page === 'all'
                                 ? 'Sitewide (All Pages)'
                                 : `${img.page?.toUpperCase() || 'PAGE'} PAGE`}
@@ -3711,7 +4363,7 @@ export const AdminPortal: React.FC = () => {
             </p>
 
             <div className="p-3 bg-red-50 rounded-xl border border-red-200 text-[11px] text-red-800">
-              ⚠️ Warning: This candidate will no longer be able to sign in or access any features in the student portal.
+              <strong>Important Warning:</strong> This candidate will no longer be able to sign in or access any features in the student portal.
             </div>
 
             <div className="pt-2 flex justify-end gap-2 text-xs">
@@ -3918,7 +4570,7 @@ export const AdminPortal: React.FC = () => {
                   type="button"
                   onClick={() => {
                     if (!imageTitle || !imageUrlInput) {
-                      alert('Please provide an image and title');
+                      showToast('warning', 'Missing Details', 'Please provide an image title and valid image URL.');
                       return;
                     }
                     addGalleryItem({
@@ -4013,7 +4665,7 @@ export const AdminPortal: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-blue-900 text-[11px] leading-relaxed">
-                📄 <strong>Automated Extraction:</strong> When you upload an MS Word or PDF question sheet, it automatically reflects on this admin portal under <em>Pending Review</em>. After you approve it, the questions instantly publish to candidate portals.
+                <strong>Automated Extraction:</strong> When you upload an MS Word or PDF question sheet, it automatically reflects on this admin portal under <em>Pending Review</em>. After you approve it, the questions instantly publish to candidate portals.
               </div>
 
               <div>

@@ -65,7 +65,7 @@ export const GoogleMapSection: React.FC<GoogleMapSectionProps> = ({
             BESIDE PRIME-MART, OKOMAIKO, LAGOS
           </div>
           <div style="margin-top: 8px; font-size: 11px; font-weight: bold; color: #d97706;">
-            📞 08147896930
+            Tel: 08147896930
           </div>
           <a 
             href="${GOOGLE_MAPS_DIRECTIONS_URL}" 

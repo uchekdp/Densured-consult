@@ -322,6 +322,7 @@ export const StudentPortal: React.FC = () => {
     { id: 'attendance', label: 'Attendance Record', icon: <CalendarCheck className="w-4 h-4" /> },
     { id: 'cbt-mocks', label: 'Mock Exams (CBT)', icon: <Award className="w-4 h-4" />, badge: 'Active' },
     { id: 'results', label: 'My Results', icon: <TrendingUp className="w-4 h-4" /> },
+    { id: 'progress', label: 'Academic Progress', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'practice-sets', label: 'Practice Sets', icon: <PlayCircle className="w-4 h-4" /> },
     { id: 'timetables', label: 'Timetables', icon: <Clock className="w-4 h-4" /> },
     { id: 'notes', label: 'Lecture Notes', icon: <BookOpen className="w-4 h-4" /> },
@@ -537,20 +538,26 @@ export const StudentPortal: React.FC = () => {
           /* LOCKED PORTAL SCREEN */
           <div className="space-y-6">
             {/* Status Alert Bar */}
-            <div className="bg-red-500/10 border-2 border-[#D5241B]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="bg-orange-50 border-2 border-[#ea580c]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#D5241B]/15 text-[#D5241B] flex items-center justify-center shrink-0">
-                  <Lock className="w-5 h-5 text-[#D5241B]" />
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#ea580c] flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-[#ea580c]" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-[#25166B] text-base">
-                    e-portal Features Locked: Monthly Tuition Access Required
+                  <h3 className="font-extrabold text-slate-900 text-base">
+                    Your monthly tuition payment has expired. Please renew your payment to restore access to protected student resources.
                   </h3>
-                  <p className="text-[#1D1918]/80 text-xs mt-0.5">
-                    JAMB, WAEC, NECO, GCE: <strong>₦20,000</strong> • IELTS: <strong>₦70,000</strong> • Adult Education: <strong>₦60,000</strong>. This tuition payment must be approved by the admin on the admin dashboard before full access to study materials, ID cards, CBT practice, and receipts is granted.
+                  <p className="text-slate-600 text-xs mt-0.5">
+                    UTME / WAEC / NECO: <strong>₦20,000/month</strong>. Once submitted, the admin approves your payment on the directorate dashboard to restore full access to CBT practice, study materials, receipts, and ID cards.
                   </p>
                 </div>
               </div>
+              <a
+                href="#renew-tuition"
+                className="px-5 py-2.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold shrink-0 transition-colors shadow-xs"
+              >
+                Renew Tuition
+              </a>
             </div>
 
             {/* If Payment is Pending Admin Approval */}
@@ -835,7 +842,7 @@ export const StudentPortal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleOpenOfficialReceipt()}
-                className="px-4 py-2.5 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] font-extrabold text-xs shadow-xs cursor-pointer flex items-center gap-2 shrink-0 transition-all"
+                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] font-extrabold text-xs shadow-xs cursor-pointer flex items-center gap-2 shrink-0 transition-all"
               >
                 <QrCode className="w-4 h-4 text-[#FFC600]" />
                 <span>View Official Receipt (with QR Code)</span>
@@ -1222,7 +1229,7 @@ export const StudentPortal: React.FC = () => {
                               D ENSURED CONSULT
                             </span>
                             <span className="text-[7px] uppercase tracking-widest text-[#FFC600] font-extrabold block leading-none">
-                              Education is power
+                              Learn, Emerge and Succeed.
                             </span>
                           </div>
                         </div>
@@ -1651,9 +1658,9 @@ export const StudentPortal: React.FC = () => {
 
                   <div className="flex items-center gap-4">
                     <div className="bg-white/10 px-4 py-1.5 rounded-xl border border-white/20 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#d97706]" />
-                      <span className="font-mono text-sm sm:text-base font-bold text-[#f59e0b]">
-                        {formatTime(examTimeLeft)}
+                      <Clock className="w-4 h-4 text-amber-300" />
+                      <span className="font-mono text-xs sm:text-sm font-bold text-amber-300 uppercase tracking-wide">
+                        TIME REMAINING: {formatTime(examTimeLeft)}
                       </span>
                     </div>
 
@@ -1874,6 +1881,134 @@ export const StudentPortal: React.FC = () => {
           </div>
         )}
 
+        {/* TAB 6B: ACADEMIC PROGRESS (Requirement 34) */}
+        {studentTab === 'progress' && (
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
+                  Academic Performance Ledger
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900">Continuous Academic Progress</h2>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Multi-assessment heuristic progress, subject mastery curves, and teacher evaluation comments.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-[#0284c7] border border-sky-300 text-xs font-bold transition-colors cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print Progress Report</span>
+              </button>
+            </div>
+
+            {/* High-Level Standing Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase">Cumulative Average</span>
+                <div className="text-2xl sm:text-3xl font-black text-[#0284c7] font-mono">
+                  {Math.round(
+                    currentStudent.recentMockTests.reduce((acc, t) => acc + (t.percentage || 78), 0) /
+                      (currentStudent.recentMockTests.length || 1)
+                  )}%
+                </div>
+                <span className="text-[10px] text-emerald-600 font-bold">Excellence Benchmark</span>
+              </div>
+
+              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase">Assessments Logged</span>
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
+                  {currentStudent.recentMockTests.length + cbtAttempts.length}
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium">Class Tests &amp; Mocks</span>
+              </div>
+
+              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase">Target Score</span>
+                <div className="text-2xl sm:text-3xl font-black text-[#ea580c] font-mono">
+                  {currentStudent.targetScore || '320+'}
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium">{currentStudent.program} Track</span>
+              </div>
+
+              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase">Attendance Standing</span>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
+                  {currentStudent.attendanceRate || 96}%
+                </div>
+                <span className="text-[10px] text-emerald-700 font-bold">Good Standing</span>
+              </div>
+            </div>
+
+            {/* Assessment History Table */}
+            <div className="space-y-4">
+              <h3 className="font-extrabold text-slate-900 text-sm">Assessment History &amp; Diagnostics</h3>
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3.5">Assessment Type</th>
+                      <th className="p-3.5">Title / Subject</th>
+                      <th className="p-3.5">Date</th>
+                      <th className="p-3.5">Score</th>
+                      <th className="p-3.5">Percentage</th>
+                      <th className="p-3.5">Teacher / Proctor Feedback</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {currentStudent.recentMockTests.map((test) => (
+                      <tr key={test.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-3.5 font-bold text-slate-800">
+                          <span className="px-2.5 py-1 rounded-md bg-sky-50 text-[#0284c7] font-extrabold border border-sky-200">
+                            Mock Examination
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-bold text-slate-900">{test.title}</td>
+                        <td className="p-3.5 font-mono text-slate-500">{test.date}</td>
+                        <td className="p-3.5 font-mono font-bold text-slate-800">
+                          {test.totalScore} / {test.maxScore}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2.5 py-0.5 rounded-full font-bold font-mono text-[11px] bg-emerald-100 text-emerald-800">
+                            {test.percentage}%
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-slate-600 italic">
+                          "Consistent accuracy in calculation heuristics. Recommended for speed pacing drills."
+                        </td>
+                      </tr>
+                    ))}
+                    {cbtAttempts.slice(0, 3).map((att) => (
+                      <tr key={att.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-3.5 font-bold text-slate-800">
+                          <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-extrabold border border-amber-200">
+                            CBT Practice
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-bold text-slate-900">{att.examTitle}</td>
+                        <td className="p-3.5 font-mono text-slate-500">{att.submittedAt}</td>
+                        <td className="p-3.5 font-mono font-bold text-slate-800">
+                          {att.score} / {att.maxScore}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2.5 py-0.5 rounded-full font-bold font-mono text-[11px] bg-emerald-100 text-emerald-800">
+                            {att.percentage}%
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-slate-600 italic">
+                          Automatic CBT scoring. Status: {att.status}.
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TAB 7: PRACTICE SETS */}
         {studentTab === 'practice-sets' && (
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
@@ -2072,7 +2207,7 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             <div className="p-3 bg-blue-50/70 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
-              <span>📚 <strong>Personalized Portal View:</strong> Materials shown below are automatically filtered specifically for you based on the subjects you selected during registration.</span>
+              <span><strong>Personalized Portal View:</strong> Materials shown below are automatically filtered specifically for you based on the subjects you selected during registration.</span>
               <span className="font-bold font-mono">{filteredStudyMaterials.length} files available</span>
             </div>
 

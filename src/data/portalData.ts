@@ -13,7 +13,6 @@ import {
 
 export const ADMIN_CREDENTIALS = {
   email: 'Densuredconsult@gmail.com',
-  password: 'Blessing0147$$',
   name: 'Mr Akinjo Rotimi',
   role: 'Directorate / Super Admin' as const,
 };

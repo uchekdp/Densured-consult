@@ -8,7 +8,7 @@ export interface ChatMessage {
 }
 
 const SYSTEM_INSTRUCTION = `You are the official Academic Counselor and Admissions Guide for D Ensured Consult (Tutorial & Educational Consultancy Center) in Lagos, Nigeria.
-Motto: "Education is Power".
+Motto: "Learn, Emerge and Succeed.".
 Official Academic Session: Official 2026/2027 academic session.
 Founder & Managing Director: Mr. Akinjo Rotimi (the only authorized signatory).
 Center Location: DOYIN PLAZA, IGBOELERIN BUSSTOP, BESIDE PRIME-MART, OKOMAIKO, LAGOS.
@@ -43,7 +43,7 @@ export async function sendMessageToGemini(
       return `For the **Official 2026/2027 academic session**, tuition at D Ensured Consult is structured conveniently by shift:\n\n• **Morning Shift (09:00 AM – 01:30 PM):** ₦20,000 / month\n• **Evening Shift (02:00 PM – 06:00 PM):** ₦15,000 / month\n\nTuition includes full access to our 120-seat computer testing laboratory, weekly grand mock drills, and syllabus study packs. You can register right here via our **Admission** tab!`;
     }
     if (lower.includes('location') || lower.includes('where') || lower.includes('address') || lower.includes('center')) {
-      return `Our flagship campus is located at:\n\n📍 **DOYIN PLAZA, IGBOELERIN BUSSTOP**\n*(Beside Prime-Mart, Okomaiko, Lagos State)*\n\nOffice hours are Monday – Friday (8:00 AM – 6:30 PM) and Saturday (8:30 AM – 5:00 PM). You can also reach our desk directly at **08147896930**.`;
+      return `Our flagship campus is located at:\n\n**DOYIN PLAZA, IGBOELERIN BUSSTOP**\n*(Beside Prime-Mart, Okomaiko, Lagos State)*\n\nOffice hours are Monday – Friday (8:00 AM – 6:30 PM) and Saturday (8:30 AM – 5:00 PM). You can also reach our desk directly at **08147896930**.`;
     }
     if (lower.includes('founder') || lower.includes('director') || lower.includes('rotimi') || lower.includes('head')) {
       return `D Ensured Consult was founded and is directed by **Mr. Akinjo Rotimi**, our visionary educational consultant and pioneer tutor with over 15 years of proven results across UTME, WAEC, NECO, and IELTS. Mr. Akinjo Rotimi is the sole authorized signatory for all official receipts and student ID cards.`;
@@ -54,7 +54,7 @@ export async function sendMessageToGemini(
     if (lower.includes('ielts') || lower.includes('abroad') || lower.includes('sat')) {
       return `For candidates targeting overseas study, our **IELTS Masterclass** covers Academic and General Training modules led by British Council certified trainers. We also prepare students for the Digital SAT and TOEFL iBT to secure American and European university admissions.`;
     }
-    return `Welcome to **D Ensured Consult**! Education is power. We are currently enrolling for the **Official 2026/2027 academic session** for UTME (JAMB), WAEC, NECO, IELTS, ATSWA, and SAT. How can I assist you with your exam preparation, subject combination, or admission process today?`;
+    return `Welcome to **D Ensured Consult**! Learn, Emerge and Succeed. We are currently enrolling for the **Official 2026/2027 academic session** for UTME (JAMB), WAEC, NECO, IELTS, ATSWA, and SAT. How can I assist you with your exam preparation, subject combination, or admission process today?`;
   }
 
   try {

@@ -227,7 +227,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
 
   const avatarUrl =
     studentAvatar ||
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80';
+    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white animate-in fade-in duration-200">
@@ -380,7 +380,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     Official 2026/2027 academic session
                   </p>
                   <p className="text-[8px] text-[#028D3B] font-bold italic">
-                    "Education is power"
+                    "Learn, Emerge and Succeed."
                   </p>
                   <p className="text-[8px] text-slate-600">
                     DOYIN PLAZA, IGBOELERIN BUSSTOP, OKOMAIKO, LAGOS
@@ -463,8 +463,8 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     <span>TOTAL PAID:</span>
                     <span className="text-[#D5241B]">₦{cryptoPayload.amount.toLocaleString()}</span>
                   </div>
-                  <div className="text-[8px] font-bold text-[#028D3B] text-center pt-0.5">
-                    ★ DIRECTORATE CLEARED & PAID ★
+                  <div className="text-[8px] font-bold text-[#028D3B] text-center pt-0.5 tracking-wider uppercase">
+                    DIRECTORATE CLEARED &amp; PAID
                   </div>
                 </div>
 
@@ -577,7 +577,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                           D ENSURED CONSULT
                         </span>
                         <span className="text-[7px] uppercase tracking-widest text-[#FFC600] font-extrabold block leading-none">
-                          Education is power
+                          Learn, Emerge and Succeed.
                         </span>
                       </div>
                     </div>

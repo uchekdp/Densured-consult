@@ -5,6 +5,9 @@ export type PageId =
   | 'gallery'
   | 'admission'
   | 'contact'
+  | 'register'
+  | 'student-login'
+  | 'admin-login'
   | 'student-portal'
   | 'admin-portal';
 

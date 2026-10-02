@@ -1,0 +1,281 @@
+/**
+ * API Service for D ENSURED CONSULT ACADEMY
+ * Connects frontend with backend database and endpoints
+ */
+
+const API_BASE = '/api';
+
+function getAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem('deca_token');
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+}
+
+export async function apiRequest<T = any>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<{ ok: boolean; data?: T; error?: string; status?: number }> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+      ...((options.headers as Record<string, string>) || {}),
+    };
+
+    // If body is FormData, don't set Content-Type so browser sets boundary
+    if (options.body instanceof FormData) {
+      delete headers['Content-Type'];
+    }
+
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: (data && data.message) || (data && data.error) || 'Request failed.',
+        status: res.status,
+        data,
+      };
+    }
+
+    return { ok: true, data, status: res.status };
+  } catch (err: any) {
+    console.error(`API request error on ${endpoint}:`, err);
+    return { ok: false, error: err.message || 'Network connection failed.' };
+  }
+}
+
+// Auth API
+export const authApi = {
+  adminLogin: (email: string, password: string) =>
+    apiRequest('/auth/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  studentLogin: (identifier: string, password: string) =>
+    apiRequest('/auth/student/login', {
+      method: 'POST',
+      body: JSON.stringify({ identifier, password }),
+    }),
+  getAdminMe: () => apiRequest('/auth/admin/me'),
+  getStudentMe: () => apiRequest('/auth/student/me'),
+  changeAdminPassword: (currentPassword: string, newPassword: string) =>
+    apiRequest('/auth/admin/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+  logout: () => {
+    apiRequest('/auth/logout', { method: 'POST' });
+    localStorage.removeItem('deca_token');
+    localStorage.removeItem('deca_role');
+    localStorage.removeItem('deca_student_id');
+  },
+};
+
+// Students API
+export const studentApi = {
+  register: (studentData: any) =>
+    apiRequest('/students/register', {
+      method: 'POST',
+      body: JSON.stringify(studentData),
+    }),
+  getAllStudents: () => apiRequest('/admin/students'),
+  updateStudent: (id: string, updates: any) =>
+    apiRequest(`/admin/students/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }),
+};
+
+// Payments API
+export const paymentApi = {
+  submitPayment: (payload: {
+    studentId: string;
+    amount: number;
+    paymentMonth: string;
+    reference: string;
+    method: string;
+    proofUrl?: string;
+    notes?: string;
+  }) =>
+    apiRequest('/payments/submit', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getAllPayments: () => apiRequest('/admin/payments'),
+  approvePayment: (id: string) =>
+    apiRequest(`/admin/payments/${id}/approve`, {
+      method: 'POST',
+    }),
+  rejectPayment: (id: string, reason?: string) =>
+    apiRequest(`/admin/payments/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  getStudentPayments: (studentId: string) => apiRequest(`/payments/student/${studentId}`),
+};
+
+// Attendance API
+export const attendanceApi = {
+  markAttendance: (payload: {
+    date: string;
+    programme?: string;
+    className?: string;
+    session?: string;
+    records: { studentId: string; studentName?: string; status: 'Present' | 'Absent' | 'Late' | 'Excused' }[];
+  }) =>
+    apiRequest('/admin/attendance/mark', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getAllAttendance: (date?: string, programme?: string) => {
+    const params = new URLSearchParams();
+    if (date) params.set('date', date);
+    if (programme) params.set('programme', programme);
+    return apiRequest(`/admin/attendance?${params.toString()}`);
+  },
+  getStudentAttendance: (studentId: string) => apiRequest(`/attendance/student/${studentId}`),
+};
+
+// CBT API
+export const cbtApi = {
+  getTests: () => apiRequest('/cbt/tests'),
+  startAttempt: (testId: string) =>
+    apiRequest('/cbt/attempts/start', {
+      method: 'POST',
+      body: JSON.stringify({ testId }),
+    }),
+  submitAttempt: (testId: string, serverStartTime: number, answers: Record<string, string>) =>
+    apiRequest('/cbt/attempts/submit', {
+      method: 'POST',
+      body: JSON.stringify({ testId, serverStartTime, answers }),
+    }),
+  getStudentResults: (studentId: string) => apiRequest(`/cbt/results/student/${studentId}`),
+  createTest: (testData: any) =>
+    apiRequest('/admin/cbt/tests', {
+      method: 'POST',
+      body: JSON.stringify(testData),
+    }),
+  deleteTest: (testId: string) =>
+    apiRequest(`/admin/cbt/tests/${testId}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Study Materials API
+export const materialsApi = {
+  getMaterials: () => apiRequest('/materials'),
+  uploadMaterial: (formData: FormData) =>
+    apiRequest('/admin/materials', {
+      method: 'POST',
+      body: formData,
+    }),
+  deleteMaterial: (id: string) =>
+    apiRequest(`/admin/materials/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Announcements API
+export const announcementsApi = {
+  getAnnouncements: () => apiRequest('/announcements'),
+  createAnnouncement: (payload: { title: string; message: string; target_audience?: string }) =>
+    apiRequest('/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteAnnouncement: (id: string) =>
+    apiRequest(`/admin/announcements/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Academic Progress API
+export const progressApi = {
+  getStudentProgress: (studentId: string) => apiRequest(`/progress/student/${studentId}`),
+  recordProgress: (payload: {
+    studentId: string;
+    subject: string;
+    assessmentType: string;
+    score: number;
+    maximumScore: number;
+    comment: string;
+    date?: string;
+  }) =>
+    apiRequest('/admin/progress', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+};
+
+// Gallery & Videos API
+export const mediaApi = {
+  getGallery: () => apiRequest('/gallery'),
+  getAdminGallery: () => apiRequest('/admin/gallery'),
+  uploadGalleryImage: (formData: FormData) =>
+    apiRequest('/admin/gallery', {
+      method: 'POST',
+      body: formData,
+    }),
+  deleteGalleryImage: (id: string) =>
+    apiRequest(`/admin/gallery/${id}`, {
+      method: 'DELETE',
+    }),
+  getVideos: () => apiRequest('/videos'),
+  addVideo: (payload: { title: string; description?: string; video_url: string }) =>
+    apiRequest('/admin/videos', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteVideo: (id: string) =>
+    apiRequest(`/admin/videos/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Admin Dashboard Stats API
+export const statsApi = {
+  getAdminStats: () => apiRequest('/admin/stats'),
+  getSettings: () => apiRequest('/settings'),
+  updateSettings: (settings: any) =>
+    apiRequest('/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    }),
+};
+
+// Cloud Database Status & Live Sync API
+export const databaseApi = {
+  getStatus: () =>
+    apiRequest<{
+      status: string;
+      provider: string;
+      connected: boolean;
+      liveSync: boolean;
+      syncMode: string;
+      lastSync: string;
+      metrics: {
+        totalStudents: number;
+        totalPayments: number;
+        activeTests: number;
+        studyMaterials: number;
+        announcements: number;
+        activeSessions: number;
+      };
+    }>('/database/status'),
+  syncNow: () =>
+    apiRequest<{
+      success: boolean;
+      status: string;
+      message: string;
+      timestamp: string;
+    }>('/database/sync', { method: 'POST' }),
+};
+
