@@ -144,7 +144,7 @@ export const AdminPortal: React.FC = () => {
 
   // Daily attendance session creator state
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [attendanceProg, setAttendanceProg] = useState('UTME');
+  const [attendanceProg, setAttendanceProg] = useState('All');
   const [attendanceCohort, setAttendanceCohort] = useState('Morning Weekday Batch A');
   const [attendanceEntries, setAttendanceEntries] = useState<Record<string, 'Present' | 'Late' | 'Absent' | 'Excused'>>({});
 
@@ -1407,6 +1407,19 @@ export const AdminPortal: React.FC = () => {
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 type="button"
+                                title="Mark Attendance for Candidate"
+                                onClick={() => {
+                                  setSelectedStudentDetails(std);
+                                  setIndividualAttendanceDate(new Date().toISOString().split('T')[0]);
+                                  setIndividualAttendanceStatus('Present');
+                                }}
+                                className="px-2 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                              >
+                                <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="hidden sm:inline">Attendance</span>
+                              </button>
+                              <button
+                                type="button"
                                 title="View Full Candidate Dossier"
                                 onClick={() => setSelectedStudentDetails(std)}
                                 className="p-1.5 rounded-lg border border-slate-200 hover:border-[#25166B] hover:bg-[#25166B]/10 text-[#25166B] transition-colors cursor-pointer"
@@ -1492,13 +1505,24 @@ export const AdminPortal: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  updateApplicationStatus(app.id, 'Approved');
-                                  showToast('success', 'Application Approved', `${app.fullName}'s dossier has been approved.`);
+                                  const matchingTx = transactions.find(
+                                    (t) =>
+                                      t.status === 'Pending' &&
+                                      (t.studentId === app.id ||
+                                        (app.email && t.studentId === app.email) ||
+                                        t.studentName.toLowerCase().trim() === app.fullName.toLowerCase().trim())
+                                  );
+                                  if (matchingTx) {
+                                    approveTuitionPayment(matchingTx.id);
+                                  } else {
+                                    updateApplicationStatus(app.id, 'Approved');
+                                  }
+                                  showToast('success', 'Application & Payment Approved', `${app.fullName} is now officially enrolled! Candidate can sign in immediately with email and password.`);
                                 }}
-                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1"
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Approve</span>
+                                <span>Approve & Enrol</span>
                               </button>
                             )}
                             {app.status !== 'Rejected' && (
@@ -1585,16 +1609,21 @@ export const AdminPortal: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Programme</label>
+                    <label className="block font-bold text-slate-700 mb-1">Programme Filter</label>
                     <select
                       value={attendanceProg}
                       onChange={(e) => setAttendanceProg(e.target.value)}
                       className="w-full p-2.5 rounded-xl border border-slate-300 font-bold bg-white outline-hidden"
                     >
+                      <option value="All">All Enrolled Candidates ({studentsList.length})</option>
                       <option value="UTME">UTME Intensive</option>
                       <option value="WAEC">WAEC / WASSCE</option>
+                      <option value="NECO">NECO Senior School</option>
+                      <option value="JUPEB">JUPEB Direct Entry</option>
+                      <option value="Post-UTME">Post-UTME Screening</option>
+                      <option value="ATSWA">ATSWA / Accounting</option>
+                      <option value="Adult Education">Adult Education</option>
                       <option value="IELTS">IELTS Prep</option>
-                      <option value="All">All Cohorts</option>
                     </select>
                   </div>
                   <div>

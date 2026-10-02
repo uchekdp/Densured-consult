@@ -538,17 +538,17 @@ export const StudentPortal: React.FC = () => {
           /* LOCKED PORTAL SCREEN */
           <div className="space-y-6">
             {/* Status Alert Bar */}
-            <div className="bg-orange-50 border-2 border-[#ea580c]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="bg-amber-50 border-2 border-amber-500/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-100 text-[#ea580c] flex items-center justify-center shrink-0">
-                  <Lock className="w-5 h-5 text-[#ea580c]" />
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-amber-700" />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-base">
-                    Your monthly tuition payment has expired. Please renew your payment to restore access to protected student resources.
+                    Your monthly tuition payment has expired at the end of the month.
                   </h3>
-                  <p className="text-slate-600 text-xs mt-0.5">
-                    UTME / WAEC / NECO: <strong>₦20,000/month</strong>. Once submitted, the admin approves your payment on the directorate dashboard to restore full access to CBT practice, study materials, receipts, and ID cards.
+                  <p className="text-slate-600 text-xs mt-0.5 leading-relaxed">
+                    You are signed in to your individual portal, but access to all features (CBT mock exams, lecture notes, master timetables, academic progress, results, and digital ID card) is locked until your monthly tuition payment is renewed and approved by the Executive Directorate.
                   </p>
                 </div>
               </div>
@@ -556,7 +556,7 @@ export const StudentPortal: React.FC = () => {
                 href="#renew-tuition"
                 className="px-5 py-2.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold shrink-0 transition-colors shadow-xs"
               >
-                Renew Tuition
+                Renew Tuition Payment
               </a>
             </div>
 

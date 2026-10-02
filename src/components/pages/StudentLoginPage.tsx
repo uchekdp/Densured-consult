@@ -4,7 +4,7 @@ import { authApi } from '../../services/api';
 import { GraduationCap, Lock, ArrowRight, UserCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export const StudentLoginPage: React.FC = () => {
-  const { setCurrentPage, showToast, setIsStudentLoggedIn, setCurrentStudent } = useApp();
+  const { setCurrentPage, showToast, setIsStudentLoggedIn, setCurrentStudent, loginStudent } = useApp();
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +14,7 @@ export const StudentLoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier.trim() || !password) {
-      setErrorMsg('Please enter your Student ID or Email and password.');
+      setErrorMsg('Please enter your registered Email Address or Student ID and password.');
       return;
     }
 
@@ -22,6 +22,40 @@ export const StudentLoginPage: React.FC = () => {
     setErrorMsg('');
 
     try {
+      // 1. First authenticate with AppContext (contains all registered students and newly approved candidates)
+      const localRes = await loginStudent(identifier.trim(), password);
+
+      if (localRes.success && localRes.student) {
+        // Also sync background token if available
+        try {
+          authApi.studentLogin(identifier.trim(), password).then((apiRes) => {
+            if (apiRes.ok && apiRes.data?.token) {
+              localStorage.setItem('deca_token', apiRes.data.token);
+              localStorage.setItem('deca_role', 'student');
+              localStorage.setItem('deca_student_id', apiRes.data.student.student_id);
+            }
+          }).catch(() => {});
+        } catch {
+          // ignore
+        }
+
+        setCurrentPage('student-portal');
+        return;
+      }
+
+      // If Directorate approval is pending or password failed, display that exact message
+      if (
+        localRes.message &&
+        (localRes.message.includes('pending') ||
+          localRes.message.includes('password') ||
+          localRes.message.includes('awaiting approval'))
+      ) {
+        setErrorMsg(localRes.message);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback check with server API
       const res = await authApi.studentLogin(identifier.trim(), password);
       if (res.ok && res.data) {
         localStorage.setItem('deca_token', res.data.token);
@@ -34,7 +68,7 @@ export const StudentLoginPage: React.FC = () => {
         showToast(`Welcome back, ${res.data.student.full_name}!`, 'success');
         setCurrentPage('student-portal');
       } else {
-        setErrorMsg(res.error || 'Invalid credentials. Please verify your Student ID and password.');
+        setErrorMsg(localRes.message || res.error || 'Invalid credentials. Please verify your Email Address and password.');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Connection error. Please try again.');
@@ -53,25 +87,25 @@ export const StudentLoginPage: React.FC = () => {
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Student Portal Sign In</h2>
           <p className="text-xs text-slate-500">
-            Access your CBT practice tests, study materials, attendance, and tuition receipts.
+            Sign in with your registered <strong>Email Address</strong> and password to access your individual portal.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2 animate-in fade-in duration-200">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-            <span>{errorMsg}</span>
+          <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-start gap-2.5 animate-in fade-in duration-200">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+            <span className="leading-relaxed font-medium">{errorMsg}</span>
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              Student ID or Registered Email *
+              Email Address or Student ID *
             </label>
             <input
               type="text"
-              placeholder="e.g. DECA-2026-0001 or email@student.dec.ng"
+              placeholder="e.g. olawale.adebayo@student.dec.ng or DEC-2025-0142"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium focus:outline-hidden focus:border-[#0284c7] focus:ring-2 focus:ring-sky-100"
@@ -85,7 +119,7 @@ export const StudentLoginPage: React.FC = () => {
             </div>
             <input
               type="password"
-              placeholder="Enter your password"
+              placeholder="Enter your account password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-medium focus:outline-hidden focus:border-[#0284c7] focus:ring-2 focus:ring-sky-100"
@@ -103,18 +137,57 @@ export const StudentLoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Demo Credentials Helper */}
-        <div className="p-4 bg-sky-50/70 rounded-2xl border border-sky-200 text-xs space-y-1.5">
+        {/* Access Policy Notice */}
+        <div className="p-4 bg-sky-50/70 rounded-2xl border border-sky-200 text-xs space-y-2">
           <span className="font-bold text-[#0369a1] block text-[11px] uppercase tracking-wider">
+            Student Access &amp; Payment Policy:
+          </span>
+          <p className="text-[11px] text-slate-700 leading-relaxed">
+            Immediately after the Directorate approves payment for enrolled students, you can sign in with your <strong>email and password</strong> to access all features in the student portal.
+          </p>
+          <p className="text-[11px] text-slate-600 leading-relaxed">
+            Tuition payments expire at the end of each calendar month. Students can still sign in to their portal after expiration, but feature access is locked until payment is renewed.
+          </p>
+        </div>
+
+        {/* Quick Demo Candidate Accounts */}
+        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+          <span className="font-bold text-slate-600 block text-[10px] uppercase tracking-wider">
             Quick Demo Candidate Accounts:
           </span>
           <div className="text-[11px] text-slate-700 space-y-1">
-            <p>
-              <strong className="text-slate-900">Active Student:</strong> ID: <code className="bg-white px-1 py-0.5 rounded font-mono font-bold text-[#0284c7]">DECA-2026-0001</code> / Pass: <code className="bg-white px-1 py-0.5 rounded font-mono font-bold">Student1234#</code>
-            </p>
-            <p>
-              <strong className="text-slate-900">Expired Tuition:</strong> ID: <code className="bg-white px-1 py-0.5 rounded font-mono font-bold text-[#ea580c]">DECA-2026-0002</code> / Pass: <code className="bg-white px-1 py-0.5 rounded font-mono font-bold">Student1234#</code>
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <strong className="text-slate-900">Active Student:</strong>
+                <span className="block text-[10px] text-slate-500 font-mono">olawale.adebayo@student.dec.ng</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('olawale.adebayo@student.dec.ng');
+                  setPassword('student123');
+                }}
+                className="px-2 py-1 rounded-lg bg-sky-100 hover:bg-sky-200 text-[#0284c7] text-[10px] font-bold cursor-pointer transition-colors"
+              >
+                Autofill
+              </button>
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-slate-200">
+              <div>
+                <strong className="text-slate-900">Expired Tuition:</strong>
+                <span className="block text-[10px] text-amber-700 font-mono">chioma.okonkwo@student.dec.ng</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('chioma.okonkwo@student.dec.ng');
+                  setPassword('student123');
+                }}
+                className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] font-bold cursor-pointer transition-colors"
+              >
+                Autofill
+              </button>
+            </div>
           </div>
         </div>
 

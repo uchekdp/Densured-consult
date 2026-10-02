@@ -578,11 +578,11 @@ apiRouter.post('/admin/payments/:id/approve', requireAdmin, (req, res) => {
   }
 
   const now = new Date();
-  const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30-day active validity
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59); // Tuition payment expires at the end of the month
 
   payment.status = 'Approved';
   payment.approval_date = now.toISOString().split('T')[0];
-  payment.expiry_date = expiry.toISOString().split('T')[0];
+  payment.expiry_date = lastDayOfMonth.toISOString().split('T')[0];
   payment.approved_by = 'Mr Akinjo Rotimi';
 
   // Automatically activate student

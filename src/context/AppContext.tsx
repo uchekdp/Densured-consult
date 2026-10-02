@@ -155,6 +155,15 @@ interface AppContextType {
   applications: AdmissionApplication[];
   submitAdmission: (data: Omit<AdmissionApplication, 'id' | 'submittedAt' | 'status'>) => string;
   updateApplicationStatus: (id: string, status: AdmissionApplication['status']) => void;
+  submitStudentApplicationWithPayment: (
+    formData: any,
+    paymentInfo: {
+      amount: number;
+      paymentMonth: string;
+      reference: string;
+      method: string;
+    }
+  ) => { studentId: string; applicationId: string; transactionId: string };
 
   // Timetable Lessons
   lessons: ScheduledLesson[];
@@ -441,12 +450,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('dec_transactions_clean_v1');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch {
-        return [];
+        return INITIAL_TRANSACTIONS;
       }
     }
-    return [];
+    return INITIAL_TRANSACTIONS;
   });
 
   // Announcements
@@ -1040,14 +1050,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!found) {
+      // Check if there is an application waiting for Directorate payment approval
+      const matchingApp = applications.find(
+        (a) =>
+          (a.email || '').toLowerCase().trim() === cleanId ||
+          (a.id || '').toLowerCase().trim() === cleanId ||
+          (a.fullName || '').toLowerCase().trim() === cleanId
+      );
+      if (matchingApp) {
+        return {
+          success: false,
+          message:
+            'Payment approval pending: Your enrollment application and initial tuition payment are currently awaiting approval by the Executive Directorate. Once the Directorate approves your payment, you will be able to sign in immediately.',
+        };
+      }
       return {
         success: false,
-        message: 'No student record found with this Registration Number or Email.',
+        message: 'No student record found with this Email or Registration Number. Please apply or verify your email.',
       };
     }
 
-    // Allow student123 as universal demo password or their registered password
-    if (found.password && cleanPass !== found.password && cleanPass !== 'student123') {
+    // Allow student123 or Student1234# as universal demo password or their registered password
+    if (
+      found.password &&
+      cleanPass !== found.password &&
+      cleanPass !== 'student123' &&
+      cleanPass !== 'Student1234#'
+    ) {
       return {
         success: false,
         message: 'Incorrect portal password. Please re-enter your password.',
@@ -1282,6 +1311,93 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     addAuditLog('Application Status Updated', `Application #${id} status changed to ${status}`);
     showToast('info', 'Application Updated', `Application #${id} set to "${status}".`);
+  };
+
+  const submitStudentApplicationWithPayment = (
+    formData: any,
+    paymentInfo: {
+      amount: number;
+      paymentMonth: string;
+      reference: string;
+      method: string;
+    }
+  ): { studentId: string; applicationId: string; transactionId: string } => {
+    const applicationId = `APP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const studentTempId = `std-app-${Date.now()}`;
+    const fullName = `${formData.firstName || ''} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName || ''}`.trim() || 'New Applicant';
+
+    const newApp: AdmissionApplication = {
+      id: applicationId,
+      fullName,
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      surname: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      dateOfBirth: formData.dateOfBirth,
+      gender: formData.gender,
+      stateOfOrigin: formData.state,
+      lga: formData.lga,
+      residentialAddress: formData.residentialAddress,
+      parentName: formData.parentName,
+      parentPhone: formData.parentPhone,
+      parentRelationship: formData.parentRelationship,
+      parentEmail: formData.parentEmail,
+      parentAddress: formData.parentAddress,
+      secondarySchool: formData.currentSchool,
+      program: formData.preferredProgramme || 'UTME',
+      studyMode: 'Physical Weekday',
+      studentShift: 'Morning',
+      subjectCombinations: formData.subjects || ['Use of English', 'Mathematics'],
+      submittedAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      status: 'Pending Review',
+      password: formData.password || 'student123',
+      notes: `Initial tuition payment submitted: ${paymentInfo.reference} (${paymentInfo.method})`,
+    };
+
+    const newTx: TransactionRecord = {
+      id: `tx-${Date.now()}`,
+      reference: paymentInfo.reference,
+      studentId: studentTempId,
+      studentName: fullName,
+      program: newApp.program,
+      amount: Number(paymentInfo.amount) || 20000,
+      currency: 'NGN',
+      status: 'Pending',
+      paymentMethod: (paymentInfo.method as any) || 'Bank Transfer',
+      description: `Initial Registration & Tuition - ${paymentInfo.paymentMonth}`,
+      timestamp: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      studentShift: 'Morning',
+      monthPeriod: paymentInfo.paymentMonth,
+      validUntil: 'End of Month',
+    };
+
+    const newSub: MonthlyPaymentSubmission = {
+      id: `sub-${Date.now()}`,
+      studentId: studentTempId,
+      studentName: fullName,
+      registrationNumber: 'Pending Verification',
+      studentShift: 'Morning',
+      amount: Number(paymentInfo.amount) || 20000,
+      monthPeriod: paymentInfo.paymentMonth,
+      paymentMethod: (paymentInfo.method as any) || 'Bank Transfer',
+      referenceOrProof: paymentInfo.reference,
+      transactionReference: paymentInfo.reference,
+      submittedAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      status: 'Pending',
+      adminRemarks: `Initial tuition payment for ${fullName} awaiting clearance`,
+    };
+
+    setApplications((prev) => [newApp, ...prev]);
+    setTransactions((prev) => [newTx, ...prev]);
+    setMonthlyPaymentSubmissions((prev) => [newSub, ...prev]);
+
+    addAuditLog(
+      'New Candidate Application & Payment Received',
+      `Applicant ${fullName} submitted registration & tuition payment #${paymentInfo.reference}`
+    );
+
+    return { studentId: studentTempId, applicationId, transactionId: newTx.id };
   };
 
   const addLesson = (newLessonData: Omit<ScheduledLesson, 'id'>) => {
@@ -1841,8 +1957,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       );
       return [session, ...filtered];
     });
+
+    // Update attendanceHistory and attendanceRate for all students in this session
+    setStudentsList((prevStudents) =>
+      prevStudents.map((student) => {
+        const entry = session.entries.find((e) => e.studentId === student.id);
+        if (!entry) return student;
+
+        const currentHistory = student.attendanceHistory || [];
+        const existingIdx = currentHistory.findIndex((h) => h.date === session.date);
+        const newHistEntry = {
+          id: `att-${Date.now()}-${student.id}`,
+          date: session.date,
+          status: entry.status,
+          remark: `${session.cohort || session.program} Lecture Session`,
+        };
+
+        let updatedHistory;
+        if (existingIdx >= 0) {
+          updatedHistory = currentHistory.map((h, idx) => (idx === existingIdx ? newHistEntry : h));
+        } else {
+          updatedHistory = [newHistEntry, ...currentHistory];
+        }
+
+        const presentCount = updatedHistory.filter(
+          (h) => h.status === 'Present' || h.status === 'Late'
+        ).length;
+        const total = updatedHistory.length;
+        const newRate = total > 0 ? Math.round((presentCount / total) * 100) : 100;
+
+        return {
+          ...student,
+          attendanceHistory: updatedHistory,
+          attendanceRate: newRate,
+        };
+      })
+    );
+
     addAuditLog('Daily Attendance Logged', `Attendance marked for ${session.date} (${session.cohort})`);
-    showToast('success', 'Attendance Recorded', `Saved attendance entries for ${session.date}.`);
+    showToast('success', 'Attendance Recorded', `Saved attendance entries for ${session.entries.length} students on ${session.date}.`);
   };
 
   // Monthly Tuition & Access Pass Logic
@@ -1928,19 +2081,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const tx = transactions.find((t) => t.id === transactionId);
     if (!tx) return null;
 
-    const student = studentsList.find((s) => s.id === tx.studentId) || currentStudent;
-    const shift = tx.studentShift || student.studentShift || 'Morning';
-    const progStr = (student.program || '').toUpperCase();
+    // Check if student already exists in studentsList
+    let student = studentsList.find(
+      (s) =>
+        s.id === tx.studentId ||
+        s.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim()
+    );
+
+    const shift = tx.studentShift || student?.studentShift || 'Morning';
+    const progStr = (tx.program || student?.program || 'UTME').toUpperCase();
     const amount = tx.amount || (progStr.includes('IELTS') ? 70000 : progStr.includes('ADULT') ? 60000 : 20000);
-    const amountInWords = amount === 70000
-      ? 'SEVENTY THOUSAND NAIRA ONLY'
-      : amount === 60000
-      ? 'SIXTY THOUSAND NAIRA ONLY'
-      : 'TWENTY THOUSAND NAIRA ONLY';
+    const amountInWords =
+      amount === 70000
+        ? 'SEVENTY THOUSAND NAIRA ONLY'
+        : amount === 60000
+        ? 'SIXTY THOUSAND NAIRA ONLY'
+        : 'TWENTY THOUSAND NAIRA ONLY';
     const now = new Date();
     const monthPeriod = tx.monthPeriod || now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    const validUntil = tx.validUntil || `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}`;
+    const validUntil =
+      tx.validUntil && tx.validUntil !== 'End of Month'
+        ? tx.validUntil
+        : `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}`;
     const receiptNum = tx.receiptNumber || `DEC-REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const approvedAtFormatted = new Date().toLocaleDateString('en-GB', {
@@ -1951,7 +2114,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       minute: '2-digit',
     });
 
-    const qrPayload = `https://densuredconsult.ng/verify-receipt?receipt=${receiptNum}&ref=${tx.reference}&student=${encodeURIComponent(student.fullName)}&reg=${student.registrationNumber}&shift=${shift}&month=${encodeURIComponent(monthPeriod)}&amount=${amount}&status=APPROVED`;
+    const expiryDateFormatted = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`;
+
+    // If student is NOT yet enrolled in studentsList (i.e. they just applied and submitted payment):
+    let isNewEnrollment = false;
+    let enrolledStudent: StudentProfile;
+
+    if (!student) {
+      isNewEnrollment = true;
+      const matchingApp = applications.find(
+        (a) =>
+          a.id === tx.studentId ||
+          a.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim() ||
+          a.email === tx.studentId
+      );
+
+      const regNum = `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const studentId = tx.studentId && tx.studentId.startsWith('std-') ? tx.studentId : `std-${Date.now()}`;
+
+      enrolledStudent = {
+        id: studentId,
+        registrationNumber: regNum,
+        fullName: tx.studentName || matchingApp?.fullName || 'Enrolled Student',
+        email: matchingApp?.email || `${(tx.studentName || 'student').toLowerCase().replace(/\s+/g, '.')}@candidate.densured.ng`,
+        phone: matchingApp?.phone || '08147896930',
+        avatar:
+          matchingApp?.passportPhotoUrl ||
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+        program: (tx.program as any) || matchingApp?.program || 'UTME',
+        studyMode: matchingApp?.studyMode || 'Physical Weekday',
+        studentShift: shift,
+        monthlyFee: amount,
+        subscriptionStatus: 'Active',
+        subscriptionMonth: monthPeriod,
+        subscriptionExpiryDate: expiryDateFormatted,
+        targetExamDate: (tx.program || '').includes('IELTS') ? 'June 2026' : 'April 2026',
+        daysRemaining: 180,
+        targetScore: (tx.program || '').includes('IELTS') ? 'Band 8.0' : '320+',
+        currentAverageScore: 0,
+        attendanceRate: 100,
+        syllabusCompletion: 5,
+        tuitionTotal: amount * 3,
+        tuitionPaid: amount,
+        tuitionBalance: amount * 2,
+        currency: 'NGN',
+        nextClass: 'Monday 08:30 AM (Lecture Hall A)',
+        assignedAdvisor: 'Mr. Akinjo Rotimi (Directorate)',
+        recentMockTests: [],
+        password: matchingApp?.password || 'student123',
+        subjectCombinations: matchingApp?.subjectCombinations || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
+        attendanceHistory: [
+          {
+            id: `att-init-${Date.now()}`,
+            date: now.toISOString().split('T')[0],
+            status: 'Present',
+            remark: 'Tuition Cleared & Enrolled in Directorate Directory',
+          },
+        ],
+      };
+      student = enrolledStudent;
+    } else {
+      enrolledStudent = student;
+    }
+
+    const qrPayload = `https://densuredconsult.ng/verify-receipt?receipt=${receiptNum}&ref=${tx.reference}&student=${encodeURIComponent(
+      student.fullName
+    )}&reg=${student.registrationNumber}&shift=${shift}&month=${encodeURIComponent(monthPeriod)}&amount=${amount}&status=APPROVED`;
 
     const officialReceipt: OfficialReceipt = {
       id: `rec-${Date.now()}`,
@@ -1977,6 +2205,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       paymentMethod: tx.paymentMethod,
     };
 
+    enrolledStudent.lastApprovedReceipt = officialReceipt;
+
     // Update Transaction
     setTransactions((prev) =>
       prev.map((t) =>
@@ -1984,6 +2214,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ? {
               ...t,
               status: 'Successful',
+              studentId: student!.id,
               receiptNumber: receiptNum,
               approvedAt: approvedAtFormatted,
               approvedBy: officialReceipt.approvedBy,
@@ -1993,35 +2224,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    // Update Student Profile
-    const expiryDateFormatted = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`;
-
-    setStudentsList((prev) =>
-      prev.map((s) => {
-        if (s.id === student.id) {
-          const updated: StudentProfile = {
-            ...s,
-            studentShift: shift,
-            monthlyFee: amount,
-            subscriptionStatus: 'Active',
-            subscriptionExpiryDate: expiryDateFormatted,
-            subscriptionMonth: monthPeriod,
-            lastApprovedReceipt: officialReceipt,
-            tuitionPaid: s.tuitionPaid + amount,
-            tuitionBalance: Math.max(0, s.tuitionBalance - amount),
-          };
-          if (currentStudent.id === s.id) {
-            setCurrentStudent(updated);
-          }
-          return updated;
-        }
-        return s;
-      })
+    // Update matching application status to 'Enrolled'
+    setApplications((prev) =>
+      prev.map((a) =>
+        a.id === tx.studentId ||
+        a.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim() ||
+        a.email === tx.studentId
+          ? {
+              ...a,
+              status: 'Enrolled',
+              notes: `Enrolled upon tuition payment clearance. Reg No: ${student!.registrationNumber}`,
+            }
+          : a
+      )
     );
 
+    // Update monthlyPaymentSubmissions if matching
+    setMonthlyPaymentSubmissions((prev) =>
+      prev.map((m) =>
+        m.transactionReference === tx.reference || m.studentId === tx.studentId
+          ? { ...m, status: 'Approved', registrationNumber: student!.registrationNumber }
+          : m
+      )
+    );
+
+    // Update Student Directory (studentsList)
+    setStudentsList((prev) => {
+      const existsIndex = prev.findIndex(
+        (s) =>
+          s.id === student!.id ||
+          s.fullName.toLowerCase().trim() === student!.fullName.toLowerCase().trim()
+      );
+
+      if (existsIndex >= 0) {
+        return prev.map((s, idx) => {
+          if (idx === existsIndex) {
+            const updated: StudentProfile = {
+              ...s,
+              studentShift: shift,
+              monthlyFee: amount,
+              subscriptionStatus: 'Active',
+              subscriptionExpiryDate: expiryDateFormatted,
+              subscriptionMonth: monthPeriod,
+              lastApprovedReceipt: officialReceipt,
+              tuitionPaid: (s.tuitionPaid || 0) + amount,
+              tuitionBalance: Math.max(0, (s.tuitionBalance || 0) - amount),
+            };
+            if (currentStudent.id === s.id) {
+              setCurrentStudent(updated);
+            }
+            return updated;
+          }
+          return s;
+        });
+      } else {
+        // PREPEND newly enrolled student so their name appears immediately at the top of the Student Directory!
+        return [enrolledStudent, ...prev];
+      }
+    });
+
     addAuditLog(
-      'Monthly Tuition Approved',
-      `Payment #${tx.reference} (₦${amount.toLocaleString()}) approved for ${student.fullName}. Official Receipt ${receiptNum} generated.`
+      'Monthly Tuition Approved & Student Enrolled',
+      `Payment #${tx.reference} (₦${amount.toLocaleString()}) approved for ${student.fullName}. Candidate ${
+        isNewEnrollment ? 'officially enrolled into Student Directory and' : ''
+      } Official Receipt ${receiptNum} generated.`
     );
 
     try {
@@ -2038,7 +2304,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(
       'success',
       'Payment Approved & Cleared!',
-      `Receipt ${receiptNum} generated for ${student.fullName}. Portal features unlocked!`
+      `Receipt ${receiptNum} generated for ${student.fullName}. Candidate is enrolled in Student Directory!`
     );
 
     return officialReceipt;
@@ -2091,12 +2357,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isStudentSubscriptionActive = (student: StudentProfile): boolean => {
     if (!student) return false;
+    if (
+      student.subscriptionStatus === 'Expired' ||
+      student.subscriptionStatus === 'Unpaid' ||
+      student.subscriptionStatus === 'Pending Approval'
+    ) {
+      return false;
+    }
     if (student.subscriptionStatus !== 'Active') return false;
+
     const now = new Date();
     const currentMonthYear = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+    // Tuition payment expires at the end of the month
     if (student.subscriptionMonth && student.subscriptionMonth !== currentMonthYear) {
       return false;
     }
+
+    if (student.subscriptionExpiryDate) {
+      const parsedDate = new Date(student.subscriptionExpiryDate);
+      if (!isNaN(parsedDate.getTime()) && now.getTime() > parsedDate.getTime()) {
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -2161,6 +2445,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         applications,
         submitAdmission,
         updateApplicationStatus,
+        submitStudentApplicationWithPayment,
 
         lessons,
         addLesson,

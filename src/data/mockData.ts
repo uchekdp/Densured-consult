@@ -321,9 +321,59 @@ export const INITIAL_LESSONS: ScheduledLesson[] = [
   },
 ];
 
-export const INITIAL_TRANSACTIONS: TransactionRecord[] = [];
+export const INITIAL_TRANSACTIONS: TransactionRecord[] = [
+  {
+    id: 'tx-pending-1088',
+    reference: 'PAY-DEC-2026-1088',
+    studentId: 'APP-2026-083',
+    studentName: 'Precious Olusola',
+    program: 'WAEC',
+    amount: 20000,
+    currency: 'NGN',
+    status: 'Pending',
+    paymentMethod: 'Bank Transfer',
+    description: 'Initial Registration & October 2026 Tuition',
+    timestamp: '02 Oct 2026, 09:15 AM',
+    studentShift: 'Morning',
+    monthPeriod: 'October 2026',
+    validUntil: '31 Oct 2026',
+  },
+  {
+    id: 'tx-pending-1089',
+    reference: 'PAY-DEC-2026-1089',
+    studentId: 'APP-2026-085',
+    studentName: 'Ibrahim Musa',
+    program: 'UTME',
+    amount: 20000,
+    currency: 'NGN',
+    status: 'Pending',
+    paymentMethod: 'Bank Transfer',
+    description: 'Initial Registration & October 2026 Tuition',
+    timestamp: '02 Oct 2026, 10:30 AM',
+    studentShift: 'Morning',
+    monthPeriod: 'October 2026',
+    validUntil: '31 Oct 2026',
+  },
+];
 
 export const INITIAL_APPLICATIONS: AdmissionApplication[] = [
+  {
+    id: 'APP-2026-085',
+    fullName: 'Ibrahim Musa',
+    email: 'ibrahim.musa@candidate.densured.ng',
+    phone: '08147896930',
+    parentName: 'Alhaji Musa Garba',
+    parentPhone: '08023349911',
+    program: 'UTME',
+    studyMode: 'Physical Weekday',
+    stateOfOrigin: 'Kaduna State',
+    targetInstitution: 'Ahmadu Bello University (ABU Zaria)',
+    targetCourse: 'Mechanical Engineering',
+    subjectCombinations: ['English', 'Mathematics', 'Physics', 'Chemistry'],
+    submittedAt: '02 Oct 2026, 10:25 AM',
+    status: 'Pending Review',
+    notes: 'Newly submitted admission application. Initial tuition payment submitted via OPAY transfer.',
+  },
   {
     id: 'APP-2026-081',
     fullName: 'Zainab Mohammed',

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export const StudentRegistrationPage: React.FC = () => {
-  const { setCurrentPage, showToast } = useApp();
+  const { setCurrentPage, showToast, submitStudentApplicationWithPayment } = useApp();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [submitting, setSubmitting] = useState(false);
@@ -209,6 +209,14 @@ export const StudentRegistrationPage: React.FC = () => {
 
     setPaySubmitting(true);
     try {
+      // Synchronize into AppContext for instant Directorate verification & portal tracking
+      submitStudentApplicationWithPayment(formData, {
+        amount: Number(payAmount),
+        paymentMonth: payMonth,
+        reference: payRef.trim(),
+        method: payMethod,
+      });
+
       const res = await paymentApi.submitPayment({
         studentId: registrationResult.student_id,
         amount: Number(payAmount),
