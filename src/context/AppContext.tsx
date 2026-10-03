@@ -48,6 +48,8 @@ import {
   ADMIN_USERS_DATA,
 } from '../data/portalData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { db } from '../lib/firebase';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import {
   authApi,
   paymentApi,
@@ -912,6 +914,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [fetchDatabaseStatus]);
 
+  // Firebase Firestore Real-Time Multi-Device Live Sync
+  useEffect(() => {
+    try {
+      const unsubApps = onSnapshot(
+        collection(db, 'applications'),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteApps = snapshot.docs.map((d) => d.data() as AdmissionApplication);
+            if (remoteApps.length > 0) {
+              setApplications((prev) => {
+                const existingMap = new Map(prev.map((a) => [a.id, a]));
+                remoteApps.forEach((a) => existingMap.set(a.id, a));
+                return Array.from(existingMap.values());
+              });
+            }
+          }
+        },
+        () => {}
+      );
+
+      const unsubStudents = onSnapshot(
+        collection(db, 'students'),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remoteStudents = snapshot.docs.map((d) => d.data() as StudentProfile);
+            if (remoteStudents.length > 0) {
+              setStudentsList((prev) => {
+                const existingMap = new Map(prev.map((s) => [s.id, s]));
+                remoteStudents.forEach((s) => existingMap.set(s.id, s));
+                return Array.from(existingMap.values());
+              });
+            }
+          }
+        },
+        () => {}
+      );
+
+      const unsubPayments = onSnapshot(
+        collection(db, 'payments'),
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const remotePayments = snapshot.docs.map((d) => d.data() as TransactionRecord);
+            if (remotePayments.length > 0) {
+              setTransactions((prev) => {
+                const existingMap = new Map(prev.map((t) => [t.id, t]));
+                remotePayments.forEach((t) => existingMap.set(t.id, t));
+                return Array.from(existingMap.values());
+              });
+            }
+          }
+        },
+        () => {}
+      );
+
+      return () => {
+        unsubApps();
+        unsubStudents();
+        unsubPayments();
+      };
+    } catch {
+      // Graceful fallback
+    }
+  }, []);
+
   const syncCloudDatabase = async () => {
     setIsDatabaseSyncing(true);
     try {
@@ -1044,9 +1110,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const cleanPass = pass.trim();
 
     const found = studentsList.find((s) => {
-      const matchEmail = s.email.toLowerCase() === cleanId;
-      const matchReg = s.registrationNumber.toLowerCase() === cleanId;
-      return matchEmail || matchReg;
+      const matchEmail = (s.email || '').toLowerCase().trim() === cleanId;
+      const matchReg = (s.registrationNumber || '').toLowerCase().trim() === cleanId;
+      const matchId = (s.id || '').toLowerCase().trim() === cleanId;
+      return matchEmail || matchReg || matchId;
     });
 
     if (!found) {
@@ -1306,6 +1373,129 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateApplicationStatus = (id: string, status: AdmissionApplication['status']) => {
+    if (status === 'Rejected') {
+      const appToDelete = applications.find((app) => app.id === id);
+      setApplications((prev) => {
+        const remaining = prev.filter((app) => app.id !== id);
+        try {
+          localStorage.setItem('dec_applications', JSON.stringify(remaining));
+        } catch {
+          // ignore
+        }
+        return remaining;
+      });
+
+      // Also clean up any associated pending transactions for this rejected application
+      setTransactions((prev) => {
+        const filteredTx = prev.filter(
+          (t) =>
+            !(
+              (t.studentId === id ||
+                (appToDelete?.email && t.studentId === appToDelete.email) ||
+                (appToDelete?.fullName &&
+                  t.studentName &&
+                  t.studentName.toLowerCase().trim() === appToDelete.fullName.toLowerCase().trim())) &&
+              t.status === 'Pending'
+            )
+        );
+        try {
+          localStorage.setItem('dec_transactions_clean_v1', JSON.stringify(filteredTx));
+        } catch {
+          // ignore
+        }
+        return filteredTx;
+      });
+
+      // Clean up any associated pending monthly payment submissions
+      setMonthlyPaymentSubmissions((prev) =>
+        prev.filter(
+          (m) =>
+            m.studentId !== id &&
+            m.studentId !== appToDelete?.email &&
+            m.studentName !== appToDelete?.fullName
+        )
+      );
+
+      // Also delete from Firestore if connected
+      deleteDoc(doc(db, 'applications', id)).catch(() => {});
+
+      addAuditLog(
+        'Registration Rejected & Application Deleted',
+        `Application #${id} for ${appToDelete?.fullName || 'Applicant'} was rejected and deleted immediately.`
+      );
+      showToast(
+        'warning',
+        'Registration Rejected & Application Deleted',
+        `Application for ${appToDelete?.fullName || id} has been rejected and deleted immediately.`
+      );
+      return;
+    }
+
+    if (status === 'Approved') {
+      const app = applications.find((a) => a.id === id);
+      if (app) {
+        setStudentsList((prev) => {
+          const already = prev.find(
+            (s) =>
+              s.id === id ||
+              ((s.email || '').toLowerCase().trim() === (app.email || '').toLowerCase().trim()) ||
+              ((s.fullName || '').toLowerCase().trim() === (app.fullName || '').toLowerCase().trim())
+          );
+          if (already) return prev;
+
+          const progStr = (app.program || 'UTME').toUpperCase();
+          const amount = progStr.includes('IELTS') ? 70000 : progStr.includes('ADULT') ? 60000 : 20000;
+          const now = new Date();
+          const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+          const expiryDateFormatted = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`;
+          const regNum = `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+          const enrolledId = `std-${Date.now()}`;
+
+          const enrolled: StudentProfile = {
+            id: enrolledId,
+            registrationNumber: regNum,
+            fullName: app.fullName,
+            email: app.email,
+            phone: app.phone,
+            avatar: app.passportPhotoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+            program: app.program as any,
+            studyMode: app.studyMode || 'Physical Weekday',
+            studentShift: app.studentShift || 'Morning',
+            monthlyFee: amount,
+            subscriptionStatus: 'Active',
+            subscriptionMonth: now.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+            subscriptionExpiryDate: expiryDateFormatted,
+            targetExamDate: progStr.includes('IELTS') ? 'June 2026' : 'April 2026',
+            daysRemaining: 180,
+            targetScore: progStr.includes('IELTS') ? 'Band 8.0' : '320+',
+            currentAverageScore: 0,
+            attendanceRate: 100,
+            syllabusCompletion: 5,
+            tuitionTotal: amount * 3,
+            tuitionPaid: amount,
+            tuitionBalance: amount * 2,
+            currency: 'NGN',
+            nextClass: 'Monday 08:30 AM (Lecture Hall A)',
+            assignedAdvisor: 'Mr. Akinjo Rotimi (Directorate)',
+            recentMockTests: [],
+            password: app.password || 'student123',
+            subjectCombinations: app.subjectCombinations || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
+            attendanceHistory: [
+              {
+                id: `att-init-${Date.now()}`,
+                date: now.toISOString().split('T')[0],
+                status: 'Present',
+                remark: 'Admissions Approved & Registered in Directorate Directory',
+              },
+            ],
+          };
+
+          setDoc(doc(db, 'students', enrolledId), enrolled).catch(() => {});
+          return [enrolled, ...prev];
+        });
+      }
+    }
+
     setApplications((prev) =>
       prev.map((app) => (app.id === id ? { ...app, status } : app))
     );
@@ -1391,6 +1581,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setApplications((prev) => [newApp, ...prev]);
     setTransactions((prev) => [newTx, ...prev]);
     setMonthlyPaymentSubmissions((prev) => [newSub, ...prev]);
+
+    setDoc(doc(db, 'applications', newApp.id), newApp).catch(() => {});
+    setDoc(doc(db, 'payments', newTx.id), newTx).catch(() => {});
 
     addAuditLog(
       'New Candidate Application & Payment Received',
@@ -1682,7 +1875,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (
       target.isSuperAdmin ||
       target.name.includes('Akinjo') ||
-      target.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase()
+      (target.email || '').toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase()
     ) {
       showToast('error', 'Action Prohibited', 'The Super Admin & Directorate (Mr Akinjo Rotimi) cannot be removed.');
       return;
@@ -2085,7 +2278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let student = studentsList.find(
       (s) =>
         s.id === tx.studentId ||
-        s.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim()
+        (s.fullName && tx.studentName && s.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim())
     );
 
     const shift = tx.studentShift || student?.studentShift || 'Morning';
@@ -2125,8 +2318,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const matchingApp = applications.find(
         (a) =>
           a.id === tx.studentId ||
-          a.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim() ||
-          a.email === tx.studentId
+          (a.fullName && tx.studentName && a.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim()) ||
+          (a.email && tx.studentId && a.email.toLowerCase().trim() === tx.studentId.toLowerCase().trim())
       );
 
       const regNum = `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -2136,7 +2329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: studentId,
         registrationNumber: regNum,
         fullName: tx.studentName || matchingApp?.fullName || 'Enrolled Student',
-        email: matchingApp?.email || `${(tx.studentName || 'student').toLowerCase().replace(/\s+/g, '.')}@candidate.densured.ng`,
+        email: matchingApp?.email || `${((tx.studentName || 'student')).toLowerCase().replace(/\s+/g, '.')}@candidate.densured.ng`,
         phone: matchingApp?.phone || '08147896930',
         avatar:
           matchingApp?.passportPhotoUrl ||
@@ -2228,7 +2421,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setApplications((prev) =>
       prev.map((a) =>
         a.id === tx.studentId ||
-        a.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim() ||
+        (a.fullName && tx.studentName && a.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim()) ||
         a.email === tx.studentId
           ? {
               ...a,
@@ -2253,7 +2446,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const existsIndex = prev.findIndex(
         (s) =>
           s.id === student!.id ||
-          s.fullName.toLowerCase().trim() === student!.fullName.toLowerCase().trim()
+          (s.fullName && student?.fullName && s.fullName.toLowerCase().trim() === student.fullName.toLowerCase().trim())
       );
 
       if (existsIndex >= 0) {
@@ -2282,6 +2475,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return [enrolledStudent, ...prev];
       }
     });
+
+    setDoc(doc(db, 'students', (enrolledStudent || student)!.id), enrolledStudent || student).catch(() => {});
+    setDoc(doc(db, 'payments', tx.id), { ...tx, status: 'Successful', receiptNumber: receiptNum }).catch(() => {});
 
     addAuditLog(
       'Monthly Tuition Approved & Student Enrolled',

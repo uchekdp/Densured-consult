@@ -45,37 +45,44 @@ export function computeSignatureHash(inputString: string): string {
  * Generate a tamper-proof cryptographic verification package
  */
 export function generateCryptographicReceipt(data: {
-  reference: string;
-  registrationNumber: string;
-  studentName: string;
-  studentShift: 'Morning' | 'Evening';
-  amount: number;
-  monthPeriod: string;
+  reference?: string;
+  registrationNumber?: string;
+  studentName?: string;
+  studentShift?: 'Morning' | 'Evening' | string;
+  amount?: number;
+  monthPeriod?: string;
   validUntil?: string;
   issuedAt?: string;
 }): CryptographicPayload {
+  const reference = data.reference || `DEC-REF-${Date.now().toString().slice(-6)}`;
+  const registrationNumber = data.registrationNumber || 'DEC-2026-8821';
+  const studentName = data.studentName || 'Candidate Scholar';
+  const rawShift = String(data.studentShift || 'Morning');
+  const studentShift: 'Morning' | 'Evening' = rawShift.toLowerCase().includes('evening') ? 'Evening' : 'Morning';
+  const amount = Number(data.amount) || 20000;
+  const monthPeriod = data.monthPeriod || 'September 2026';
   const issuedAt = data.issuedAt || new Date().toISOString();
-  const validUntil = data.validUntil || '30 Sep 2026';
+  const validUntil = data.validUntil || 'End of Month';
   const keyFingerprint = 'DEC-RSA-PUBLIC-KEY:SHA256:7B88:D99E:2516:6B00:098C:D0FF';
 
   // Seed payload to compute signature
-  const rawSeed = `${data.reference}|${data.registrationNumber}|${data.studentShift}|${data.amount}|${data.monthPeriod}|${validUntil}|${keyFingerprint}`;
+  const rawSeed = `${reference}|${registrationNumber}|${studentShift}|${amount}|${monthPeriod}|${validUntil}|${keyFingerprint}`;
   const signatureHash = computeSignatureHash(rawSeed);
 
-  const verificationUrl = `https://densuredconsult.edu.ng/verify?ref=${encodeURIComponent(data.reference)}&reg=${encodeURIComponent(data.registrationNumber)}&sig=${signatureHash}&shift=${data.studentShift}`;
+  const verificationUrl = `https://densuredconsult.edu.ng/verify?ref=${encodeURIComponent(reference)}&reg=${encodeURIComponent(registrationNumber)}&sig=${signatureHash}&shift=${studentShift}`;
 
   return {
     version: '2.0-EDUSIGN',
     algorithm: 'HMAC-SHA256',
     entity: 'D Ensured Consult Academic Directorate',
     centerReg: 'RC-DEC-LAG-2015-889',
-    reference: data.reference,
-    registrationNumber: data.registrationNumber,
-    studentName: data.studentName,
-    studentShift: data.studentShift,
-    amount: data.amount,
+    reference,
+    registrationNumber,
+    studentName,
+    studentShift,
+    amount,
     currency: 'NGN',
-    monthPeriod: data.monthPeriod,
+    monthPeriod,
     validUntil,
     issuedAt,
     keyFingerprint,

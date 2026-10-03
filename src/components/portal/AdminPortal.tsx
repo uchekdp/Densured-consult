@@ -789,13 +789,14 @@ export const AdminPortal: React.FC = () => {
   const filteredStudents = studentsList.filter((std) => {
     const matchesFilter = studentProgFilter === 'All' || std.program === studentProgFilter;
     const matchesSearch =
-      std.fullName.toLowerCase().includes(studentSearch.toLowerCase()) ||
-      std.registrationNumber.toLowerCase().includes(studentSearch.toLowerCase());
+      !studentSearch ||
+      (std.fullName || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+      (std.registrationNumber || '').toLowerCase().includes(studentSearch.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const totalRevenue = transactions.reduce((acc, t) => acc + (t.status === 'Successful' ? t.amount : 0), 0);
-  const pendingFeesTotal = studentsList.reduce((acc, s) => acc + s.tuitionBalance, 0);
+  const totalRevenue = transactions.reduce((acc, t) => acc + (t.status === 'Successful' ? (t.amount || 0) : 0), 0);
+  const pendingFeesTotal = studentsList.reduce((acc, s) => acc + (s.tuitionBalance || 0), 0);
 
   return (
     <div className="bg-slate-100 min-h-[calc(100vh-80px)] py-6 sm:py-8">
@@ -1505,38 +1506,24 @@ export const AdminPortal: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const matchingTx = transactions.find(
-                                    (t) =>
-                                      t.status === 'Pending' &&
-                                      (t.studentId === app.id ||
-                                        (app.email && t.studentId === app.email) ||
-                                        t.studentName.toLowerCase().trim() === app.fullName.toLowerCase().trim())
-                                  );
-                                  if (matchingTx) {
-                                    approveTuitionPayment(matchingTx.id);
-                                  } else {
-                                    updateApplicationStatus(app.id, 'Approved');
-                                  }
-                                  showToast('success', 'Application & Payment Approved', `${app.fullName} is now officially enrolled! Candidate can sign in immediately with email and password.`);
+                                  updateApplicationStatus(app.id, 'Approved');
                                 }}
-                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Approve & Enrol</span>
+                                <span>Approve & Issue Receipt</span>
                               </button>
                             )}
-                            {app.status !== 'Rejected' && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  updateApplicationStatus(app.id, 'Rejected');
-                                  showToast('warning', 'Application Rejected', `Marked ${app.fullName} as Rejected.`);
-                                }}
-                                className="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-red-50 text-slate-700 hover:text-red-700 font-bold text-xs transition-colors cursor-pointer"
-                              >
-                                Reject
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateApplicationStatus(app.id, 'Rejected');
+                              }}
+                              className="px-3.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1 border border-red-200 shadow-2xs"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                              <span>Reject & Delete</span>
+                            </button>
                           </div>
                         </div>
 
@@ -1747,11 +1734,11 @@ export const AdminPortal: React.FC = () => {
                   const filtered = studyMaterials.filter((mat) => {
                     const matchesSearch =
                       !materialSearch ||
-                      mat.title.toLowerCase().includes(materialSearch.toLowerCase()) ||
-                      mat.subject.toLowerCase().includes(materialSearch.toLowerCase()) ||
-                      mat.author.toLowerCase().includes(materialSearch.toLowerCase());
+                      (mat.title || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
+                      (mat.subject || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
+                      (mat.author || '').toLowerCase().includes(materialSearch.toLowerCase());
                     const matchesSubject =
-                      materialSubjectFilter === 'All' || mat.subject.toLowerCase().includes(materialSubjectFilter.toLowerCase());
+                      materialSubjectFilter === 'All' || (mat.subject || '').toLowerCase().includes(materialSubjectFilter.toLowerCase());
                     return matchesSearch && matchesSubject;
                   });
 
@@ -2492,7 +2479,7 @@ export const AdminPortal: React.FC = () => {
                                     className="px-3 py-1.5 rounded-lg bg-[#028D3B] hover:bg-[#027531] text-white font-bold text-xs cursor-pointer inline-flex items-center gap-1.5 transition-colors shadow-2xs"
                                   >
                                     <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Approve</span>
+                                    <span>Approve & Issue Receipt</span>
                                   </button>
                                 )}
                               </td>
@@ -2984,9 +2971,9 @@ export const AdminPortal: React.FC = () => {
                     </p>
                   </div>
 
-                  {adminUser?.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase() ||
-                  adminUser?.name.includes('Akinjo') ||
-                  adminUser?.role.includes('Super Admin') ? (
+                  {(adminUser?.email && adminUser.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase()) ||
+                  adminUser?.name?.includes('Akinjo') ||
+                  adminUser?.role?.includes('Super Admin') ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -3029,8 +3016,8 @@ export const AdminPortal: React.FC = () => {
                   {adminUsers.map((usr) => {
                     const isSuper =
                       usr.isSuperAdmin ||
-                      usr.name.includes('Akinjo') ||
-                      usr.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase();
+                      (usr.name && usr.name.includes('Akinjo')) ||
+                      (usr.email && usr.email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase());
 
                     return (
                       <div
@@ -4281,17 +4268,36 @@ export const AdminPortal: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => {
+                          const remark = individualAttendanceRemark || `Logged on ${individualAttendanceDate}`;
                           recordIndividualStudentAttendance(
                             selectedStudentDetails.id,
                             individualAttendanceDate,
                             individualAttendanceStatus,
-                            individualAttendanceRemark || `Logged on ${individualAttendanceDate}`
+                            remark
                           );
-                          // Update local copy
-                          const updatedStudent = studentsList.find((s) => s.id === selectedStudentDetails.id);
-                          if (updatedStudent) {
-                            setSelectedStudentDetails({ ...updatedStudent });
-                          }
+                          // Update local copy immediately for instant UI refresh
+                          const existingHistory = selectedStudentDetails.attendanceHistory || [];
+                          const newEntry = {
+                            id: `att-${Date.now()}`,
+                            date: individualAttendanceDate,
+                            status: individualAttendanceStatus,
+                            remark,
+                          };
+                          const existingIdx = existingHistory.findIndex((h) => h.date === individualAttendanceDate);
+                          const updatedHistory = existingIdx >= 0
+                            ? existingHistory.map((h, idx) => (idx === existingIdx ? newEntry : h))
+                            : [newEntry, ...existingHistory];
+                          const presentCount = updatedHistory.filter(
+                            (h) => h.status === 'Present' || h.status === 'Late'
+                          ).length;
+                          const newRate = updatedHistory.length > 0
+                            ? Math.round((presentCount / updatedHistory.length) * 100)
+                            : 100;
+                          setSelectedStudentDetails({
+                            ...selectedStudentDetails,
+                            attendanceHistory: updatedHistory,
+                            attendanceRate: newRate,
+                          });
                           setIndividualAttendanceRemark('');
                         }}
                         className="w-full py-2 rounded-xl bg-[#009E49] hover:bg-[#00823c] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-colors"

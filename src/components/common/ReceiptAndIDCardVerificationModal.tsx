@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { OfficialReceipt } from '../../types';
 import { generateCryptographicReceipt, CryptographicPayload } from '../../utils/cryptoVerification';
@@ -61,6 +61,20 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentDone, setPaymentDone] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab || 'receipt');
+      setPaymentDone(false);
+      if (receipt) {
+        if (receipt.amount) setGatewayAmount(receipt.amount);
+        if (receipt.studentShift) {
+          const shiftStr = String(receipt.studentShift);
+          setGatewayShift(shiftStr.toLowerCase().includes('evening') ? 'Evening' : 'Morning');
+        }
+      }
+    }
+  }, [isOpen, initialTab, receipt]);
 
   if (!isOpen) return null;
 
@@ -230,7 +244,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white animate-in fade-in duration-200">
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto print:shadow-none print:border-none print:w-full print:max-w-none">
         {/* Navigation Bar / Mode Switcher */}
         <div className="bg-[#D5241B] text-white px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden border-b-2 border-[#FFC600]">

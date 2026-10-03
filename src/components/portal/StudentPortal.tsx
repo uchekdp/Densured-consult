@@ -239,8 +239,10 @@ export const StudentPortal: React.FC = () => {
     const matching = practiceQuestions.filter((q) =>
       registeredSubjects.some(
         (subj) =>
-          subj.toLowerCase().includes(q.subject.toLowerCase()) ||
-          q.subject.toLowerCase().includes(subj.toLowerCase())
+          subj &&
+          q?.subject &&
+          (subj.toLowerCase().includes(q.subject.toLowerCase()) ||
+            q.subject.toLowerCase().includes(subj.toLowerCase()))
       )
     );
     return matching.length >= 4 ? matching : practiceQuestions;
@@ -252,8 +254,10 @@ export const StudentPortal: React.FC = () => {
       if (mat.subject === 'General' || mat.subject === 'All') return true;
       return registeredSubjects.some(
         (subj) =>
-          subj.toLowerCase().includes(mat.subject.toLowerCase()) ||
-          mat.subject.toLowerCase().includes(subj.toLowerCase())
+          subj &&
+          mat?.subject &&
+          (subj.toLowerCase().includes(mat.subject.toLowerCase()) ||
+            mat.subject.toLowerCase().includes(subj.toLowerCase()))
       );
     });
   }, [studyMaterials, registeredSubjects]);
@@ -1473,7 +1477,7 @@ export const StudentPortal: React.FC = () => {
                             <span
                               key={i}
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                                sub.toLowerCase().includes('english')
+                                (sub || '').toLowerCase().includes('english')
                                   ? 'bg-[#25166B] text-white flex items-center gap-1 shadow-2xs'
                                   : 'bg-white border border-[#098CD0]/40 text-[#25166B]'
                               }`}

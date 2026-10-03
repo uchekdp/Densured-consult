@@ -1,4 +1,5 @@
 import React from 'react';
+import { useApp } from '../../context/AppContext';
 import {
   Phone,
   MapPin,
@@ -8,9 +9,11 @@ import {
   MessageCircle,
   Award,
   BookCheck,
+  Lock,
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
+  const { navigateTo } = useApp();
   return (
     <footer className="bg-[#0f172a] text-slate-300 border-t-4 border-[#0284c7] font-['Poppins',sans-serif]">
       {/* Upper CTA Banner - Deep Academic Navy with Orange & Yellow */}
@@ -172,10 +175,27 @@ export const Footer: React.FC = () => {
         {/* Bottom Legal & Directorate Notice */}
         <div className="mt-10 pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <p>© {new Date().getFullYear()} D Ensured Consult Academy. Directorate &amp; Super Admin: Mr Akinjo Rotimi.</p>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-4">
             <span className="text-slate-400">
               Doyin Plaza, Okomaiko, Lagos State, Nigeria.
             </span>
+            <span className="text-slate-700">•</span>
+            <button
+              type="button"
+              onClick={() => navigateTo('student-login')}
+              className="text-slate-400 hover:text-sky-300 transition-colors cursor-pointer"
+            >
+              Student Portal
+            </button>
+            <span className="text-slate-700">•</span>
+            <button
+              type="button"
+              onClick={() => navigateTo('admin-login')}
+              className="inline-flex items-center gap-1 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+            >
+              <Lock className="w-3 h-3 text-amber-400" />
+              <span>Directorate Hub</span>
+            </button>
           </div>
         </div>
       </div>
