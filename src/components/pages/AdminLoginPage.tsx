@@ -37,7 +37,7 @@ export const AdminLoginPage: React.FC = () => {
 
   const handleFillDemoCredentials = () => {
     setEmail('Densuredconsult@gmail.com');
-    setPassword('densuredconsultAcademy');
+    setPassword('Blessing0147$$');
     setErrorMsg('');
   };
 

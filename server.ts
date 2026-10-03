@@ -25,8 +25,10 @@ async function startServer() {
   // Serve static uploads (materials, gallery, student photos)
   app.use('/uploads', express.static(uploadsDir));
 
-  // Mount backend API routes under /api
+  // Mount backend API routes under /api, /auth, /admin
   app.use('/api', apiRouter);
+  app.use('/auth', apiRouter);
+  app.use('/admin', apiRouter);
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
