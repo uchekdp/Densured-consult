@@ -254,18 +254,33 @@ export function getDb(): DatabaseSchema {
 
 export function saveDb(db: DatabaseSchema): void {
   memoryDb = db;
-  const tempPath = `${DB_FILE_PATH}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(db, null, 2), 'utf-8');
-  fs.renameSync(tempPath, DB_FILE_PATH);
+  try {
+    const dir = path.dirname(DB_FILE_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const tempPath = `${DB_FILE_PATH}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(db, null, 2), 'utf-8');
+    try {
+      fs.renameSync(tempPath, DB_FILE_PATH);
+    } catch {
+      fs.copyFileSync(tempPath, DB_FILE_PATH);
+      try {
+        fs.unlinkSync(tempPath);
+      } catch {}
+    }
+  } catch (err) {
+    console.error('Error saving db to disk:', err);
+  }
 }
 
 // Generate unique sequential Student ID: e.g. DECA-2026-0001
 export function generateStudentId(db: DatabaseSchema): string {
   const year = new Date().getFullYear();
   const prefix = `DECA-${year}-`;
-  const existingIds = db.students
-    .map((s) => s.student_id)
-    .filter((id) => id && id.startsWith(prefix));
+  const existingIds = (db.students || [])
+    .map((s) => s?.student_id)
+    .filter((id): id is string => typeof id === 'string' && id.startsWith(prefix));
 
   let maxNum = 0;
   for (const id of existingIds) {

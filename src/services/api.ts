@@ -37,9 +37,23 @@ export async function apiRequest<T = any>(
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
+      let errorMsg = (data && data.message) || (data && data.error);
+      if (!errorMsg) {
+        if (res.status === 413) {
+          errorMsg = 'Uploaded image or payload is too large. Please use a smaller photo.';
+        } else if (res.status === 400) {
+          errorMsg = 'Invalid registration details submitted. Please check the form.';
+        } else if (res.status === 404) {
+          errorMsg = 'Requested service endpoint was not found.';
+        } else if (res.status >= 500) {
+          errorMsg = 'Server encountered a temporary issue. Please try again.';
+        } else {
+          errorMsg = `Server response returned status code ${res.status}.`;
+        }
+      }
       return {
         ok: false,
-        error: (data && data.message) || (data && data.error) || 'Request failed.',
+        error: errorMsg,
         status: res.status,
         data,
       };

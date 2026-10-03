@@ -367,114 +367,136 @@ apiRouter.post('/auth/logout', (req, res) => {
 // 2. STUDENT REGISTRATION SYSTEM (Requirement 15 & 16)
 // ==========================================
 apiRouter.post('/students/register', (req, res) => {
-  const {
-    firstName,
-    middleName,
-    lastName,
-    dateOfBirth,
-    gender,
-    phone,
-    email,
-    residentialAddress,
-    state,
-    lga,
-    photoUrl,
-    parentName,
-    parentRelationship,
-    parentPhone,
-    parentEmail,
-    parentAddress,
-    emergencyContact,
-    currentSchool,
-    currentClass,
-    previousSchool,
-    intendedExam,
-    preferredProgramme,
-    subjects,
-    password,
-  } = req.body;
+  try {
+    const {
+      firstName,
+      middleName,
+      lastName,
+      dateOfBirth,
+      gender,
+      phone,
+      email,
+      residentialAddress,
+      state,
+      lga,
+      photoUrl,
+      parentName,
+      parentRelationship,
+      parentPhone,
+      parentEmail,
+      parentAddress,
+      emergencyContact,
+      currentSchool,
+      currentClass,
+      previousSchool,
+      intendedExam,
+      preferredProgramme,
+      subjects,
+      password,
+    } = req.body || {};
 
-  // Validation
-  if (!firstName || !lastName || !phone || !email || !password) {
-    res.status(400).json({ error: 'First name, last name, phone, email, and password are required.' });
-    return;
+    // Validation
+    if (!firstName || !lastName || !phone || !email || !password) {
+      res.status(400).json({ error: 'First name, last name, phone, email, and password are required.' });
+      return;
+    }
+
+    if (String(password).length < 6) {
+      res.status(400).json({ error: 'Password must be at least 6 characters.' });
+      return;
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const db = getDb();
+
+    // Check for duplicate email safely
+    const existingUser = (db.users || []).find(
+      (u) => (u.email || '').toString().trim().toLowerCase() === cleanEmail
+    );
+
+    if (existingUser) {
+      // If student is already registered with pending payment, allow them to proceed smoothly to payment step
+      const existingStudent = (db.students || []).find(
+        (s) => s.student_id === existingUser.student_id || s.email.toLowerCase() === cleanEmail
+      );
+      if (existingStudent) {
+        res.status(200).json({
+          success: true,
+          student_id: existingStudent.student_id,
+          student: existingStudent,
+          message: 'Student record found. Please proceed to complete your tuition payment.',
+        });
+        return;
+      }
+      res.status(400).json({ error: 'A student account with this email address already exists. Please sign in.' });
+      return;
+    }
+
+    // Generate unique sequential Student ID (e.g. DECA-2026-0004)
+    const studentId = generateStudentId(db);
+
+    const pwd = hashPassword(String(password));
+    const fullName = `${String(firstName).trim()} ${middleName ? String(middleName).trim() + ' ' : ''}${String(lastName).trim()}`.trim();
+
+    const userId = `usr-${Date.now()}`;
+    const newUser: UserRecord = {
+      id: userId,
+      role: 'student',
+      email: cleanEmail,
+      student_id: studentId,
+      name: fullName,
+      password_hash: pwd.hash,
+      salt: pwd.salt,
+      status: 'pending_payment',
+      created_at: new Date().toISOString(),
+    };
+
+    const newStudent: StudentRecord = {
+      id: `std-${Date.now()}`,
+      student_id: studentId,
+      user_id: userId,
+      first_name: String(firstName).trim(),
+      middle_name: middleName ? String(middleName).trim() : undefined,
+      last_name: String(lastName).trim(),
+      full_name: fullName,
+      date_of_birth: dateOfBirth || '2007-01-01',
+      gender: gender || 'Male',
+      phone: String(phone).trim(),
+      email: cleanEmail,
+      residential_address: residentialAddress || 'Lagos, Nigeria',
+      state: state || 'Lagos',
+      lga: lga || 'Ojo',
+      photo_url: typeof photoUrl === 'string' && photoUrl.length < 200000 ? photoUrl : '',
+      parent_name: parentName || '',
+      parent_relationship: parentRelationship || 'Guardian',
+      parent_phone: parentPhone || '',
+      parent_email: parentEmail || '',
+      parent_address: parentAddress || '',
+      emergency_contact: emergencyContact || parentPhone || phone,
+      current_school: currentSchool || '',
+      current_class: currentClass || 'SS3',
+      previous_school: previousSchool || '',
+      intended_exam: intendedExam || 'UTME/JAMB',
+      preferred_programme: preferredProgramme || 'UTME',
+      subjects: Array.isArray(subjects) ? subjects : ['Use of English', 'Mathematics'],
+      registration_date: new Date().toISOString().split('T')[0],
+      status: 'Pending Payment',
+    };
+
+    db.users.push(newUser);
+    db.students.push(newStudent);
+    saveDb(db);
+
+    res.status(201).json({
+      success: true,
+      student_id: studentId,
+      student: newStudent,
+      message: 'Registration submitted successfully. Please proceed to submit your tuition payment.',
+    });
+  } catch (err: any) {
+    console.error('Registration processing error:', err);
+    res.status(500).json({ error: err.message || 'Registration processing error. Please try again.' });
   }
-
-  if (password.length < 6) {
-    res.status(400).json({ error: 'Password must be at least 6 characters.' });
-    return;
-  }
-
-  const db = getDb();
-
-  // Check for duplicate email
-  const existingUser = db.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-  if (existingUser) {
-    res.status(400).json({ error: 'A student account with this email address already exists.' });
-    return;
-  }
-
-  // Generate unique sequential Student ID (e.g. DECA-2026-0004)
-  const studentId = generateStudentId(db);
-
-  const pwd = hashPassword(password);
-  const fullName = `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`.trim();
-
-  const userId = `usr-${Date.now()}`;
-  const newUser: UserRecord = {
-    id: userId,
-    role: 'student',
-    email: email.trim().toLowerCase(),
-    student_id: studentId,
-    name: fullName,
-    password_hash: pwd.hash,
-    salt: pwd.salt,
-    status: 'pending_payment',
-    created_at: new Date().toISOString(),
-  };
-
-  const newStudent: StudentRecord = {
-    id: `std-${Date.now()}`,
-    student_id: studentId,
-    user_id: userId,
-    first_name: firstName.trim(),
-    middle_name: middleName ? middleName.trim() : undefined,
-    last_name: lastName.trim(),
-    full_name: fullName,
-    date_of_birth: dateOfBirth || '2007-01-01',
-    gender: gender || 'Male',
-    phone: phone.trim(),
-    email: email.trim().toLowerCase(),
-    residential_address: residentialAddress || 'Lagos, Nigeria',
-    state: state || 'Lagos',
-    lga: lga || 'Ojo',
-    photo_url: photoUrl || '',
-    parent_name: parentName || '',
-    parent_relationship: parentRelationship || 'Guardian',
-    parent_phone: parentPhone || '',
-    parent_email: parentEmail || '',
-    parent_address: parentAddress || '',
-    emergency_contact: emergencyContact || parentPhone || phone,
-    current_school: currentSchool || '',
-    current_class: currentClass || 'SS3',
-    previous_school: previousSchool || '',
-    intended_exam: intendedExam || 'UTME/JAMB',
-    preferred_programme: preferredProgramme || 'UTME',
-    subjects: Array.isArray(subjects) ? subjects : ['Use of English', 'Mathematics'],
-    registration_date: new Date().toISOString().split('T')[0],
-    status: 'Pending Payment',
-  };
-
-  db.users.push(newUser);
-  db.students.push(newStudent);
-  saveDb(db);
-
-  res.status(201).json({
-    success: true,
-    student_id: studentId,
-    student: newStudent,
-    message: 'Registration submitted successfully. Please proceed to submit your tuition payment.',
-  });
 });
 
 // Admin Get All Students

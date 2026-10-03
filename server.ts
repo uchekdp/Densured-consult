@@ -51,6 +51,19 @@ async function startServer() {
     });
   }
 
+  // Global error handler ensuring JSON responses
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Express error intercepted:', err);
+    if (res.headersSent) {
+      return next(err);
+    }
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: err.message || 'An unexpected server error occurred.',
+    });
+  });
+
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`D ENSURED CONSULT ACADEMY Full-Stack Server running on http://0.0.0.0:${PORT}`);
   });
