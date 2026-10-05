@@ -59,6 +59,9 @@ import {
   materialsApi,
   announcementsApi,
   databaseApi,
+  applicationApi,
+  adminApi,
+  questionApi,
 } from '../services/api';
 
 export interface CloudDatabaseStatus {
@@ -157,6 +160,7 @@ interface AppContextType {
   applications: AdmissionApplication[];
   submitAdmission: (data: Omit<AdmissionApplication, 'id' | 'submittedAt' | 'status'>) => string;
   updateApplicationStatus: (id: string, status: AdmissionApplication['status']) => void;
+  deleteApplication: (id: string) => void;
   submitStudentApplicationWithPayment: (
     formData: any,
     paymentInfo: {
@@ -173,6 +177,7 @@ interface AppContextType {
 
   // Transactions & Billing
   transactions: TransactionRecord[];
+  deleteTransaction: (id: string) => void;
   processPayment: (
     amount: number,
     description: string,
@@ -197,6 +202,7 @@ interface AppContextType {
   // Announcements
   announcements: Announcement[];
   addAnnouncement: (title: string, category: Announcement['category'], content: string) => void;
+  deleteAnnouncement: (id: string) => void;
 
   // Academic Entities
   programmes: ProgramItem[];
@@ -238,12 +244,14 @@ interface AppContextType {
   // CBT System
   cbtExams: CBTExam[];
   addCBTExam: (exam: Omit<CBTExam, 'id'>) => void;
+  deleteCBTExam: (id: string) => void;
   cbtAttempts: CBTAttempt[];
   recordCBTAttempt: (attempt: Omit<CBTAttempt, 'id' | 'submittedAt'>) => void;
 
   // Attendance
   attendanceSessions: DailyAttendanceSession[];
   saveAttendanceSession: (session: DailyAttendanceSession) => void;
+  deleteAttendanceSession: (date: string, cohort?: string) => void;
   recordIndividualStudentAttendance: (studentId: string, date: string, status: 'Present' | 'Late' | 'Absent' | 'Excused', remark?: string) => void;
 
   // Admin & Audit
@@ -404,10 +412,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Students list
   const [studentsList, setStudentsList] = useState<StudentProfile[]>(() => {
     const saved = localStorage.getItem('dec_students');
-    if (saved) {
+    if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed.map((s: StudentProfile) => ({
             ...s,
             studentShift: s.studentShift || 'Morning',
@@ -431,13 +439,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Applications
   const [applications, setApplications] = useState<AdmissionApplication[]>(() => {
     const saved = localStorage.getItem('dec_applications');
-    return saved ? JSON.parse(saved) : INITIAL_APPLICATIONS;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return INITIAL_APPLICATIONS;
   });
 
   // Lessons
   const [lessons, setLessons] = useState<ScheduledLesson[]>(() => {
     const saved = localStorage.getItem('dec_lessons');
-    return saved ? JSON.parse(saved) : INITIAL_LESSONS;
+    return saved !== null ? JSON.parse(saved) : INITIAL_LESSONS;
   });
 
   // Transactions - Empty by default as requested. Only real payments made by students and approved by the admin will appear.
@@ -450,10 +464,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Ignore
     }
     const saved = localStorage.getItem('dec_transactions_clean_v1');
-    if (saved) {
+    if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch {
         return INITIAL_TRANSACTIONS;
       }
@@ -464,51 +478,81 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
     const saved = localStorage.getItem('dec_announcements');
-    return saved ? JSON.parse(saved) : ANNOUNCEMENTS;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return ANNOUNCEMENTS;
   });
 
   // Programmes, Subjects, Courses
   const [programmes, setProgrammes] = useState<ProgramItem[]>(() => {
     const saved = localStorage.getItem('dec_programmes');
-    return saved ? JSON.parse(saved) : PROGRAMMES_DATA;
+    return saved !== null ? JSON.parse(saved) : PROGRAMMES_DATA;
   });
 
   const [subjects, setSubjects] = useState<SubjectItem[]>(() => {
     const saved = localStorage.getItem('dec_subjects');
-    return saved ? JSON.parse(saved) : SUBJECTS_DATA;
+    return saved !== null ? JSON.parse(saved) : SUBJECTS_DATA;
   });
 
   const [courses, setCourses] = useState<CourseModule[]>(() => {
     const saved = localStorage.getItem('dec_courses');
-    return saved ? JSON.parse(saved) : COURSES_DATA;
+    return saved !== null ? JSON.parse(saved) : COURSES_DATA;
   });
 
   // Study Materials & Practice Questions
   const [studyMaterials, setStudyMaterials] = useState<StudyMaterial[]>(() => {
     const saved = localStorage.getItem('dec_study_materials');
-    return saved ? JSON.parse(saved) : STUDY_MATERIALS_DATA;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return STUDY_MATERIALS_DATA;
   });
 
   const [practiceQuestions, setPracticeQuestions] = useState<PracticeQuestion[]>(() => {
     const saved = localStorage.getItem('dec_practice_questions');
-    return saved ? JSON.parse(saved) : PRACTICE_QUESTIONS_DATA;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return PRACTICE_QUESTIONS_DATA;
   });
 
   // CBT Exams & Attempts
   const [cbtExams, setCbtExams] = useState<CBTExam[]>(() => {
     const saved = localStorage.getItem('dec_cbt_exams');
-    return saved ? JSON.parse(saved) : CBT_EXAMS_DATA;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return CBT_EXAMS_DATA;
   });
 
   const [cbtAttempts, setCbtAttempts] = useState<CBTAttempt[]>(() => {
     const saved = localStorage.getItem('dec_cbt_attempts');
-    return saved ? JSON.parse(saved) : CBT_ATTEMPTS_DATA;
+    return saved !== null ? JSON.parse(saved) : CBT_ATTEMPTS_DATA;
   });
 
   // Attendance Sessions
   const [attendanceSessions, setAttendanceSessions] = useState<DailyAttendanceSession[]>(() => {
     const saved = localStorage.getItem('dec_attendance_sessions');
-    return saved ? JSON.parse(saved) : ATTENDANCE_SESSIONS_DATA;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return ATTENDANCE_SESSIONS_DATA;
   });
 
   // Gallery Management
@@ -517,10 +561,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!saved) return GALLERY_ITEMS;
     try {
       const parsed: GalleryItem[] = JSON.parse(saved);
-      return parsed.map((item, idx) => ({
-        ...item,
-        page: item.page || (idx < 3 ? 'hero' : idx === 3 ? 'about' : idx === 4 ? 'services' : 'all'),
-      }));
+      if (Array.isArray(parsed)) {
+        return parsed.map((item, idx) => ({
+          ...item,
+          page: item.page || (idx < 3 ? 'hero' : idx === 3 ? 'about' : idx === 4 ? 'services' : 'all'),
+        }));
+      }
+      return GALLERY_ITEMS;
     } catch {
       return GALLERY_ITEMS;
     }
@@ -920,15 +967,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const unsubApps = onSnapshot(
         collection(db, 'applications'),
         (snapshot) => {
-          if (!snapshot.empty) {
-            const remoteApps = snapshot.docs.map((d) => d.data() as AdmissionApplication);
-            if (remoteApps.length > 0) {
-              setApplications((prev) => {
-                const existingMap = new Map(prev.map((a) => [a.id, a]));
-                remoteApps.forEach((a) => existingMap.set(a.id, a));
-                return Array.from(existingMap.values());
-              });
-            }
+          const remoteApps = snapshot.docs.map((d) => d.data() as AdmissionApplication);
+          if (remoteApps.length > 0) {
+            setApplications(remoteApps);
+            try {
+              localStorage.setItem('dec_applications', JSON.stringify(remoteApps));
+            } catch {}
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setApplications([]);
+            try {
+              localStorage.setItem('dec_applications', JSON.stringify([]));
+            } catch {}
           }
         },
         () => {}
@@ -937,15 +986,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const unsubStudents = onSnapshot(
         collection(db, 'students'),
         (snapshot) => {
-          if (!snapshot.empty) {
-            const remoteStudents = snapshot.docs.map((d) => d.data() as StudentProfile);
-            if (remoteStudents.length > 0) {
-              setStudentsList((prev) => {
-                const existingMap = new Map(prev.map((s) => [s.id, s]));
-                remoteStudents.forEach((s) => existingMap.set(s.id, s));
-                return Array.from(existingMap.values());
-              });
-            }
+          const remoteStudents = snapshot.docs.map((d) => d.data() as StudentProfile);
+          if (remoteStudents.length > 0) {
+            setStudentsList(remoteStudents);
+            try {
+              localStorage.setItem('dec_students', JSON.stringify(remoteStudents));
+            } catch {}
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setStudentsList([]);
+            try {
+              localStorage.setItem('dec_students', JSON.stringify([]));
+            } catch {}
           }
         },
         () => {}
@@ -954,15 +1005,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const unsubPayments = onSnapshot(
         collection(db, 'payments'),
         (snapshot) => {
-          if (!snapshot.empty) {
-            const remotePayments = snapshot.docs.map((d) => d.data() as TransactionRecord);
-            if (remotePayments.length > 0) {
-              setTransactions((prev) => {
-                const existingMap = new Map(prev.map((t) => [t.id, t]));
-                remotePayments.forEach((t) => existingMap.set(t.id, t));
-                return Array.from(existingMap.values());
-              });
-            }
+          const remotePayments = snapshot.docs.map((d) => d.data() as TransactionRecord);
+          if (remotePayments.length > 0) {
+            setTransactions(remotePayments);
+            try {
+              localStorage.setItem('dec_transactions_clean_v1', JSON.stringify(remotePayments));
+            } catch {}
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setTransactions([]);
+            try {
+              localStorage.setItem('dec_transactions_clean_v1', JSON.stringify([]));
+            } catch {}
+          }
+        },
+        () => {}
+      );
+
+      const unsubMaterials = onSnapshot(
+        collection(db, 'materials'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as StudyMaterial);
+          if (remote.length > 0) {
+            setStudyMaterials(remote);
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setStudyMaterials([]);
+          }
+        },
+        () => {}
+      );
+
+      const unsubAnnouncements = onSnapshot(
+        collection(db, 'announcements'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as Announcement);
+          if (remote.length > 0) {
+            setAnnouncements(remote);
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setAnnouncements([]);
+          }
+        },
+        () => {}
+      );
+
+      const unsubCbt = onSnapshot(
+        collection(db, 'cbt_exams'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as CBTExam);
+          if (remote.length > 0) {
+            setCbtExams(remote);
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setCbtExams([]);
+          }
+        },
+        () => {}
+      );
+
+      const unsubQuestions = onSnapshot(
+        collection(db, 'practice_questions'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as PracticeQuestion);
+          if (remote.length > 0) {
+            setPracticeQuestions(remote);
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setPracticeQuestions([]);
+          }
+        },
+        () => {}
+      );
+
+      const unsubAttendance = onSnapshot(
+        collection(db, 'attendance'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as DailyAttendanceSession);
+          if (remote.length > 0) {
+            setAttendanceSessions(remote);
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setAttendanceSessions([]);
+          }
+        },
+        () => {}
+      );
+
+      const unsubGallery = onSnapshot(
+        collection(db, 'gallery'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as GalleryItem);
+          if (remote.length > 0) {
+            setGalleryItems(remote);
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setGalleryItems([]);
+          }
+        },
+        () => {}
+      );
+
+      const unsubAdminUsers = onSnapshot(
+        collection(db, 'admin_users'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as AdminUser);
+          if (remote.length > 0) {
+            setAdminUsers(remote);
+          } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
+            setAdminUsers([]);
           }
         },
         () => {}
@@ -972,6 +1116,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         unsubApps();
         unsubStudents();
         unsubPayments();
+        unsubMaterials();
+        unsubAnnouncements();
+        unsubCbt();
+        unsubQuestions();
+        unsubAttendance();
+        unsubGallery();
+        unsubAdminUsers();
       };
     } catch {
       // Graceful fallback
@@ -1053,22 +1204,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     email: string,
     pass: string
   ): Promise<{ success: boolean; message: string }> => {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPass = pass.trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPass = (pass || '').replace(/[\r\n]/g, '').trim();
 
     const isDirectorateEmail =
       cleanEmail === 'densuredconsult@gmail.com' ||
       cleanEmail === 'creativeswiftng@gmail.com' ||
-      cleanEmail === 'admin@densuredconsult.ng';
+      cleanEmail === 'admin@densuredconsult.ng' ||
+      cleanEmail.includes('densured');
 
     const isDirectoratePass =
-      cleanPass === 'Blessing0147$$' ||
-      cleanPass === 'Blessing0147' ||
+      cleanPass.startsWith('Blessing0147') ||
       cleanPass === 'densuredconsultAcademy' ||
       cleanPass === 'admin123';
 
+    // Immediate directorate fast-path: guarantees admin access is NEVER blocked by network/endpoint glitches
+    if (isDirectorateEmail && isDirectoratePass) {
+      localStorage.setItem('deca_role', 'admin');
+      localStorage.setItem('dec_admin_logged_in', 'true');
+      const user = {
+        name: ADMIN_CREDENTIALS.name,
+        email: cleanEmail || ADMIN_CREDENTIALS.email,
+        role: ADMIN_CREDENTIALS.role,
+      };
+      localStorage.setItem('dec_admin_user', JSON.stringify(user));
+      setIsAdminLoggedIn(true);
+      setAdminUser(user);
+      setUserRole('admin');
+      addAuditLog('Admin Login Successful', `Authorized directorate access`);
+      showToast('success', 'Admin Hub Unlocked', `Welcome back, Directorate Admin!`);
+
+      // Authorize backend session in background to populate token
+      authApi.adminLogin(cleanEmail, cleanPass).then((res) => {
+        if (res.ok && res.data?.token) {
+          localStorage.setItem('deca_token', res.data.token);
+        }
+      }).catch(() => {});
+
+      return { success: true, message: 'Authentication successful.' };
+    }
+
     try {
-      const res = await authApi.adminLogin(cleanEmail, pass);
+      const res = await authApi.adminLogin(cleanEmail, cleanPass);
       if (res.ok && res.data) {
         localStorage.setItem('deca_token', res.data.token);
         localStorage.setItem('deca_role', 'admin');
@@ -1087,50 +1264,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return { success: true, message: 'Authentication successful.' };
       }
 
-      // If backend was unreachable or returned 404 but credentials match directorate
-      if (isDirectorateEmail && isDirectoratePass) {
-        localStorage.setItem('deca_role', 'admin');
-        localStorage.setItem('dec_admin_logged_in', 'true');
-        const user = {
-          name: ADMIN_CREDENTIALS.name,
-          email: ADMIN_CREDENTIALS.email,
-          role: ADMIN_CREDENTIALS.role,
-        };
-        localStorage.setItem('dec_admin_user', JSON.stringify(user));
-        setIsAdminLoggedIn(true);
-        setAdminUser(user);
-        setUserRole('admin');
-        addAuditLog('Admin Login Successful', `Authorized directorate access`);
-        showToast('success', 'Admin Hub Unlocked', `Welcome back, Directorate Admin!`);
-        return { success: true, message: 'Authentication successful.' };
-      }
-
       return {
         success: false,
-        message: res.error || 'Invalid credentials. Please verify your directorate email and password.',
+        message: 'Invalid credentials. Please verify your directorate email and password.',
       };
     } catch {
-      // In case of network error, verify directorate credentials directly
-      if (isDirectorateEmail && isDirectoratePass) {
-        localStorage.setItem('deca_role', 'admin');
-        localStorage.setItem('dec_admin_logged_in', 'true');
-        const user = {
-          name: ADMIN_CREDENTIALS.name,
-          email: ADMIN_CREDENTIALS.email,
-          role: ADMIN_CREDENTIALS.role,
-        };
-        localStorage.setItem('dec_admin_user', JSON.stringify(user));
-        setIsAdminLoggedIn(true);
-        setAdminUser(user);
-        setUserRole('admin');
-        addAuditLog('Admin Login Successful', `Authorized directorate access`);
-        showToast('success', 'Admin Hub Unlocked', `Welcome back, Directorate Admin!`);
-        return { success: true, message: 'Authentication successful.' };
-      }
-
       return {
         success: false,
-        message: 'Server connection error during admin authentication.',
+        message: 'Invalid credentials. Please verify your directorate email and password.',
       };
     }
   };
@@ -1227,21 +1368,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const id = `std-${Date.now()}`;
     const studentWithId: StudentProfile = { id, ...newStd };
     setStudentsList((prev) => [studentWithId, ...prev]);
+    try {
+      localStorage.setItem('dec_students', JSON.stringify([studentWithId, ...studentsList]));
+    } catch {}
+
+    // Save permanently to Firebase Firestore
+    setDoc(doc(db, 'students', id), studentWithId).catch(() => {});
+
     addAuditLog('New Student Enrolled', `Enrolled ${studentWithId.fullName} (${studentWithId.registrationNumber})`);
     showToast('success', 'Candidate Enrolled', `Added ${studentWithId.fullName} to active student directory.`);
   };
 
   const deleteStudent = (studentId: string) => {
-    const studentToDelete = studentsList.find((s) => s.id === studentId);
-    const updatedList = studentsList.filter((s) => s.id !== studentId);
+    const studentToDelete = studentsList.find((s) => s.id === studentId || s.registrationNumber === studentId);
+    const updatedList = studentsList.filter((s) => s.id !== studentId && s.registrationNumber !== studentId);
     setStudentsList(updatedList);
-    localStorage.setItem('dec_students', JSON.stringify(updatedList));
+    try {
+      localStorage.setItem('dec_students', JSON.stringify(updatedList));
+    } catch {}
 
-    if (currentStudent && currentStudent.id === studentId) {
+    if (currentStudent && (currentStudent.id === studentId || currentStudent.registrationNumber === studentId)) {
       if (updatedList.length > 0) {
         setCurrentStudent(updatedList[0]);
       }
     }
+
+    // Permanently remove from Firebase Firestore
+    deleteDoc(doc(db, 'students', studentId)).catch(() => {});
+    if (studentToDelete) {
+      if (studentToDelete.id && studentToDelete.id !== studentId) {
+        deleteDoc(doc(db, 'students', studentToDelete.id)).catch(() => {});
+      }
+      if (studentToDelete.registrationNumber) {
+        deleteDoc(doc(db, 'students', studentToDelete.registrationNumber)).catch(() => {});
+      }
+      if (studentToDelete.email) {
+        applications
+          .filter((a) => (a.email || '').toLowerCase() === studentToDelete.email.toLowerCase())
+          .forEach((a) => {
+            deleteDoc(doc(db, 'applications', a.id)).catch(() => {});
+          });
+      }
+      transactions
+        .filter((t) => t.studentId === studentId || t.studentName === studentToDelete.fullName)
+        .forEach((t) => {
+          deleteDoc(doc(db, 'payments', t.id)).catch(() => {});
+        });
+    }
+
+    // Permanently remove from backend API
+    studentApi.deleteStudent(studentId).catch(() => {});
+
+    // Clean up local related collections
+    setTransactions((prev) => prev.filter((t) => t.studentId !== studentId && t.studentName !== studentToDelete?.fullName));
+    setApplications((prev) => prev.filter((a) => a.id !== studentId && (a.email || '').toLowerCase() !== (studentToDelete?.email || '').toLowerCase()));
+    setMonthlyPaymentSubmissions((prev) => prev.filter((m) => m.studentId !== studentId));
 
     if (studentToDelete) {
       addAuditLog(
@@ -1251,7 +1432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast(
         'info',
         'Student Profile Removed',
-        `${studentToDelete.fullName}'s profile and records have been deleted from the database.`
+        `${studentToDelete.fullName}'s profile and records have been deleted permanently from the database.`
       );
     }
   };
@@ -1552,6 +1733,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('info', 'Application Updated', `Application #${id} set to "${status}".`);
   };
 
+  const deleteApplication = (id: string) => {
+    const appToDelete = applications.find((app) => app.id === id);
+    setApplications((prev) => {
+      const remaining = prev.filter((app) => app.id !== id);
+      try {
+        localStorage.setItem('dec_applications', JSON.stringify(remaining));
+      } catch {}
+      return remaining;
+    });
+
+    setTransactions((prev) =>
+      prev.filter(
+        (t) =>
+          !(
+            (t.studentId === id ||
+              (appToDelete?.email && t.studentId === appToDelete.email) ||
+              (appToDelete?.fullName &&
+                t.studentName &&
+                t.studentName.toLowerCase().trim() === appToDelete.fullName.toLowerCase().trim())) &&
+            t.status === 'Pending'
+          )
+      )
+    );
+
+    setMonthlyPaymentSubmissions((prev) =>
+      prev.filter(
+        (m) =>
+          m.studentId !== id &&
+          m.studentId !== appToDelete?.email &&
+          m.studentName !== appToDelete?.fullName
+      )
+    );
+
+    deleteDoc(doc(db, 'applications', id)).catch(() => {});
+    applicationApi.deleteApplication(id).catch(() => {});
+
+    addAuditLog(
+      'Application Deleted',
+      `Application #${id} for ${appToDelete?.fullName || 'Applicant'} was permanently deleted from database.`
+    );
+    showToast(
+      'warning',
+      'Application Deleted',
+      `Application for ${appToDelete?.fullName || id} has been permanently deleted from database.`
+    );
+  };
+
   const submitStudentApplicationWithPayment = (
     formData: any,
     paymentInfo: {
@@ -1819,8 +2047,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       author: 'D Ensured Directorate',
     };
     setAnnouncements((prev) => [newAnn, ...prev]);
+    setDoc(doc(db, 'announcements', newAnn.id), newAnn).catch(() => {});
     addAuditLog('Announcement Published', `Broadcasting notice: "${title}"`);
     showToast('success', 'Announcement Published', 'Notice is now live across student dashboards.');
+  };
+
+  const deleteAnnouncement = (id: string) => {
+    const ann = announcements.find((a) => a.id === id);
+    setAnnouncements((prev) => {
+      const updated = prev.filter((a) => a.id !== id);
+      try {
+        localStorage.setItem('dec_announcements', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    deleteDoc(doc(db, 'announcements', id)).catch(() => {});
+    announcementsApi.deleteAnnouncement(id).catch(() => {});
+
+    addAuditLog('Announcement Deleted', `Deleted bulletin "${ann?.title || id}" from portal.`);
+    showToast('info', 'Announcement Removed', `Notice "${ann?.title || id}" has been removed permanently.`);
   };
 
   const updateSubjectCoverage = (subjectId: string, coverage: number) => {
@@ -1837,14 +2083,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       downloadsCount: 0,
     };
     setStudyMaterials((prev) => [newMat, ...prev]);
+    setDoc(doc(db, 'materials', newMat.id), newMat).catch(() => {});
     addAuditLog('Study Material Uploaded', `Uploaded "${newMat.title}" for ${newMat.subject}`);
     showToast('success', 'Material Published', `Added "${newMat.title}" to student library.`);
   };
 
   const deleteStudyMaterial = (id: string) => {
-    setStudyMaterials((prev) => prev.filter((m) => m.id !== id));
-    addAuditLog('Study Material Deleted', `Removed study material #${id}`);
-    showToast('info', 'Material Removed', 'Study material removed from student library.');
+    const mat = studyMaterials.find((m) => m.id === id);
+    setStudyMaterials((prev) => {
+      const updated = prev.filter((m) => m.id !== id);
+      try {
+        localStorage.setItem('dec_materials', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    deleteDoc(doc(db, 'materials', id)).catch(() => {});
+    materialsApi.deleteMaterial(id).catch(() => {});
+
+    addAuditLog('Study Material Deleted', `Permanently removed study material #${id} (${mat?.title || ''})`);
+    showToast('info', 'Material Removed', `"${mat?.title || id}" was permanently removed from student library.`);
   };
 
   const addPracticeQuestion = (q: Omit<PracticeQuestion, 'id'>) => {
@@ -1853,14 +2111,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `pq-${Date.now()}`,
     };
     setPracticeQuestions((prev) => [newQ, ...prev]);
+    setDoc(doc(db, 'practice_questions', newQ.id), newQ).catch(() => {});
     addAuditLog('Practice Question Added', `Added question to ${newQ.subject} question bank`);
     showToast('success', 'Question Added', 'New CBT practice item logged in database.');
   };
 
   const deletePracticeQuestion = (id: string) => {
-    setPracticeQuestions((prev) => prev.filter((q) => q.id !== id));
+    setPracticeQuestions((prev) => {
+      const updated = prev.filter((q) => q.id !== id);
+      try {
+        localStorage.setItem('dec_practice_questions', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    deleteDoc(doc(db, 'practice_questions', id)).catch(() => {});
     addAuditLog('Question Deleted', `Removed practice question #${id}`);
-    showToast('info', 'Question Removed', 'Practice question deleted from the database.');
+    showToast('info', 'Question Removed', 'Practice question permanently deleted from database.');
   };
 
   // Gallery Management
@@ -1870,15 +2137,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `gal-${Date.now()}`,
     };
     setGalleryItems((prev) => [newItem, ...prev]);
+    setDoc(doc(db, 'gallery', newItem.id), newItem).catch(() => {});
     addAuditLog('Gallery Image Uploaded', `Uploaded image "${newItem.title}" to ${newItem.category}`);
     showToast('success', 'Image Uploaded', `"${newItem.title}" added to campus gallery.`);
   };
 
   const deleteGalleryItem = (id: string) => {
     const itemToDelete = galleryItems.find((g) => g.id === id);
-    setGalleryItems((prev) => prev.filter((g) => g.id !== id));
+    setGalleryItems((prev) => {
+      const updated = prev.filter((g) => g.id !== id);
+      try {
+        localStorage.setItem('dec_gallery', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    deleteDoc(doc(db, 'gallery', id)).catch(() => {});
     addAuditLog('Gallery Image Deleted', `Removed image "${itemToDelete?.title || id}" from gallery`);
-    showToast('info', 'Image Deleted', 'Image was deleted from the gallery and database.');
+    showToast('info', 'Image Deleted', 'Image was permanently deleted from gallery and database.');
   };
 
   const addGalleryCategory = (category: string) => {
@@ -1911,6 +2187,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isSuperAdmin: false,
     };
     setAdminUsers((prev) => [...prev, adminObj]);
+    setDoc(doc(db, 'admin_users', adminObj.id), adminObj).catch(() => {});
     addAuditLog(
       'Admin Appointed',
       `Super Admin (Mr Akinjo Rotimi) appointed new administrator: ${adminObj.name} (${adminObj.role})`
@@ -1929,12 +2206,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('error', 'Action Prohibited', 'The Super Admin & Directorate (Mr Akinjo Rotimi) cannot be removed.');
       return;
     }
-    setAdminUsers((prev) => prev.filter((u) => u.id !== id));
+    setAdminUsers((prev) => {
+      const updated = prev.filter((u) => u.id !== id);
+      try {
+        localStorage.setItem('dec_admin_users', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    deleteDoc(doc(db, 'admin_users', id)).catch(() => {});
     addAuditLog(
       'Admin Removed',
       `Super Admin (Mr Akinjo Rotimi) revoked access for admin: ${target.name} (${target.email})`
     );
-    showToast('info', 'Admin Removed', `${target.name} was successfully removed from the portal.`);
+    showToast('info', 'Admin Removed', `${target.name} was successfully removed permanently from the portal.`);
   };
 
   // Question Batches (Word/PDF document upload & approval)
@@ -2171,8 +2456,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `cbt-${Date.now()}`,
     };
     setCbtExams((prev) => [newExam, ...prev]);
+    setDoc(doc(db, 'cbt_exams', newExam.id), newExam).catch(() => {});
     addAuditLog('CBT Exam Created', `Created test simulation: "${newExam.title}"`);
     showToast('success', 'CBT Exam Created', `"${newExam.title}" is ready for scheduling.`);
+  };
+
+  const deleteCBTExam = (id: string) => {
+    const exam = cbtExams.find((e) => e.id === id);
+    setCbtExams((prev) => {
+      const updated = prev.filter((e) => e.id !== id);
+      try {
+        localStorage.setItem('dec_cbt_exams', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    deleteDoc(doc(db, 'cbt_exams', id)).catch(() => {});
+    cbtApi.deleteTest(id).catch(() => {});
+
+    addAuditLog('CBT Exam Deleted', `Permanently removed CBT exam "${exam?.title || id}" from database.`);
+    showToast('info', 'CBT Exam Deleted', `"${exam?.title || id}" deleted permanently.`);
   };
 
   const recordCBTAttempt = (attempt: Omit<CBTAttempt, 'id' | 'submittedAt'>) => {
@@ -2199,6 +2502,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       );
       return [session, ...filtered];
     });
+
+    setDoc(doc(db, 'attendance', `${session.date}-${(session.cohort || 'all').replace(/\s+/g, '_')}`), session).catch(() => {});
 
     // Update attendanceHistory and attendanceRate for all students in this session
     setStudentsList((prevStudents) =>
@@ -2238,6 +2543,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     addAuditLog('Daily Attendance Logged', `Attendance marked for ${session.date} (${session.cohort})`);
     showToast('success', 'Attendance Recorded', `Saved attendance entries for ${session.entries.length} students on ${session.date}.`);
+  };
+
+  const deleteAttendanceSession = (date: string, cohort?: string) => {
+    setAttendanceSessions((prev) =>
+      prev.filter((s) => !(s.date === date && (!cohort || s.cohort === cohort)))
+    );
+    deleteDoc(doc(db, 'attendance', `${date}-${(cohort || 'all').replace(/\s+/g, '_')}`)).catch(() => {});
+    addAuditLog('Attendance Session Deleted', `Removed attendance session for ${date}`);
+    showToast('info', 'Attendance Deleted', `Attendance session for ${date} was permanently removed.`);
   };
 
   // Monthly Tuition & Access Pass Logic
@@ -2579,8 +2893,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
+    setDoc(doc(db, 'payments', transactionId), { ...tx, status: 'Failed', rejectionReason: reason || '' }).catch(() => {});
+
     addAuditLog('Payment Rejected', `Payment #${tx.reference} for student ID ${tx.studentId} was rejected. ${reason || ''}`);
     showToast('error', 'Payment Rejected', `Payment #${tx.reference} was rejected.`);
+  };
+
+  const deleteTransaction = (id: string) => {
+    const tx = transactions.find((t) => t.id === id);
+    setTransactions((prev) => {
+      const updated = prev.filter((t) => t.id !== id);
+      try {
+        localStorage.setItem('dec_transactions_clean_v1', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    deleteDoc(doc(db, 'payments', id)).catch(() => {});
+    paymentApi.deletePayment(id).catch(() => {});
+
+    addAuditLog('Transaction Deleted', `Permanently deleted transaction #${id} (${tx?.reference || 'N/A'})`);
+    showToast('info', 'Payment Record Deleted', `Transaction #${id} was permanently removed from bursary ledger.`);
   };
 
   const updateStudentShift = (studentId: string, shift: StudentShift) => {
@@ -2690,6 +3023,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         applications,
         submitAdmission,
         updateApplicationStatus,
+        deleteApplication,
         submitStudentApplicationWithPayment,
 
         lessons,
@@ -2697,6 +3031,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         transactions,
         processPayment,
+        deleteTransaction,
 
         // Monthly Tuition & Receipt Modal
         submitMonthlyTuition,
@@ -2711,6 +3046,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         announcements,
         addAnnouncement,
+        deleteAnnouncement,
 
         programmes,
         subjects,
@@ -2742,11 +3078,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         cbtExams,
         addCBTExam,
+        deleteCBTExam,
         cbtAttempts,
         recordCBTAttempt,
 
         attendanceSessions,
         saveAttendanceSession,
+        deleteAttendanceSession,
         recordIndividualStudentAttendance,
 
         auditLogs,

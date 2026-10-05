@@ -65,5 +65,47 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if true;
     }
+
+    // Study Materials
+    match /materials/{materialId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // CBT Exams
+    match /cbt_exams/{examId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Practice Questions
+    match /practice_questions/{questionId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Gallery & Campus Media
+    match /gallery/{galleryId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Admin Users
+    match /admin_users/{adminId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Payment Submissions
+    match /submissions/{submissionId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
   }
 }

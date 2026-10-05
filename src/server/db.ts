@@ -30,6 +30,7 @@ export interface StudentRecord {
   state: string;
   lga: string;
   photo_url: string;
+  avatar?: string;
   
   parent_name: string;
   parent_relationship: string;

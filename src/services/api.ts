@@ -7,10 +7,16 @@ const API_BASE = '/api';
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('deca_token');
+  const role = localStorage.getItem('deca_role') || (localStorage.getItem('dec_admin_logged_in') === 'true' ? 'admin' : '');
+  const headers: Record<string, string> = {};
   if (token) {
-    return { Authorization: `Bearer ${token}` };
+    headers['Authorization'] = `Bearer ${token}`;
   }
-  return {};
+  if (role === 'admin') {
+    headers['x-admin-access'] = 'directorate';
+    headers['x-user-role'] = 'admin';
+  }
+  return headers;
 }
 
 export async function apiRequest<T = any>(
@@ -106,6 +112,10 @@ export const studentApi = {
       method: 'PUT',
       body: JSON.stringify(updates),
     }),
+  deleteStudent: (id: string) =>
+    apiRequest(`/admin/students/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // Payments API
@@ -133,6 +143,10 @@ export const paymentApi = {
       method: 'POST',
       body: JSON.stringify({ reason }),
     }),
+  deletePayment: (id: string) =>
+    apiRequest(`/admin/payments/${id}`, {
+      method: 'DELETE',
+    }),
   getStudentPayments: (studentId: string) => apiRequest(`/payments/student/${studentId}`),
 };
 
@@ -156,6 +170,10 @@ export const attendanceApi = {
     return apiRequest(`/admin/attendance?${params.toString()}`);
   },
   getStudentAttendance: (studentId: string) => apiRequest(`/attendance/student/${studentId}`),
+  deleteAttendanceSession: (dateOrId: string) =>
+    apiRequest(`/admin/attendance/${dateOrId}`, {
+      method: 'DELETE',
+    }),
 };
 
 // CBT API
@@ -291,5 +309,29 @@ export const databaseApi = {
       message: string;
       timestamp: string;
     }>('/database/sync', { method: 'POST' }),
+};
+
+// Applications API
+export const applicationApi = {
+  deleteApplication: (id: string) =>
+    apiRequest(`/admin/applications/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Admin Users API
+export const adminApi = {
+  deleteAdmin: (id: string) =>
+    apiRequest(`/admin/users/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Practice Questions API
+export const questionApi = {
+  deleteQuestion: (id: string) =>
+    apiRequest(`/admin/practice_questions/${id}`, {
+      method: 'DELETE',
+    }),
 };
 

@@ -84,6 +84,7 @@ export const StudentPortal: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('Bank Transfer');
   const [isSubmittingMonthly, setIsSubmittingMonthly] = useState(false);
   const [idCardZoom, setIdCardZoom] = useState<number>(1.25);
+  const [materialSubjectFilter, setMaterialSubjectFilter] = useState<string>('All');
 
   // Sync shift selection when switching candidates
   useEffect(() => {
@@ -248,19 +249,25 @@ export const StudentPortal: React.FC = () => {
     return matching.length >= 4 ? matching : practiceQuestions;
   }, [practiceQuestions, registeredSubjects]);
 
-  // Study materials tailored to student's chosen subjects
+  // Study materials tailored to student's chosen subjects or all uploaded materials
   const filteredStudyMaterials = useMemo(() => {
-    return studyMaterials.filter((mat) => {
-      if (mat.subject === 'General' || mat.subject === 'All') return true;
-      return registeredSubjects.some(
-        (subj) =>
-          subj &&
-          mat?.subject &&
-          (subj.toLowerCase().includes(mat.subject.toLowerCase()) ||
-            mat.subject.toLowerCase().includes(subj.toLowerCase()))
-      );
-    });
-  }, [studyMaterials, registeredSubjects]);
+    if (materialSubjectFilter === 'All') {
+      return studyMaterials;
+    }
+    if (materialSubjectFilter === 'My Subjects') {
+      return studyMaterials.filter((mat) => {
+        if (mat.subject === 'General' || mat.subject === 'All') return true;
+        return registeredSubjects.some(
+          (subj) =>
+            subj &&
+            mat?.subject &&
+            (subj.toLowerCase().includes(mat.subject.toLowerCase()) ||
+              mat.subject.toLowerCase().includes(subj.toLowerCase()))
+        );
+      });
+    }
+    return studyMaterials.filter((mat) => (mat.subject || '').toLowerCase().includes(materialSubjectFilter.toLowerCase()));
+  }, [studyMaterials, registeredSubjects, materialSubjectFilter]);
 
   const handleStartExam = (examId: string) => {
     setActiveCbtExamId(examId);
@@ -1211,7 +1218,7 @@ export const StudentPortal: React.FC = () => {
                   >
                     <div
                       id="student-portal-id-card-front"
-                      className="cr80-id-card relative bg-white border-2 border-[#D5241B] shadow-xl overflow-hidden flex flex-col justify-between"
+                      className="cr80-id-card relative bg-white border-2 border-[#FFC600] shadow-xl overflow-hidden flex flex-col justify-between"
                       style={{
                         width: '3.375in',
                         height: '2.125in',
@@ -1222,23 +1229,23 @@ export const StudentPortal: React.FC = () => {
                         borderRadius: '0.125in',
                       }}
                     >
-                      {/* Top Red & Gold Header */}
-                      <div className="bg-[#D5241B] text-white px-2.5 py-1.5 flex items-center justify-between border-b border-[#FFC600]">
+                      {/* Top Navy & Gold Header */}
+                      <div className="bg-gradient-to-r from-[#0a192f] via-[#25166B] to-[#0284c7] text-white px-2.5 py-1.5 flex items-center justify-between border-b-2 border-[#FFC600]">
                         <div className="flex items-center gap-1.5">
                           <div className="w-6 h-6 rounded-full bg-white p-0.5 shrink-0 border border-[#FFC600]">
                             <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain rounded-full" />
                           </div>
                           <div>
-                            <span className="font-black text-[10px] tracking-tight block text-white leading-tight">
+                            <span className="font-extrabold text-[10px] tracking-tight block text-white leading-tight">
                               D ENSURED CONSULT
                             </span>
-                            <span className="text-[7px] uppercase tracking-widest text-[#FFC600] font-extrabold block leading-none">
+                            <span className="text-[6.5px] uppercase tracking-widest text-[#FFC600] font-black block leading-none">
                               Learn, Emerge and Succeed.
                             </span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="px-1.5 py-0.5 rounded text-[7.5px] font-black bg-[#FFC600] text-[#25166B] uppercase tracking-wider block">
+                          <span className="px-1.5 py-0.5 rounded text-[7.5px] font-black bg-[#FFC600] text-[#0a192f] uppercase tracking-wider block">
                             {currentStudent.studentShift || 'Morning'}
                           </span>
                           <span className="text-[6.5px] text-white/90 font-bold block mt-0.5">
@@ -1248,16 +1255,16 @@ export const StudentPortal: React.FC = () => {
                       </div>
 
                       {/* Body: Photo & Credentials */}
-                      <div className="px-2.5 py-1.5 flex items-start gap-2 flex-1 bg-linear-to-b from-white via-slate-50/50 to-white">
-                        {/* Photo with double border */}
+                      <div className="px-2.5 py-1.5 flex items-start gap-2 flex-1 bg-gradient-to-b from-white via-slate-50/50 to-white">
+                        {/* Photo with clean gold & navy ring */}
                         <div className="relative shrink-0">
                           <img
-                            src={currentStudent.avatar}
+                            src={currentStudent.avatar || (currentStudent as any).photo_url || (currentStudent as any).photoUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>'}
                             alt={currentStudent.fullName}
                             style={{ width: '0.72in', height: '0.90in' }}
-                            className="rounded-lg object-cover border border-[#D5241B] ring-1 ring-[#FFC600] shadow-xs bg-slate-100"
+                            className="rounded-lg object-cover border-2 border-[#FFC600] ring-1 ring-[#0a192f]/20 shadow-xs bg-slate-100"
                           />
-                          <div className="absolute -bottom-1 -right-0.5 px-1 py-0.2 rounded bg-[#028D3B] text-white font-black text-[6.5px] uppercase tracking-wider">
+                          <div className="absolute -bottom-1 -right-0.5 px-1 py-0.2 rounded bg-[#028D3B] text-white font-black text-[6.5px] uppercase tracking-wider shadow-2xs">
                             CLEARED
                           </div>
                         </div>
@@ -1265,14 +1272,14 @@ export const StudentPortal: React.FC = () => {
                         <div className="flex-1 space-y-0.5 leading-tight">
                           <div>
                             <span className="text-[7px] text-slate-400 uppercase font-black tracking-wider block">Candidate Name</span>
-                            <h3 className="text-[10.5px] font-black text-[#25166B] leading-tight truncate">
+                            <h3 className="text-[10.5px] font-black text-[#0a192f] leading-tight truncate">
                               {currentStudent.fullName}
                             </h3>
                           </div>
 
                           <div>
                             <span className="text-[6.5px] text-slate-400 uppercase font-bold tracking-wider block">Reg Number</span>
-                            <strong className="font-mono text-[9.5px] font-black text-[#D5241B]">
+                            <strong className="font-mono text-[9.5px] font-black text-[#0284c7]">
                               {currentStudent.registrationNumber}
                             </strong>
                           </div>
@@ -1280,11 +1287,11 @@ export const StudentPortal: React.FC = () => {
                           <div className="grid grid-cols-2 gap-1 pt-0.5 border-t border-slate-200 text-[7px]">
                             <div>
                               <span className="text-slate-400 block">Shift</span>
-                              <strong className="text-[#25166B]">{currentStudent.studentShift || 'Morning'}</strong>
+                              <strong className="text-[#0a192f]">{currentStudent.studentShift || 'Morning'}</strong>
                             </div>
                             <div>
                               <span className="text-slate-400 block">Program</span>
-                              <strong className="text-[#25166B] truncate block">{currentStudent.program}</strong>
+                              <strong className="text-[#0a192f] truncate block">{currentStudent.program}</strong>
                             </div>
                           </div>
                         </div>
@@ -1293,7 +1300,7 @@ export const StudentPortal: React.FC = () => {
                       {/* Bottom Bar: Barcode, Expiry & QR */}
                       <div className="px-2.5 py-1 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[7px]">
                         <div className="space-y-0.2">
-                          <div className="font-mono text-[#25166B] text-[7.5px] tracking-widest font-black leading-none">
+                          <div className="font-mono text-[#0a192f] text-[7.5px] tracking-widest font-black leading-none">
                             |||| || ||||| || ||||
                           </div>
                           <span className="text-[6.5px] text-[#028D3B] font-mono font-bold block">
@@ -1303,10 +1310,10 @@ export const StudentPortal: React.FC = () => {
 
                         <div className="flex items-center gap-1.5">
                           <div className="text-right leading-none">
-                            <span className="text-[6px] text-[#D5241B] font-black block">DIRECTORATE</span>
+                            <span className="text-[6px] text-[#0284c7] font-black block">DIRECTORATE</span>
                             <span className="text-[5.5px] text-slate-500">Mr. Akinjo Rotimi</span>
                           </div>
-                          <div className="bg-white p-0.5 rounded border border-[#D5241B]/30 shadow-2xs shrink-0">
+                          <div className="bg-white p-0.5 rounded border border-[#0284c7]/30 shadow-2xs shrink-0">
                             <QRCodeSVG
                               value={`https://densuredconsult.edu.ng/verify?reg=${currentStudent.registrationNumber}&student=${encodeURIComponent(currentStudent.fullName)}&status=VALID`}
                               size={28}
@@ -1340,29 +1347,29 @@ export const StudentPortal: React.FC = () => {
                         borderRadius: '0.125in',
                       }}
                     >
-                      <div className="border-b border-[#D5241B] pb-1 flex items-center justify-between">
-                        <span className="font-black uppercase tracking-wider text-[#D5241B] text-[8px]">
-                          TERMS & CENTER REGULATIONS
+                      <div className="border-b border-[#FFC600] pb-1 flex items-center justify-between bg-gradient-to-r from-[#0a192f] to-[#25166B] text-white p-1 rounded-md">
+                        <span className="font-extrabold uppercase tracking-wider text-[#FFC600] text-[8px]">
+                          TERMS &amp; CENTER REGULATIONS
                         </span>
-                        <span className="text-[6.5px] font-bold text-[#028D3B] bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                        <span className="text-[6.5px] font-bold text-white bg-emerald-600 px-1 py-0.2 rounded">
                           OFFICIAL 2026/2027
                         </span>
                       </div>
 
-                      <ul className="list-disc pl-3 space-y-0.5 text-slate-600 text-[7px] leading-tight">
-                        <li>This card is the property of D Ensured Consult and must be presented for CBT mock drills and physical classes.</li>
-                        <li>Cardholder is cleared for student e-portal resources and test simulations.</li>
+                      <ul className="list-disc pl-3 space-y-0.5 text-slate-600 text-[7px] leading-tight mt-1">
+                        <li>This card is the property of D Ensured Consult and must be presented for CBT mock drills and physical lectures.</li>
+                        <li>Cardholder is officially cleared for student e-portal resources, past questions, and test simulations.</li>
                         <li>Loss or damage must be promptly reported to the directorate desk.</li>
                       </ul>
 
                       <div className="pt-1 border-t border-slate-200 text-[6.5px] text-slate-600 space-y-0.2 leading-tight">
                         <p><strong>Campus:</strong> DOYIN PLAZA, IGBOELERIN BUSSTOP, OKOMAIKO, LAGOS</p>
-                        <p><strong>Hotline:</strong> <span className="font-mono font-bold text-[#D5241B]">08147896930</span> | Densuredconsult@gmail.com</p>
+                        <p><strong>Hotline:</strong> <span className="font-mono font-bold text-[#0284c7]">08147896930</span> | Densuredconsult@gmail.com</p>
                       </div>
 
                       <div className="flex justify-between items-center pt-0.5 border-t border-slate-200 text-[6.5px]">
-                        <span className="font-mono text-slate-400">Card Type: CR80 PVC (3.375" × 2.125")</span>
-                        <span className="font-serif italic font-bold text-[#25166B]">Akinjo Rotimi</span>
+                        <span className="font-mono text-slate-400">Card Type: CR80 PVC Standard</span>
+                        <span className="font-serif italic font-bold text-[#0a192f]">Akinjo Rotimi</span>
                       </div>
                     </div>
                   </div>
@@ -2195,59 +2202,95 @@ export const StudentPortal: React.FC = () => {
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Digital Study Materials & Handouts</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Digital Study Materials &amp; Handouts</h2>
                 <p className="text-slate-500 text-xs mt-0.5">
-                  Official lesson summaries, formula cheat sheets, and past question compilations uploaded by tutors.
+                  Official lesson summaries, formula cheat sheets, and syllabus compilations uploaded from the Directorate.
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-bold text-slate-500">Your Registered Subjects:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-500">Filter:</span>
+                <select
+                  value={materialSubjectFilter}
+                  onChange={(e) => setMaterialSubjectFilter(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-slate-50 cursor-pointer focus:outline-hidden"
+                >
+                  <option value="All">All Academy Materials ({studyMaterials.length})</option>
+                  <option value="My Subjects">My Enrolled Subjects</option>
+                  <option value="Physics">Physics</option>
+                  <option value="Mathematics">Mathematics</option>
+                  <option value="Chemistry">Chemistry</option>
+                  <option value="Biology">Biology</option>
+                  <option value="Use of English & Literature">Use of English</option>
+                  <option value="Economics">Economics</option>
+                  <option value="Government">Government</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-3 bg-gradient-to-r from-sky-50 to-indigo-50/50 rounded-2xl border border-sky-200 text-xs text-[#0a192f] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#0284c7] shrink-0" />
+                <span>
+                  Showing <strong>{filteredStudyMaterials.length}</strong> study resource{filteredStudyMaterials.length === 1 ? '' : 's'} ({materialSubjectFilter === 'All' ? 'All Academy Handouts' : materialSubjectFilter === 'My Subjects' ? 'Enrolled Subjects' : materialSubjectFilter})
+                </span>
+              </div>
+              <div className="flex items-center gap-1 flex-wrap text-[10px]">
                 {registeredSubjects.map((s) => (
-                  <span key={s} className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#25166B] text-white">
+                  <span key={s} className="px-2 py-0.5 rounded-full font-bold bg-[#0a192f] text-[#FFC600]">
                     {s}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="p-3 bg-blue-50/70 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
-              <span><strong>Personalized Portal View:</strong> Materials shown below are automatically filtered specifically for you based on the subjects you selected during registration.</span>
-              <span className="font-bold font-mono">{filteredStudyMaterials.length} files available</span>
-            </div>
+            {filteredStudyMaterials.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredStudyMaterials.map((mat: StudyMaterial) => (
+                  <div
+                    key={mat.id}
+                    className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 space-y-3 text-xs transition-shadow hover:shadow-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#FFC600]">
+                        {mat.subject}
+                      </span>
+                      <span className="font-mono text-slate-400 font-bold">{mat.fileSize}</span>
+                    </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredStudyMaterials.map((mat: StudyMaterial) => (
-                <div
-                  key={mat.id}
-                  className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 space-y-3 text-xs"
+                    <h3 className="font-extrabold text-[#0a192f] text-sm leading-snug">{mat.title}</h3>
+                    <p className="text-slate-500 text-[11px]">
+                      Author: {mat.author} • Program: {mat.program}
+                    </p>
+
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                      <span className="text-slate-400 text-[11px]">{mat.downloadsCount || 0} downloads</span>
+                      <button
+                        onClick={() => {
+                          showToast('success', 'Download Started', `Downloading "${mat.title}" (${mat.fileSize})`);
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#0a192f] hover:bg-[#112240] text-[#FFC600] font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Handout</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 space-y-2">
+                <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+                <p className="font-bold text-slate-700 text-sm">No study materials in this filter yet</p>
+                <p className="text-slate-400 text-xs">Switch to &quot;All Academy Materials&quot; to view all handouts uploaded by the Directorate.</p>
+                <button
+                  type="button"
+                  onClick={() => setMaterialSubjectFilter('All')}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#0a192f] text-[#FFC600] font-bold text-xs cursor-pointer inline-flex items-center gap-1 mt-2"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-[#25166B] text-[#FFC600]">
-                      {mat.subject}
-                    </span>
-                    <span className="font-mono text-slate-400 font-bold">{mat.fileSize}</span>
-                  </div>
-
-                  <h3 className="font-extrabold text-[#0a192f] text-sm leading-snug">{mat.title}</h3>
-                  <p className="text-slate-500 text-[11px]">
-                    Author: {mat.author} • Program: {mat.program}
-                  </p>
-
-                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                    <span className="text-slate-400 text-[11px]">{mat.downloadsCount} candidate downloads</span>
-                    <button
-                      onClick={() => {
-                        showToast('success', 'Download Started', `Downloading "${mat.title}" (${mat.fileSize})`);
-                      }}
-                      className="px-3.5 py-1.5 rounded-xl bg-[#25166B] hover:bg-[#1a0f4c] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <Download className="w-3.5 h-3.5 text-[#FFC600]" />
-                      <span>Download PDF</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  View All Materials
+                </button>
+              </div>
+            )}
           </div>
         )}
 

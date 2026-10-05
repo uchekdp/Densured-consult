@@ -14,16 +14,13 @@ import {
   Copy,
   Check,
   Download,
-  ExternalLink,
+  FileText,
+  Sparkles,
   Award,
   Calendar,
   Clock,
   User,
   Hash,
-  Sparkles,
-  FileText,
-  Key,
-  Fingerprint,
   RefreshCw,
 } from 'lucide-react';
 
@@ -45,10 +42,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
   onPaymentSuccess,
 }) => {
   const [activeTab, setActiveTab] = useState<'receipt' | 'id-card' | 'gateway'>(initialTab);
-  const [receiptWidth, setReceiptWidth] = useState<'80mm' | '57mm'>('80mm');
-  const [idCardScale, setIdCardScale] = useState<number>(1.25);
-  const [showCryptoSignatureInspector, setShowCryptoSignatureInspector] = useState(false);
-  const [copiedKey, setCopiedKey] = useState(false);
+  const [idCardScale, setIdCardScale] = useState<number>(1.15);
 
   // Gateway states
   const [gatewayMethod, setGatewayMethod] = useState<'card' | 'transfer' | 'ussd'>('card');
@@ -115,19 +109,15 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
   <title>DEC_Official_Receipt_${receipt?.receiptNumber || '2026'}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @page { 
-      size: ${receiptWidth} auto; 
-      margin: 0; 
-    }
     @media print { 
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; background: #fff; }
-      .thermal-receipt-container { width: ${receiptWidth} !important; max-width: ${receiptWidth} !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
+      .receipt-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
     }
-    body { background: #f1f5f9; font-family: monospace, ui-monospace, sans-serif; margin: 0; padding: 16px; display: flex; justify-content: center; }
+    body { background: #f8fafc; font-family: 'Poppins', system-ui, sans-serif; margin: 0; padding: 24px; display: flex; justify-content: center; }
   </style>
 </head>
 <body>
-  <div class="thermal-receipt-container bg-white" style="width: ${receiptWidth}; max-width: ${receiptWidth};">
+  <div class="max-w-xl w-full">
     ${receiptEl.innerHTML}
   </div>
   <script>
@@ -141,7 +131,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `DEC_Receipt_${receiptWidth}_${receipt?.receiptNumber || '2026'}.html`;
+        link.download = `DEC_Receipt_${receipt?.receiptNumber || '2026'}.html`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -157,42 +147,19 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>DEC_Student_ID_${cryptoPayload.registrationNumber}</title>
+  <title>DEC_Student_ID_Card_${cryptoPayload.registrationNumber}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @page { 
-      size: 3.375in 2.125in; 
-      margin: 0; 
-    }
-    @media print { 
+    @page { size: auto; margin: 0.5in; }
+    @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; background: #fff; }
-      .cr80-id-card { 
-        width: 3.375in !important; 
-        height: 2.125in !important; 
-        max-width: 3.375in !important; 
-        max-height: 2.125in !important; 
-        margin: 0 !important; 
-        page-break-after: always; 
-        border-radius: 0.125in !important;
-        box-shadow: none !important;
-      }
+      .cr80-id-card { page-break-inside: avoid; margin-bottom: 20px; box-shadow: none !important; }
     }
-    body { 
-      background: #f1f5f9; 
-      font-family: ui-sans-serif, system-ui, sans-serif; 
-      margin: 0; 
-      padding: 16px; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      gap: 16px; 
-    }
+    body { background: #f1f5f9; font-family: 'Poppins', system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 30px; }
   </style>
 </head>
 <body>
-  <div class="cr80-id-card" style="width: 3.375in; height: 2.125in;">
-    ${idEl.innerHTML}
-  </div>
+  <div class="cr80-id-card" style="width: 3.375in; height: 2.125in;">${idEl.innerHTML}</div>
   ${idBackEl ? `<div class="cr80-id-card" style="width: 3.375in; height: 2.125in;">${idBackEl.innerHTML}</div>` : ''}
   <script>
     window.onload = function() {
@@ -205,7 +172,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `DEC_Student_ID_3.375x2.125_${cryptoPayload.registrationNumber}.html`;
+        link.download = `DEC_ID_Card_${cryptoPayload.registrationNumber}.html`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -213,15 +180,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
       } else {
         window.print();
       }
-    } else {
-      window.print();
     }
-  };
-
-  const handleCopySig = (sig: string) => {
-    navigator.clipboard.writeText(sig);
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
   };
 
   const handleExecutePayment = () => {
@@ -232,8 +191,8 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
       if (onPaymentSuccess) {
         onPaymentSuccess(
           gatewayAmount,
-          `Monthly Tuition Pass - ${gatewayShift} Student`,
-          gatewayMethod === 'card' ? 'Debit/Credit Card' : gatewayMethod === 'transfer' ? 'Bank Transfer' : 'USSD *737*'
+          `Monthly Tuition Payment - ${gatewayShift} Shift (${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })})`,
+          gatewayMethod === 'card' ? 'Online Card Payment' : gatewayMethod === 'transfer' ? 'Direct Bank Transfer' : 'USSD Mobile Banking'
         );
       }
     }, 1200);
@@ -244,54 +203,54 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto print:shadow-none print:border-none print:w-full print:max-w-none">
-        {/* Navigation Bar / Mode Switcher */}
-        <div className="bg-[#D5241B] text-white px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden border-b-2 border-[#FFC600]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white animate-in fade-in duration-200 font-['Poppins',sans-serif]">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden my-auto print:shadow-none print:border-none print:max-w-none">
+        {/* Modal Top Header with Website Branding */}
+        <div className="bg-gradient-to-r from-[#0a192f] via-[#25166B] to-[#0284c7] text-white px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden border-b-2 border-[#FFC600]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-white p-1 shrink-0 border border-[#FFC600] shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-white p-1 shrink-0 border border-[#FFC600] shadow-xs">
               <img src="/logo.jpg" alt="DEC Logo" className="w-full h-full object-contain rounded" />
             </div>
             <div>
-              <span className="font-black text-sm block tracking-tight">D Ensured Consult</span>
+              <span className="font-extrabold text-base block tracking-tight text-white">D Ensured Consult</span>
               <span className="text-[10px] text-[#FFC600] font-bold uppercase tracking-wider">
-                Official Verification Desk • 2026/2027
+                Official Bursary &amp; ID Card Desk • 2026/2027
               </span>
             </div>
           </div>
 
           {/* Tab buttons */}
-          <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl text-xs font-bold">
+          <div className="flex items-center gap-1.5 bg-black/25 p-1 rounded-xl text-xs font-bold">
             <button
               type="button"
               onClick={() => setActiveTab('receipt')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'receipt'
-                  ? 'bg-white text-[#D5241B] shadow-xs font-black'
+                  ? 'bg-white text-[#25166B] shadow-xs font-black'
                   : 'text-white/90 hover:text-white hover:bg-white/10'
               }`}
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5 text-[#0284c7]" />
               <span>Official Receipt</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('id-card')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'id-card'
-                  ? 'bg-white text-[#D5241B] shadow-xs font-black'
+                  ? 'bg-white text-[#25166B] shadow-xs font-black'
                   : 'text-white/90 hover:text-white hover:bg-white/10'
               }`}
             >
-              <CreditCard className="w-3.5 h-3.5" />
+              <CreditCard className="w-3.5 h-3.5 text-[#FFC600]" />
               <span>Student ID Card</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('gateway')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'gateway'
                   ? 'bg-[#FFC600] text-[#25166B] shadow-xs font-black'
                   : 'text-white/90 hover:text-white hover:bg-white/10'
@@ -330,190 +289,167 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
         </div>
 
         {/* ============================================================ */}
-        {/* VIEW 1: OFFICIAL PAYMENT CLEARANCE RECEIPT (80mm / 57mm)     */}
+        {/* VIEW 1: CLEAN OFFICIAL PAYMENT RECEIPT (REDESIGNED IN WEBSITE COLORS) */}
         {/* ============================================================ */}
         {activeTab === 'receipt' && (
-          <div className="p-4 sm:p-6 space-y-4 bg-slate-100">
-            {/* Thermal Receipt Width Switcher */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs print:hidden text-xs">
-              <div className="flex items-center gap-2">
-                <span className="font-black text-[#25166B]">Receipt Width:</span>
-                <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setReceiptWidth('80mm')}
-                    className={`px-3 py-1 rounded-lg font-black text-xs transition-all cursor-pointer ${
-                      receiptWidth === '80mm'
-                        ? 'bg-[#D5241B] text-white shadow-xs'
-                        : 'text-slate-600 hover:text-[#25166B]'
-                    }`}
-                  >
-                    3⅛ inches (80mm) Standard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReceiptWidth('57mm')}
-                    className={`px-3 py-1 rounded-lg font-black text-xs transition-all cursor-pointer ${
-                      receiptWidth === '57mm'
-                        ? 'bg-[#D5241B] text-white shadow-xs'
-                        : 'text-slate-600 hover:text-[#25166B]'
-                    }`}
-                  >
-                    2¼ inches (57mm) Compact
-                  </button>
-                </div>
-              </div>
-
-              <div className="text-[11px] font-mono text-slate-500">
-                Print Format: <strong className="text-[#25166B]">{receiptWidth === '80mm' ? '80mm / 3.125″ POS' : '57mm / 2.25″ POS'}</strong>
-              </div>
-            </div>
-
-            {/* Thermal Receipt Container */}
+          <div className="p-4 sm:p-6 space-y-4 bg-slate-50">
             <div className="flex justify-center overflow-x-auto py-2">
               <div
                 id="printable-official-receipt"
-                style={{
-                  width: receiptWidth,
-                  minWidth: receiptWidth,
-                  maxWidth: receiptWidth,
-                }}
-                className={`bg-white text-[#111827] shadow-xl border border-slate-300 font-mono ${
-                  receiptWidth === '57mm' ? 'p-2.5 text-[9px] leading-tight' : 'p-4 text-[11px] leading-normal'
-                }`}
+                className="bg-white text-slate-800 shadow-xl rounded-2xl border border-slate-200 p-6 sm:p-8 max-w-lg w-full receipt-card space-y-5"
               >
-                {/* Header */}
-                <div className="text-center space-y-1 pb-2 border-b-2 border-dashed border-slate-400">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border border-[#D5241B] mx-auto p-0.5 bg-white">
-                    <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain rounded-full" />
+                {/* Header with Academy Logo & Official Address */}
+                <div className="border-b-2 border-[#FFC600] pb-4 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-[#0a192f] p-1 shrink-0 border-2 border-[#FFC600] shadow-xs">
+                      <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain rounded-lg" />
+                    </div>
+                    <div>
+                      <h1 className="text-base font-extrabold text-[#0a192f] tracking-tight leading-tight">
+                        D ENSURED CONSULT ACADEMY
+                      </h1>
+                      <p className="text-[11px] font-bold text-[#0284c7] uppercase tracking-wide">
+                        Official 2026/2027 Academic Session
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        Doyin Plaza, Igboelerin Bus-Stop, Ojo, Lagos • 08147896930
+                      </p>
+                    </div>
                   </div>
-                  <h1 className={`${receiptWidth === '57mm' ? 'text-xs' : 'text-sm'} font-black tracking-tight text-[#25166B] uppercase`}>
-                    D ENSURED CONSULT
-                  </h1>
-                  <p className="text-[9px] font-black text-[#D5241B] uppercase tracking-wider">
-                    Official 2026/2027 academic session
-                  </p>
-                  <p className="text-[8px] text-[#028D3B] font-bold italic">
-                    "Learn, Emerge and Succeed."
-                  </p>
-                  <p className="text-[8px] text-slate-600">
-                    DOYIN PLAZA, IGBOELERIN BUSSTOP, OKOMAIKO, LAGOS
-                  </p>
-                  <p className="text-[8px] text-slate-700">
-                    HOTLINE: <strong className="font-bold">08147896930</strong>
-                  </p>
-                  <p className="text-[8px] text-slate-600 truncate">
-                    Densuredconsult@gmail.com
-                  </p>
+                  <div className="text-right shrink-0">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-[#028D3B] border border-emerald-200">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>PAID &amp; CLEARED</span>
+                    </span>
+                  </div>
                 </div>
 
-                {/* Receipt Title & Meta */}
-                <div className="py-2 border-b-2 border-dashed border-slate-300 space-y-1">
-                  <div className="text-center font-black text-[#D5241B] uppercase tracking-wider text-[10px]">
-                    OFFICIAL BURSARY RECEIPT
+                {/* Receipt Meta & Numbers Banner */}
+                <div className="bg-gradient-to-r from-slate-50 via-sky-50/50 to-slate-50 p-3.5 rounded-xl border border-slate-200 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Receipt Number</span>
+                    <strong className="font-mono text-xs text-[#25166B] font-extrabold">
+                      {receipt?.receiptNumber || 'DEC-REC-2026-0041'}
+                    </strong>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">REC NO:</span>
-                    <strong className="font-bold">{receipt?.receiptNumber || 'DEC-REC-2026-0041'}</strong>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Transaction Reference</span>
+                    <strong className="font-mono text-xs text-slate-700 font-bold truncate block">
+                      {cryptoPayload.reference}
+                    </strong>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">TX REF:</span>
-                    <span className="truncate max-w-[120px] font-bold">{cryptoPayload.reference}</span>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Issue Date</span>
+                    <span className="font-semibold text-slate-700">
+                      {receipt?.approvedAt || receipt?.issueDate || new Date().toLocaleDateString('en-GB')}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">DATE:</span>
-                    <span>{receipt?.approvedAt || receipt?.issueDate || new Date().toLocaleDateString('en-GB')}</span>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Payment Method</span>
+                    <span className="font-semibold text-slate-700">
+                      {receipt?.paymentMethod || 'Direct Bank Transfer'}
+                    </span>
                   </div>
                 </div>
 
                 {/* Candidate Particulars */}
-                <div className="py-2 border-b-2 border-dashed border-slate-300 space-y-1">
-                  <div className="flex justify-between gap-1">
-                    <span className="text-slate-500 shrink-0">STUDENT:</span>
-                    <strong className="font-black text-right truncate text-[#25166B]">
-                      {receipt?.studentName || cryptoPayload.studentName}
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">REG NO:</span>
-                    <strong className="font-black text-[#D5241B]">
-                      {receipt?.registrationNumber || cryptoPayload.registrationNumber}
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">PROGRAM:</span>
-                    <span className="font-bold truncate">{receipt?.program || 'UTME (JAMB)'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">SHIFT:</span>
-                    <strong className="font-bold text-[#25166B]">
-                      {cryptoPayload.studentShift} ({cryptoPayload.studentShift === 'Morning' ? '9am-1:30pm' : '2pm-6:30pm'})
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">CYCLE:</span>
-                    <span>{cryptoPayload.monthPeriod}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">VALID TO:</span>
-                    <span className="font-bold text-[#028D3B]">{cryptoPayload.validUntil}</span>
+                <div className="space-y-2 text-xs">
+                  <h3 className="text-[11px] font-extrabold uppercase text-[#0a192f] tracking-wider border-b border-slate-100 pb-1">
+                    Candidate Particulars
+                  </h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-slate-600">
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Candidate Full Name</span>
+                      <strong className="text-slate-900 font-bold block text-xs">
+                        {receipt?.studentName || cryptoPayload.studentName}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Registration Number</span>
+                      <strong className="text-[#0284c7] font-mono font-bold block text-xs">
+                        {receipt?.registrationNumber || cryptoPayload.registrationNumber}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Academic Programme</span>
+                      <span className="font-semibold text-slate-800">{receipt?.program || 'UTME (JAMB)'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">Enrolled Shift</span>
+                      <span className="font-semibold text-slate-800">
+                        {cryptoPayload.studentShift} ({cryptoPayload.studentShift === 'Morning' ? '9am-1:30pm' : '2pm-6:30pm'})
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Charges & Breakdown */}
-                <div className="py-2 border-b-2 border-dashed border-slate-300 space-y-1">
-                  <div className="flex justify-between font-bold text-slate-500 pb-0.5 border-b border-slate-200">
-                    <span>DESCRIPTION</span>
-                    <span>AMOUNT</span>
-                  </div>
-                  <div className="flex justify-between pt-1">
-                    <span>Monthly Tuition & CBT Hall Drills</span>
-                    <span className="font-bold">₦{cryptoPayload.amount.toLocaleString()}</span>
-                  </div>
-                  <div className="text-[8px] text-slate-500">
-                    Includes syllabus lectures & weekly simulated mock tests.
-                  </div>
-                  <div className="flex justify-between pt-2 border-t-2 border-dashed border-slate-400 font-black text-xs text-[#25166B]">
-                    <span>TOTAL PAID:</span>
-                    <span className="text-[#D5241B]">₦{cryptoPayload.amount.toLocaleString()}</span>
-                  </div>
-                  <div className="text-[8px] font-bold text-[#028D3B] text-center pt-0.5 tracking-wider uppercase">
-                    DIRECTORATE CLEARED &amp; PAID
-                  </div>
+                {/* Itemized Payment Table */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#0a192f] text-white text-[10px] uppercase font-bold tracking-wider">
+                      <tr>
+                        <th className="py-2 px-3">Item Description</th>
+                        <th className="py-2 px-3">Period</th>
+                        <th className="py-2 px-3 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                      <tr>
+                        <td className="py-2.5 px-3">
+                          <span className="font-bold text-[#0a192f] block">Tuition &amp; CBT Laboratory Access</span>
+                          <span className="text-[10px] text-slate-400">Lectures, practice tests &amp; library</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600 font-medium">{cryptoPayload.monthPeriod}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-slate-900 font-mono">
+                          ₦{cryptoPayload.amount.toLocaleString()}
+                        </td>
+                      </tr>
+                    </tbody>
+                    <tfoot className="bg-slate-50 border-t border-slate-200">
+                      <tr>
+                        <td colSpan={2} className="py-2.5 px-3 font-extrabold text-[#0a192f] uppercase text-xs">
+                          Total Paid &amp; Approved:
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-black text-sm text-[#028D3B] font-mono">
+                          ₦{cryptoPayload.amount.toLocaleString()}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
 
-                {/* Cryptographic QR Code & Barcode */}
-                <div className="py-3 border-b-2 border-dashed border-slate-300 flex flex-col items-center text-center space-y-2">
-                  <div className="bg-white p-1 border border-slate-300 rounded shadow-2xs">
-                    <QRCodeSVG
-                      value={cryptoPayload.verificationUrl}
-                      size={receiptWidth === '57mm' ? 76 : 100}
-                      level="M"
-                      includeMargin={false}
-                    />
+                {/* QR Code Verification & Authorized Seal */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white p-1 rounded-lg border border-slate-200 shadow-2xs">
+                      <QRCodeSVG
+                        value={cryptoPayload.verificationUrl}
+                        size={64}
+                        level="M"
+                        includeMargin={false}
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] font-black text-[#0284c7] uppercase tracking-wider block">
+                        Official Digital Verification
+                      </span>
+                      <p className="text-[9px] text-slate-400 max-w-[140px] leading-tight">
+                        Scan QR code to verify bursary clearance on official academy portal.
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-[8px] font-bold tracking-wider text-[#D5241B]">
-                    SCAN TO VERIFY AUTHENTICITY
-                  </span>
-                  <div className="tracking-widest font-black text-slate-700 text-xs">
-                    |||| || ||||| || |||| ||||
-                  </div>
-                  <div className="text-[7.5px] text-slate-500 break-all">
-                    Sig: {cryptoPayload.signatureHash.slice(0, 20)}...
-                  </div>
-                </div>
 
-                {/* Authorized Signatory */}
-                <div className="pt-2 text-center space-y-0.5">
-                  <div className="font-serif italic font-bold text-xs text-[#25166B]">
-                    Mr. Akinjo Rotimi
+                  <div className="text-right space-y-0.5">
+                    <div className="font-serif italic font-bold text-sm text-[#0a192f]">
+                      Mr. Akinjo Rotimi
+                    </div>
+                    <div className="text-[9px] text-[#0284c7] font-bold uppercase tracking-wider">
+                      Founder &amp; Directorate Admin
+                    </div>
+                    <div className="text-[8px] text-slate-400">
+                      D Ensured Consult Registry
+                    </div>
                   </div>
-                  <div className="text-[8px] text-slate-600 font-bold uppercase">
-                    Founder • Sole Authorized Signatory
-                  </div>
-                  <p className="text-[7.5px] text-slate-400 pt-1">
-                    Official D Ensured Consult Receipt • Keep in safe custody
-                  </p>
                 </div>
               </div>
             </div>
@@ -521,38 +457,34 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
         )}
 
         {/* ============================================================ */}
-        {/* VIEW 2: CANDIDATE STUDENT ID CARD - LIGHT DESIGN             */}
+        {/* VIEW 2: CANDIDATE STUDENT ID CARD (REDESIGNED IN WEBSITE COLORS) */}
         {/* ============================================================ */}
         {activeTab === 'id-card' && (
           <div className="p-6 sm:p-8 space-y-6 text-[#1D1918] bg-slate-50">
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs print:hidden text-xs">
               <div>
-                <span className="font-black text-[#25166B] block">
-                  Candidate Student ID Card (CR80 Standard)
+                <span className="font-extrabold text-[#0a192f] block">
+                  Official Candidate Student ID Card
                 </span>
                 <span className="text-[11px] text-slate-500">
-                  Exact Dimensions: <strong className="text-[#D5241B]">3.375 x 2.125 inches</strong> (85.6mm × 54.0mm)
+                  Standard CR80 format with individual candidate photo and verification barcode.
                 </span>
               </div>
-
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 text-[11px] font-bold">Zoom:</span>
-                <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-                  {[1, 1.25, 1.5].map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setIdCardScale(s)}
-                      className={`px-2.5 py-0.5 rounded-lg font-black text-xs transition-all cursor-pointer ${
-                        idCardScale === s
-                          ? 'bg-[#25166B] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-[#25166B]'
-                      }`}
-                    >
-                      {s === 1 ? '100% (3.375"×2.125")' : `${Math.round(s * 100)}%`}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIdCardScale((prev) => Math.max(0.9, prev - 0.1))}
+                  className="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold hover:bg-slate-100 cursor-pointer"
+                >
+                  - Zoom
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIdCardScale((prev) => Math.min(1.5, prev + 0.1))}
+                  className="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold hover:bg-slate-100 cursor-pointer"
+                >
+                  + Zoom
+                </button>
               </div>
             </div>
 
@@ -569,7 +501,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
               >
                 <div
                   id="printable-student-id-card-front"
-                  className="cr80-id-card relative bg-white border-2 border-[#D5241B] shadow-xl overflow-hidden flex flex-col justify-between"
+                  className="cr80-id-card relative bg-white border-2 border-[#FFC600] shadow-xl overflow-hidden flex flex-col justify-between"
                   style={{
                     width: '3.375in',
                     height: '2.125in',
@@ -580,23 +512,23 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     borderRadius: '0.125in',
                   }}
                 >
-                  {/* Top Red & Gold Header */}
-                  <div className="bg-[#D5241B] text-white px-2.5 py-1.5 flex items-center justify-between border-b border-[#FFC600]">
+                  {/* Top Navy & Gold Header */}
+                  <div className="bg-gradient-to-r from-[#0a192f] via-[#25166B] to-[#0284c7] text-white px-2.5 py-1.5 flex items-center justify-between border-b-2 border-[#FFC600]">
                     <div className="flex items-center gap-1.5">
                       <div className="w-6 h-6 rounded-full bg-white p-0.5 shrink-0 border border-[#FFC600]">
                         <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain rounded-full" />
                       </div>
                       <div>
-                        <span className="font-black text-[10px] tracking-tight block text-white leading-tight">
+                        <span className="font-extrabold text-[10px] tracking-tight block text-white leading-tight">
                           D ENSURED CONSULT
                         </span>
-                        <span className="text-[7px] uppercase tracking-widest text-[#FFC600] font-extrabold block leading-none">
+                        <span className="text-[6.5px] uppercase tracking-widest text-[#FFC600] font-black block leading-none">
                           Learn, Emerge and Succeed.
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="px-1.5 py-0.5 rounded text-[7.5px] font-black bg-[#FFC600] text-[#25166B] uppercase tracking-wider block">
+                      <span className="px-1.5 py-0.5 rounded text-[7.5px] font-black bg-[#FFC600] text-[#0a192f] uppercase tracking-wider block">
                         {cryptoPayload.studentShift}
                       </span>
                       <span className="text-[6.5px] text-white/90 font-bold block mt-0.5">
@@ -606,16 +538,16 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                   </div>
 
                   {/* Body: Photo & Credentials */}
-                  <div className="px-2.5 py-1.5 flex items-start gap-2 flex-1 bg-linear-to-b from-white via-slate-50/50 to-white">
-                    {/* Photo with double border */}
+                  <div className="px-2.5 py-1.5 flex items-start gap-2 flex-1 bg-gradient-to-b from-white via-slate-50/50 to-white">
+                    {/* Photo with clean gold & navy ring */}
                     <div className="relative shrink-0">
                       <img
                         src={avatarUrl}
                         alt={cryptoPayload.studentName}
                         style={{ width: '0.72in', height: '0.90in' }}
-                        className="rounded-lg object-cover border border-[#D5241B] ring-1 ring-[#FFC600] shadow-xs bg-slate-100"
+                        className="rounded-lg object-cover border-2 border-[#FFC600] ring-1 ring-[#0a192f]/20 shadow-xs bg-slate-100"
                       />
-                      <div className="absolute -bottom-1 -right-0.5 px-1 py-0.2 rounded bg-[#028D3B] text-white font-black text-[6.5px] uppercase tracking-wider">
+                      <div className="absolute -bottom-1 -right-0.5 px-1 py-0.2 rounded bg-[#028D3B] text-white font-black text-[6.5px] uppercase tracking-wider shadow-2xs">
                         CLEARED
                       </div>
                     </div>
@@ -623,14 +555,14 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     <div className="flex-1 space-y-0.5 leading-tight">
                       <div>
                         <span className="text-[7px] text-slate-400 uppercase font-black tracking-wider block">Candidate Name</span>
-                        <h3 className="text-[10.5px] font-black text-[#25166B] leading-tight truncate">
+                        <h3 className="text-[10.5px] font-black text-[#0a192f] leading-tight truncate">
                           {cryptoPayload.studentName}
                         </h3>
                       </div>
 
                       <div>
                         <span className="text-[6.5px] text-slate-400 uppercase font-bold tracking-wider block">Reg Number</span>
-                        <strong className="font-mono text-[9.5px] font-black text-[#D5241B]">
+                        <strong className="font-mono text-[9.5px] font-black text-[#0284c7]">
                           {cryptoPayload.registrationNumber}
                         </strong>
                       </div>
@@ -638,11 +570,11 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                       <div className="grid grid-cols-2 gap-1 pt-0.5 border-t border-slate-200 text-[7px]">
                         <div>
                           <span className="text-slate-400 block">Shift</span>
-                          <strong className="text-[#25166B]">{cryptoPayload.studentShift}</strong>
+                          <strong className="text-[#0a192f]">{cryptoPayload.studentShift}</strong>
                         </div>
                         <div>
                           <span className="text-slate-400 block">Session</span>
-                          <strong className="text-[#25166B]">2026/2027</strong>
+                          <strong className="text-[#0a192f]">2026/2027</strong>
                         </div>
                       </div>
                     </div>
@@ -651,7 +583,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                   {/* Bottom Bar: Barcode, Expiry & QR */}
                   <div className="px-2.5 py-1 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[7px]">
                     <div className="space-y-0.2">
-                      <div className="font-mono text-[#25166B] text-[7.5px] tracking-widest font-black leading-none">
+                      <div className="font-mono text-[#0a192f] text-[7.5px] tracking-widest font-black leading-none">
                         |||| || ||||| || ||||
                       </div>
                       <span className="text-[6.5px] text-[#028D3B] font-mono font-bold block">
@@ -661,10 +593,10 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
 
                     <div className="flex items-center gap-1.5">
                       <div className="text-right leading-none">
-                        <span className="text-[6px] text-[#D5241B] font-black block">DIRECTORATE</span>
+                        <span className="text-[6px] text-[#0284c7] font-black block">DIRECTORATE</span>
                         <span className="text-[5.5px] text-slate-500">Mr. Akinjo Rotimi</span>
                       </div>
-                      <div className="bg-white p-0.5 rounded border border-[#D5241B]/30 shadow-2xs shrink-0">
+                      <div className="bg-white p-0.5 rounded border border-[#0284c7]/30 shadow-2xs shrink-0">
                         <QRCodeSVG
                           value={cryptoPayload.verificationUrl}
                           size={28}
@@ -698,29 +630,29 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     borderRadius: '0.125in',
                   }}
                 >
-                  <div className="border-b border-[#D5241B] pb-1 flex items-center justify-between">
-                    <span className="font-black uppercase tracking-wider text-[#D5241B] text-[8px]">
-                      TERMS & CENTER REGULATIONS
+                  <div className="border-b border-[#FFC600] pb-1 flex items-center justify-between bg-gradient-to-r from-[#0a192f] to-[#25166B] text-white p-1 rounded-md">
+                    <span className="font-extrabold uppercase tracking-wider text-[#FFC600] text-[8px]">
+                      TERMS &amp; CENTER REGULATIONS
                     </span>
-                    <span className="text-[6.5px] font-bold text-[#028D3B] bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                    <span className="text-[6.5px] font-bold text-white bg-emerald-600 px-1 py-0.2 rounded">
                       OFFICIAL 2026/2027
                     </span>
                   </div>
 
-                  <ul className="list-disc pl-3 space-y-0.5 text-slate-600 text-[7px] leading-tight">
-                    <li>This card is the property of D Ensured Consult and must be presented for CBT mock drills and physical classes.</li>
-                    <li>Cardholder is cleared for student e-portal resources and test simulations.</li>
+                  <ul className="list-disc pl-3 space-y-0.5 text-slate-600 text-[7px] leading-tight mt-1">
+                    <li>This card is the property of D Ensured Consult and must be presented for CBT mock drills and physical lectures.</li>
+                    <li>Cardholder is officially cleared for student e-portal resources, past questions, and test simulations.</li>
                     <li>Loss or damage must be promptly reported to the directorate desk.</li>
                   </ul>
 
                   <div className="pt-1 border-t border-slate-200 text-[6.5px] text-slate-600 space-y-0.2 leading-tight">
                     <p><strong>Campus:</strong> DOYIN PLAZA, IGBOELERIN BUSSTOP, OKOMAIKO, LAGOS</p>
-                    <p><strong>Hotline:</strong> <span className="font-mono font-bold text-[#D5241B]">08147896930</span> | Densuredconsult@gmail.com</p>
+                    <p><strong>Hotline:</strong> <span className="font-mono font-bold text-[#0284c7]">08147896930</span> | Densuredconsult@gmail.com</p>
                   </div>
 
                   <div className="flex justify-between items-center pt-0.5 border-t border-slate-200 text-[6.5px]">
-                    <span className="font-mono text-slate-400">Card Type: CR80 PVC (3.375" × 2.125")</span>
-                    <span className="font-serif italic font-bold text-[#25166B]">Akinjo Rotimi</span>
+                    <span className="font-mono text-slate-400">Card Type: CR80 PVC Standard</span>
+                    <span className="font-serif italic font-bold text-[#0a192f]">Akinjo Rotimi</span>
                   </div>
                 </div>
               </div>
@@ -734,10 +666,10 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
         {activeTab === 'gateway' && (
           <div className="p-6 sm:p-8 space-y-6 text-[#1D1918]">
             <div className="text-center max-w-lg mx-auto space-y-1">
-              <span className="text-[11px] font-black text-[#25166B] uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full border border-slate-200 inline-block">
+              <span className="text-[11px] font-extrabold text-[#0284c7] uppercase tracking-widest bg-sky-50 px-3 py-1 rounded-full border border-sky-200 inline-block">
                 Secure Tuition Checkout Gateway
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-[#25166B]">
+              <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">
                 Make Monthly Tuition Payment
               </h2>
               <p className="text-xs text-slate-500">
@@ -753,21 +685,21 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                 <div>
                   <h3 className="text-xl font-black text-emerald-900">Payment Completed!</h3>
                   <p className="text-xs text-emerald-700 mt-1">
-                    Your monthly tuition has been received. The official cryptographic receipt and ID card have been generated.
+                    Your monthly tuition has been received. The official receipt and student ID card have been generated.
                   </p>
                 </div>
                 <div className="flex gap-2 justify-center pt-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab('receipt')}
-                    className="px-4 py-2.5 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] font-bold text-xs cursor-pointer shadow-xs"
+                    className="px-4 py-2.5 rounded-xl bg-[#0a192f] hover:bg-[#112240] text-[#FFC600] font-bold text-xs cursor-pointer shadow-xs"
                   >
                     View Official Receipt
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab('id-card')}
-                    className="px-4 py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-[#1D1918] font-bold text-xs cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-[#0a192f] font-bold text-xs cursor-pointer"
                   >
                     View ID Card
                   </button>
@@ -785,17 +717,17 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     }}
                     className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                       gatewayShift === 'Morning'
-                        ? 'border-[#25166B] bg-[#25166B]/5 shadow-xs'
+                        ? 'border-[#0284c7] bg-sky-50/50 shadow-xs'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-extrabold text-sm text-[#25166B]">Morning Shift</span>
+                      <span className="font-extrabold text-sm text-[#0a192f]">Morning Shift</span>
                       <span className="text-[10px] font-black text-[#028D3B] bg-emerald-100 px-2 py-0.5 rounded-full">
                         09:00 AM – 01:30 PM
                       </span>
                     </div>
-                    <div className="text-xl font-black text-[#25166B] font-mono">₦20,000</div>
+                    <div className="text-xl font-black text-[#0a192f] font-mono">₦20,000</div>
                     <span className="text-[11px] text-slate-500 block mt-0.5">Per Calendar Month</span>
                   </button>
 
@@ -807,17 +739,17 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     }}
                     className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                       gatewayShift === 'Evening'
-                        ? 'border-[#25166B] bg-[#25166B]/5 shadow-xs'
+                        ? 'border-[#0284c7] bg-sky-50/50 shadow-xs'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-extrabold text-sm text-[#25166B]">Evening Shift</span>
-                      <span className="text-[10px] font-black text-[#098CD0] bg-sky-100 px-2 py-0.5 rounded-full">
+                      <span className="font-extrabold text-sm text-[#0a192f]">Evening Shift</span>
+                      <span className="text-[10px] font-black text-[#0284c7] bg-sky-100 px-2 py-0.5 rounded-full">
                         02:00 PM – 06:30 PM
                       </span>
                     </div>
-                    <div className="text-xl font-black text-[#25166B] font-mono">₦15,000</div>
+                    <div className="text-xl font-black text-[#0a192f] font-mono">₦15,000</div>
                     <span className="text-[11px] text-slate-500 block mt-0.5">Per Calendar Month</span>
                   </button>
                 </div>
@@ -829,7 +761,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     onClick={() => setGatewayMethod('card')}
                     className={`flex-1 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       gatewayMethod === 'card'
-                        ? 'bg-white text-[#25166B] shadow-xs'
+                        ? 'bg-white text-[#0a192f] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -841,11 +773,11 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     onClick={() => setGatewayMethod('transfer')}
                     className={`flex-1 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       gatewayMethod === 'transfer'
-                        ? 'bg-white text-[#25166B] shadow-xs'
+                        ? 'bg-white text-[#0a192f] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <Building className="w-3.5 h-3.5 text-[#098CD0]" />
+                    <Building className="w-3.5 h-3.5 text-[#0284c7]" />
                     <span>Direct Bank Transfer</span>
                   </button>
                   <button
@@ -853,7 +785,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     onClick={() => setGatewayMethod('ussd')}
                     className={`flex-1 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       gatewayMethod === 'ussd'
-                        ? 'bg-white text-[#25166B] shadow-xs'
+                        ? 'bg-white text-[#0a192f] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -902,7 +834,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200">
                       <div>
                         <span className="text-[10px] text-slate-500 uppercase font-bold block">Account Number</span>
-                        <strong className="font-mono text-base font-bold text-[#25166B]">6111753209</strong>
+                        <strong className="font-mono text-base font-bold text-[#0a192f]">6111753209</strong>
                         <span className="text-[11px] text-slate-600 block">Bank: OPAY</span>
                       </div>
                       <button
@@ -912,7 +844,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                           setCopiedAccount(true);
                           setTimeout(() => setCopiedAccount(false), 2000);
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-[#25166B] flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-[#0a192f] flex items-center gap-1 cursor-pointer"
                       >
                         {copiedAccount ? <Check className="w-3.5 h-3.5 text-[#028D3B]" /> : <Copy className="w-3.5 h-3.5" />}
                         <span>{copiedAccount ? 'Copied' : 'Copy'}</span>
@@ -929,7 +861,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                     <span className="text-[11px] text-slate-600 block font-medium">
                       Dial this USSD sequence on your registered phone:
                     </span>
-                    <div className="font-mono text-lg font-black text-[#25166B] bg-white p-3 rounded-xl border border-slate-200">
+                    <div className="font-mono text-lg font-black text-[#0a192f] bg-white p-3 rounded-xl border border-slate-200">
                       *737*2*₦{gatewayAmount}*8147896930#
                     </div>
                   </div>
@@ -940,18 +872,18 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                   type="button"
                   disabled={isProcessingPayment}
                   onClick={handleExecutePayment}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-[#D5241B] hover:bg-[#b01c15] text-white font-black text-sm shadow-md cursor-pointer flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  className="w-full py-3.5 px-6 rounded-2xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-sm shadow-md cursor-pointer flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                 >
                   {isProcessingPayment ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                      <span>Authenticating Cryptographic Transaction...</span>
+                      <span>Processing Payment Transaction...</span>
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4" />
+                      <Lock className="w-4 h-4 text-[#FFC600]" />
                       <span>
-                        Pay ₦{gatewayAmount.toLocaleString()} & Generate Cryptographic Receipt
+                        Pay ₦{gatewayAmount.toLocaleString()} &amp; Generate Official Receipt
                       </span>
                     </>
                   )}
@@ -965,7 +897,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
         <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden text-xs text-slate-500">
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-[#028D3B]" />
-            <span>256-Bit SSL Encrypted • Directorate Registrar Certificate</span>
+            <span>256-Bit SSL Encrypted • Directorate Registrar Certified</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
@@ -979,7 +911,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              className="px-4 py-2 rounded-xl bg-[#0a192f] hover:bg-[#112240] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
             >
               <Printer className="w-4 h-4 text-[#FFC600]" />
               <span>Print {activeTab === 'receipt' ? 'Receipt' : activeTab === 'id-card' ? 'ID Card' : 'Slip'}</span>

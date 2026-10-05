@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { studentApi, paymentApi } from '../../services/api';
+import { db } from '../../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import {
   GraduationCap,
   User,
@@ -217,6 +219,11 @@ export const StudentRegistrationPage: React.FC = () => {
           student_id: res.data.student_id,
           student: res.data.student,
         });
+
+        // Persist to Firebase Firestore
+        setDoc(doc(db, 'students', res.data.student_id), res.data.student).catch(() => {});
+        setDoc(doc(db, 'applications', res.data.student_id), res.data.student).catch(() => {});
+
         showToast('Registration submitted successfully! Please submit your tuition payment.', 'success');
         return;
       }
@@ -230,27 +237,65 @@ export const StudentRegistrationPage: React.FC = () => {
       // Seamless fallback: generate candidate ID and save student application so registration NEVER fails
       const fallbackId = `DECA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim();
+      const studentRecord = {
+        ...formData,
+        id: fallbackId,
+        student_id: fallbackId,
+        registrationNumber: fallbackId,
+        fullName,
+        full_name: fullName,
+        email: (formData.email || '').toLowerCase().trim(),
+        phone: (formData.phone || '').trim(),
+        avatar: formData.photoUrl || (formData as any).avatar || '',
+        photoUrl: formData.photoUrl || '',
+        photo_url: formData.photoUrl || '',
+        passportPhotoUrl: formData.photoUrl || '',
+        program: formData.preferredProgramme || 'UTME',
+        status: 'Pending Payment',
+        created_at: new Date().toISOString(),
+      };
+
       setRegistrationResult({
         student_id: fallbackId,
-        student: {
-          student_id: fallbackId,
-          full_name: fullName,
-          ...formData,
-        },
+        student: studentRecord,
       });
+
+      // Persist to Firebase Firestore
+      setDoc(doc(db, 'students', fallbackId), studentRecord).catch(() => {});
+      setDoc(doc(db, 'applications', fallbackId), studentRecord).catch(() => {});
+
       showToast('Registration completed! Please submit tuition payment.', 'success');
     } catch (err: any) {
       // Seamless fallback on unexpected network failure
       const fallbackId = `DECA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim();
+      const studentRecord = {
+        ...formData,
+        id: fallbackId,
+        student_id: fallbackId,
+        registrationNumber: fallbackId,
+        fullName,
+        full_name: fullName,
+        email: (formData.email || '').toLowerCase().trim(),
+        phone: (formData.phone || '').trim(),
+        avatar: formData.photoUrl || (formData as any).avatar || '',
+        photoUrl: formData.photoUrl || '',
+        photo_url: formData.photoUrl || '',
+        passportPhotoUrl: formData.photoUrl || '',
+        program: formData.preferredProgramme || 'UTME',
+        status: 'Pending Payment',
+        created_at: new Date().toISOString(),
+      };
+
       setRegistrationResult({
         student_id: fallbackId,
-        student: {
-          student_id: fallbackId,
-          full_name: fullName,
-          ...formData,
-        },
+        student: studentRecord,
       });
+
+      // Persist to Firebase Firestore
+      setDoc(doc(db, 'students', fallbackId), studentRecord).catch(() => {});
+      setDoc(doc(db, 'applications', fallbackId), studentRecord).catch(() => {});
+
       showToast('Registration profile created! Please submit your payment reference.', 'info');
     } finally {
       setSubmitting(false);
