@@ -514,14 +514,18 @@ export const StudentPortal: React.FC = () => {
           <span className="text-slate-500">Monthly Payment Status:</span>
           <span
             className={`px-2 py-0.5 rounded text-[10px] font-black border ${
-              currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
+              isSubscriptionActive || currentStudent.paymentStatus === 'APPROVED' || currentStudent.subscriptionStatus === 'Active'
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                : currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
                 ? 'bg-amber-100 text-amber-900 border-amber-300'
                 : currentStudent.paymentStatus === 'EXPIRED' || currentStudent.subscriptionStatus === 'Expired'
                 ? 'bg-red-100 text-red-900 border-red-300'
                 : 'bg-slate-200 text-slate-800 border-slate-300'
             }`}
           >
-            {currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
+            {isSubscriptionActive || currentStudent.paymentStatus === 'APPROVED' || currentStudent.subscriptionStatus === 'Active'
+              ? 'APPROVED'
+              : currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
               ? 'PENDING ADMIN APPROVAL'
               : currentStudent.paymentStatus === 'EXPIRED' || currentStudent.subscriptionStatus === 'Expired'
               ? 'EXPIRED'
