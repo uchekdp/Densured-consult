@@ -1113,10 +1113,7 @@ export const StudentPortal: React.FC = () => {
         {/* TAB 2: MY ID CARD */}
         {studentTab === 'id-card' && (
           <div className="space-y-6">
-            {!isSubscriptionActive ? (
-              <LockedFeatureNotice featureName="Official Student ID Card" />
-            ) : (
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#25166B]">
@@ -1371,8 +1368,7 @@ export const StudentPortal: React.FC = () => {
                   </div>
                 </div>
               </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -1659,9 +1655,7 @@ export const StudentPortal: React.FC = () => {
         {/* TAB 5: CBT & EXAMINATIONS: MOCK EXAMS (CBT) */}
         {studentTab === 'cbt-mocks' && (
           <div className="space-y-6">
-            {!isSubscriptionActive ? (
-              <LockedFeatureNotice featureName="Mock Exams & CBT Practice Simulations" />
-            ) : !activeCbtExamId ? (
+            {!activeCbtExamId ? (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                   <div>
@@ -2068,10 +2062,7 @@ export const StudentPortal: React.FC = () => {
 
           return (
             <div className="space-y-6">
-              {!isSubscriptionActive ? (
-                <LockedFeatureNotice featureName="My CBT Examination Results" />
-              ) : (
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                     <div>
                       <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">My CBT Test Results</h2>
@@ -2160,7 +2151,6 @@ export const StudentPortal: React.FC = () => {
                     </div>
                   )}
                 </div>
-              )}
             </div>
           );
         })()}
@@ -2190,10 +2180,7 @@ export const StudentPortal: React.FC = () => {
 
           return (
             <div className="space-y-6">
-              {!isSubscriptionActive ? (
-                <LockedFeatureNotice featureName="Academic Progress Scorecard" />
-              ) : (
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
@@ -2316,7 +2303,6 @@ export const StudentPortal: React.FC = () => {
                     )}
                   </div>
                 </div>
-              )}
             </div>
           );
         })()}
@@ -2333,10 +2319,7 @@ export const StudentPortal: React.FC = () => {
 
           return (
             <div className="space-y-6">
-              {!isSubscriptionActive ? (
-                <LockedFeatureNotice featureName="Interactive Practice Question Bank" />
-              ) : (
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                     <div>
                       <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Interactive Practice Question Bank</h2>
@@ -2508,7 +2491,6 @@ export const StudentPortal: React.FC = () => {
                     </div>
                   )}
                 </div>
-              )}
             </div>
           );
         })()}
@@ -2564,10 +2546,7 @@ export const StudentPortal: React.FC = () => {
         {/* TAB 9: LECTURE NOTES & STUDY MATERIALS */}
         {studentTab === 'notes' && (
           <div className="space-y-6">
-            {!isSubscriptionActive ? (
-              <LockedFeatureNotice featureName="Digital Study Materials & Handouts" />
-            ) : (
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Digital Study Materials &amp; Handouts</h2>
@@ -2660,7 +2639,6 @@ export const StudentPortal: React.FC = () => {
                   </div>
                 )}
               </div>
-            )}
           </div>
         )}
 

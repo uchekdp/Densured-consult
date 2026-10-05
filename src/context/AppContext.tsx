@@ -3419,49 +3419,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isStudentSubscriptionActive = (student: StudentProfile): boolean => {
     if (!student) return false;
-
-    // Enrollment must be approved
-    if (student.enrollmentStatus && student.enrollmentStatus !== 'APPROVED') {
-      return false;
-    }
-
-    // Explicit paymentStatus checks
-    if (
-      student.paymentStatus === 'NOT_PAID' ||
-      student.paymentStatus === 'PENDING' ||
-      student.paymentStatus === 'EXPIRED' ||
-      student.paymentStatus === 'REJECTED'
-    ) {
-      return false;
-    }
-
-    // Legacy subscriptionStatus fallback checks
-    if (
-      student.subscriptionStatus === 'Expired' ||
-      student.subscriptionStatus === 'Unpaid' ||
-      student.subscriptionStatus === 'Pending Approval'
-    ) {
-      return false;
-    }
-
-    const now = new Date();
-    const currentMonthYear = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-
-    // Tuition payment expires at the end of the month
-    const studentMonth = student.paymentMonth || student.subscriptionMonth;
-    if (studentMonth && studentMonth !== currentMonthYear) {
-      return false;
-    }
-
-    const expiryDateStr = student.paymentExpiryDate || student.subscriptionExpiryDate;
-    if (expiryDateStr) {
-      const parsedDate = new Date(expiryDateStr);
-      if (!isNaN(parsedDate.getTime()) && now.getTime() > parsedDate.getTime()) {
-        return false;
-      }
-    }
-
-    return student.paymentStatus === 'APPROVED' || student.subscriptionStatus === 'Active';
+    // Requirement: All registered students have complete unlocked access to individual portal features
+    return true;
   };
 
   // Official Receipt Modal State
