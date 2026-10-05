@@ -1470,7 +1470,7 @@ apiRouter.put('/admin/settings', requireAdmin, (req, res) => {
 });
 
 // Cloud Database Status & Multi-Device Sync Endpoints
-apiRouter.get('/database/status', (req, res) => {
+apiRouter.get(['/database/status', '/status'], (req, res) => {
   const db = getDb();
   res.json({
     status: 'connected',

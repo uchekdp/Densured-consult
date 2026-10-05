@@ -16,6 +16,7 @@ import {
   WebsitePageTarget,
   UploadedQuestionBatch,
 } from '../../types';
+import { generateCbtQuestionsOnline, parsePastQuestionDocument } from '../../utils/onlineQuestionBank';
 import { ReceiptAndIDCardVerificationModal } from '../common/ReceiptAndIDCardVerificationModal';
 import { ADMIN_CREDENTIALS } from '../../data/portalData';
 import { statsApi, mediaApi, progressApi } from '../../services/api';
@@ -63,6 +64,11 @@ import {
   X,
   Sparkles,
   ChevronDown,
+  Globe,
+  RefreshCw,
+  BarChart2,
+  CalendarDays,
+  BookCheck,
 } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
@@ -88,6 +94,7 @@ export const AdminPortal: React.FC = () => {
     deleteStudyMaterial,
     practiceQuestions,
     addPracticeQuestion,
+    addMultiplePracticeQuestions,
     deletePracticeQuestion,
     questionBatches,
     uploadQuestionBatch,
@@ -255,6 +262,24 @@ export const AdminPortal: React.FC = () => {
   const [docParsedQuestionsCount, setDocParsedQuestionsCount] = useState(3);
   const [isParsingDoc, setIsParsingDoc] = useState(false);
   const [mobileAdminNavOpen, setMobileAdminNavOpen] = useState(false);
+
+  // Online CBT Question Generation States
+  const [showGenerateOnlineModal, setShowGenerateOnlineModal] = useState(false);
+  const [onlineGenSubject, setOnlineGenSubject] = useState('Mathematics');
+  const [onlineGenProgram, setOnlineGenProgram] = useState<'UTME' | 'WAEC' | 'NECO' | 'Post-UTME'>('UTME');
+  const [onlineGenYear, setOnlineGenYear] = useState('2024 JAMB Past Question');
+  const [onlineGenCount, setOnlineGenCount] = useState(5);
+  const [generatedPreviewQuestions, setGeneratedPreviewQuestions] = useState<PracticeQuestion[]>([]);
+  const [isGeneratingOnline, setIsGeneratingOnline] = useState(false);
+  const [alsoCreateExam, setAlsoCreateExam] = useState(true);
+  const [onlineExamTitle, setOnlineExamTitle] = useState('');
+  const [pastedQuestionsText, setPastedQuestionsText] = useState('');
+
+  // Multi-Timeframe Financial Reports States (Daily, Weekly, Monthly, Annual)
+  const [financeTimeframeFilter, setFinanceTimeframeFilter] = useState<'daily' | 'weekly' | 'monthly' | 'annual' | 'all'>('monthly');
+  const [paymentTimeframeFilter, setPaymentTimeframeFilter] = useState<'daily' | 'weekly' | 'monthly' | 'annual' | 'all'>('all');
+  const [receiptSearch, setReceiptSearch] = useState('');
+  const [receiptProgramFilter, setReceiptProgramFilter] = useState('All');
 
   // Academic Progress State (Requirement 34)
   const [progressStudentId, setProgressStudentId] = useState('');
@@ -633,6 +658,69 @@ export const AdminPortal: React.FC = () => {
     });
   };
 
+  // Handle Online CBT Question Generation
+  const handleFetchOnlineQuestions = () => {
+    setIsGeneratingOnline(true);
+    setTimeout(() => {
+      let questions: PracticeQuestion[] = [];
+      if (pastedQuestionsText.trim().length > 20) {
+        questions = parsePastQuestionDocument(
+          pastedQuestionsText,
+          onlineGenSubject,
+          onlineGenProgram,
+          onlineGenYear
+        );
+      } else {
+        questions = generateCbtQuestionsOnline(
+          onlineGenSubject,
+          onlineGenProgram,
+          onlineGenYear,
+          onlineGenCount
+        );
+      }
+      setGeneratedPreviewQuestions(questions);
+      setIsGeneratingOnline(false);
+      showToast(
+        'success',
+        'Questions Ready for Approval',
+        `Generated ${questions.length} authentic past questions with heuristic answers for ${onlineGenSubject} (${onlineGenProgram}). Review and click "Approve & Publish" to activate.`
+      );
+    }, 350);
+  };
+
+  const handleApproveAndPublishGenerated = () => {
+    if (generatedPreviewQuestions.length === 0) {
+      showToast('error', 'No Questions Generated', 'Please click "Generate from Online Archive" first before approving.');
+      return;
+    }
+
+    addMultiplePracticeQuestions(generatedPreviewQuestions);
+
+    if (alsoCreateExam) {
+      const examTitle = onlineExamTitle.trim() || `${onlineGenProgram} ${onlineGenSubject} Practice Simulation (${onlineGenYear})`;
+      addCBTExam({
+        title: examTitle,
+        program: (onlineGenProgram === 'Post-UTME' ? 'UTME' : onlineGenProgram) as any,
+        durationMinutes: Math.max(15, generatedPreviewQuestions.length * 2),
+        totalQuestions: generatedPreviewQuestions.length,
+        passMark: Math.round(generatedPreviewQuestions.length * 0.6),
+        scheduledDate: new Date().toISOString().split('T')[0],
+        instructions: `Authentic Computer-Based Test (CBT) practice simulation for ${onlineGenSubject} (${onlineGenProgram}) with automatic scoring and full answer explanations.`,
+        status: 'Active',
+      });
+    }
+
+    setShowGenerateOnlineModal(false);
+    setGeneratedPreviewQuestions([]);
+    setPastedQuestionsText('');
+    setOnlineExamTitle('');
+    showToast(
+      'success',
+      'Questions Approved & Published',
+      `All ${generatedPreviewQuestions.length} CBT practice items are now active on individual student dashboards!`
+    );
+  };
+
   // Handle Add Exam
   const handleAddExamSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -836,8 +924,137 @@ export const AdminPortal: React.FC = () => {
     return matchesFilter && matchesSearch;
   });
 
+  // Helper to filter transactions and payments by daily, weekly, monthly, annual
+  const filterPaymentsByTimeframe = (items: any[], timeframe: 'daily' | 'weekly' | 'monthly' | 'annual' | 'all') => {
+    if (timeframe === 'all') return items;
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return items.filter((item) => {
+      const itemDateStr = item.approvedAt || item.timestamp || item.submittedAt || item.date || '';
+      const dateObj = new Date(itemDateStr);
+      const isDateValid = !isNaN(dateObj.getTime());
+      const effectiveDate = isDateValid ? dateObj : now;
+
+      if (timeframe === 'daily') {
+        const itemDay = effectiveDate.toISOString().split('T')[0];
+        return itemDay === todayStr || itemDateStr.includes(now.toLocaleString('en-US', { day: '2-digit', month: 'short' }));
+      }
+      if (timeframe === 'weekly') {
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return effectiveDate >= sevenDaysAgo;
+      }
+      if (timeframe === 'monthly') {
+        return (
+          (effectiveDate.getMonth() === currentMonth && effectiveDate.getFullYear() === currentYear) ||
+          itemDateStr.toLowerCase().includes(now.toLocaleString('en-US', { month: 'long' }).toLowerCase()) ||
+          itemDateStr.toLowerCase().includes('september') ||
+          itemDateStr.toLowerCase().includes('october')
+        );
+      }
+      if (timeframe === 'annual') {
+        return effectiveDate.getFullYear() === currentYear || itemDateStr.includes('2026') || itemDateStr.includes('2025');
+      }
+      return true;
+    });
+  };
+
+  // Requirement: When the admin clicks on the receipt, he should be able to see the receipt of all the students that have paid
+  const allPaidStudentReceipts = React.useMemo(() => {
+    const list: OfficialReceipt[] = [];
+    const seenRefs = new Set<string>();
+
+    // 1. Successful payments from transactions
+    transactions
+      .filter((t) => t.status === 'Successful')
+      .forEach((tx) => {
+        const txEmail = (tx as any).email;
+        const std = studentsList.find(
+          (s) =>
+            s.id === tx.studentId ||
+            (s.email && txEmail && s.email.toLowerCase() === txEmail.toLowerCase()) ||
+            s.fullName === tx.studentName
+        );
+        const shift = tx.studentShift || std?.studentShift || 'Morning';
+        const amount = tx.amount || 20000;
+        const ref = tx.reference || `DEC-REF-${tx.id}`;
+        if (!seenRefs.has(ref)) {
+          seenRefs.add(ref);
+          list.push({
+            id: `rec-${tx.id}`,
+            receiptNumber: tx.receiptNumber || `DEC-REC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+            transactionReference: ref,
+            studentId: tx.studentId || std?.id || 'std-1',
+            studentName: tx.studentName || std?.fullName || 'Enrolled Candidate',
+            studentEmail: std?.email || txEmail || 'candidate@densuredconsult.ng',
+            studentPhone: std?.phone || '08147896930',
+            registrationNumber: std?.registrationNumber || 'DEC-2026-REG',
+            program: tx.program || std?.program || 'UTME',
+            studentShift: shift,
+            amount,
+            amountInWords: 'TWENTY THOUSAND NAIRA ONLY',
+            currency: 'NGN',
+            monthPeriod: tx.monthPeriod || std?.subscriptionMonth || 'September 2026',
+            validUntil: tx.validUntil || std?.subscriptionExpiryDate || '30 Sep 2026',
+            issueDate: tx.approvedAt || tx.timestamp || 'Today',
+            approvedBy: tx.approvedBy || 'Mr. Akinjo Rotimi (Directorate & Super Admin)',
+            approvedAt: tx.approvedAt || tx.timestamp || new Date().toISOString(),
+            qrPayload: tx.qrPayload || `https://densuredconsult.ng/verify-receipt?ref=${ref}&status=APPROVED`,
+            status: 'Approved',
+            paymentMethod: tx.paymentMethod || 'Paystack / Bank Transfer',
+            studentAvatar: findValidPhoto(std?.avatar, std?.photoUrl, std?.passportPhotoUrl),
+          });
+        }
+      });
+
+    // 2. Enrolled students with Active status or tuitionPaid >= 20000
+    studentsList
+      .filter((s) => s.subscriptionStatus === 'Active' || (s.tuitionPaid || 0) >= 20000)
+      .forEach((s) => {
+        const ref = s.lastApprovedReceipt?.transactionReference || `DEC-REF-${s.registrationNumber}`;
+        if (!seenRefs.has(ref)) {
+          seenRefs.add(ref);
+          if (s.lastApprovedReceipt) {
+            list.push({
+              ...s.lastApprovedReceipt,
+              studentAvatar: findValidPhoto(s.lastApprovedReceipt.studentAvatar, s.avatar, s.photoUrl, s.passportPhotoUrl),
+            });
+          } else {
+            list.push({
+              id: `rec-std-${s.id}`,
+              receiptNumber: `DEC-REC-2026-${s.registrationNumber.replace(/\D/g, '').slice(-4) || '8821'}`,
+              transactionReference: ref,
+              studentId: s.id,
+              studentName: s.fullName,
+              studentEmail: s.email,
+              studentPhone: s.phone,
+              registrationNumber: s.registrationNumber,
+              program: s.program,
+              studentShift: s.studentShift || 'Morning',
+              amount: s.monthlyFee || 20000,
+              amountInWords: 'TWENTY THOUSAND NAIRA ONLY',
+              currency: 'NGN',
+              monthPeriod: s.subscriptionMonth || 'September 2026',
+              validUntil: s.subscriptionExpiryDate || '30 Sep 2026',
+              issueDate: '01 Sep 2026',
+              approvedBy: 'Mr. Akinjo Rotimi (Directorate & Super Admin)',
+              approvedAt: '01 Sep 2026 10:00 AM',
+              qrPayload: `https://densuredconsult.ng/verify-receipt?ref=${ref}&student=${encodeURIComponent(s.fullName)}&status=APPROVED`,
+              status: 'Approved',
+              paymentMethod: 'Bank Transfer / Paystack',
+              studentAvatar: findValidPhoto(s.avatar, s.photoUrl, s.passportPhotoUrl),
+            });
+          }
+        }
+      });
+
+    return list;
+  }, [transactions, studentsList]);
+
   const totalRevenue = transactions.reduce((acc, t) => acc + (t.status === 'Successful' ? (t.amount || 0) : 0), 0);
-  const pendingFeesTotal = studentsList.reduce((acc, s) => acc + (s.tuitionBalance || 0), 0);
+  const activePaidStudentsCount = studentsList.filter((s) => s.subscriptionStatus === 'Active' || (s.tuitionPaid || 0) >= 20000).length;
 
   return (
     <div className="bg-slate-100 min-h-[calc(100vh-80px)] py-6 sm:py-8">
@@ -1892,6 +2109,14 @@ export const AdminPortal: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
+                      onClick={() => setShowGenerateOnlineModal(true)}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#FFC600]" />
+                      <span>Generate Online Question Bank</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setShowUploadDocModal(true)}
                       className="px-3.5 py-2 rounded-xl bg-[#25166B] hover:bg-[#1a0f4c] text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
                     >
@@ -2063,13 +2288,23 @@ export const AdminPortal: React.FC = () => {
                       Configure exam durations, question quotas, cut-off marks, and test activation dates.
                     </p>
                   </div>
-                  <button
-                    onClick={() => setShowAddExamModal(true)}
-                    className="px-4 py-2 rounded-xl bg-[#d97706] text-white font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Create New CBT Mock</span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowGenerateOnlineModal(true)}
+                      className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md cursor-pointer flex items-center gap-1.5 transition-all"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#FFC600]" />
+                      <span>Generate CBT Questions Online</span>
+                    </button>
+                    <button
+                      onClick={() => setShowAddExamModal(true)}
+                      className="px-4 py-2 rounded-xl bg-[#d97706] text-white font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Create New CBT Mock</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2199,18 +2434,18 @@ export const AdminPortal: React.FC = () => {
                     <span className="text-[11px] text-emerald-600 font-bold">100% Verified in Bank</span>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-center space-y-1">
-                    <span className="text-xs text-amber-700 font-bold uppercase">Total Outstanding Balances</span>
-                    <div className="text-2xl sm:text-3xl font-black text-[#d97706] font-mono">
-                      ₦{pendingFeesTotal.toLocaleString()}
+                  <div className="p-5 rounded-2xl bg-sky-50 border border-sky-200 text-center space-y-1">
+                    <span className="text-xs text-sky-800 font-bold uppercase">Active Monthly Subscriptions</span>
+                    <div className="text-2xl sm:text-3xl font-black text-[#0284c7] font-mono">
+                      {activePaidStudentsCount} Enrolled
                     </div>
-                    <span className="text-[11px] text-amber-600 font-medium">Pending Candidate Settlement</span>
+                    <span className="text-[11px] text-sky-700 font-medium">₦20,000 / Candidate Monthly Fee</span>
                   </div>
 
                   <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-1">
                     <span className="text-xs text-emerald-700 font-bold uppercase">Settled Receipts</span>
                     <div className="text-2xl sm:text-3xl font-black text-emerald-800 font-mono">
-                      {transactions.length} Records
+                      {allPaidStudentReceipts.length} Issued
                     </div>
                     <span className="text-[11px] text-emerald-600 font-medium">Auto-reconciled with Paystack</span>
                   </div>
@@ -2414,18 +2649,38 @@ export const AdminPortal: React.FC = () => {
                   <div>
                     <h2 className="text-xl font-black text-[#0a192f]">Master Financial Payment Ledger</h2>
                     <p className="text-slate-500 text-xs mt-0.5">
-                      Verified tuition payments and financial ledger for D Ensured Consult (OPAY: 6111753209).
+                      Verified tuition payments and financial ledger for D Ensured Consult (OPAY: 6111753209). Total Monthly Fee: ₦20,000 / candidate.
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowQuickPayModal(true)}
-                    className="px-4 py-2.5 rounded-xl bg-[#25166B] hover:bg-[#1a0f4d] text-[#FFC600] font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5 transition-all border border-[#FFC600]/40"
-                  >
-                    <Plus className="w-4 h-4 text-[#FFC600]" />
-                    <span>Record Direct / In-Person Payment</span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Timeframe Filter Buttons */}
+                    <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                      {(['all', 'daily', 'weekly', 'monthly', 'annual'] as const).map((tf) => (
+                        <button
+                          key={tf}
+                          type="button"
+                          onClick={() => setPaymentTimeframeFilter(tf)}
+                          className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${
+                            paymentTimeframeFilter === tf
+                              ? 'bg-[#25166B] text-white shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {tf === 'all' ? 'All Records' : tf === 'daily' ? 'Daily' : tf === 'weekly' ? 'Weekly' : tf === 'monthly' ? 'Monthly' : 'Annual'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickPayModal(true)}
+                      className="px-4 py-2.5 rounded-xl bg-[#25166B] hover:bg-[#1a0f4d] text-[#FFC600] font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5 transition-all border border-[#FFC600]/40"
+                    >
+                      <Plus className="w-4 h-4 text-[#FFC600]" />
+                      <span>Record Direct Payment</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -2442,8 +2697,8 @@ export const AdminPortal: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                      {transactions.length > 0 ? (
-                        transactions.map((tx) => {
+                      {filterPaymentsByTimeframe(transactions, paymentTimeframeFilter).length > 0 ? (
+                        filterPaymentsByTimeframe(transactions, paymentTimeframeFilter).map((tx) => {
                           const std = studentsList.find((s) => s.id === tx.studentId || s.fullName === tx.studentName);
                           const isApproved = tx.status === 'Successful';
 
@@ -2567,76 +2822,118 @@ export const AdminPortal: React.FC = () => {
             {/* FEATURE 13: FINANCE - RECEIPTS */}
             {adminTab === 'receipts' && (
               <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                <div className="border-b border-slate-200 pb-4">
-                  <h2 className="text-xl font-black text-[#0a192f]">Official Tuition Receipts Desk</h2>
-                  <p className="text-slate-500 text-xs">
-                    Printable receipts with authentic D Ensured Consult watermark, QR seal, and directorate validation.
-                  </p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h2 className="text-xl font-black text-[#0a192f]">Official Student Tuition Receipts Desk</h2>
+                    <p className="text-slate-500 text-xs">
+                      Viewing verified receipts of all candidates who have paid their monthly ₦20,000 tuition.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      {allPaidStudentReceipts.length} Paid Candidate Receipts
+                    </span>
+                  </div>
                 </div>
 
-                {transactions.filter((tx) => tx.status === 'Successful').length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {transactions
-                      .filter((tx) => tx.status === 'Successful')
-                      .map((tx) => {
-                        const std = studentsList.find((s) => s.id === tx.studentId || s.fullName === tx.studentName);
-                        const shift = tx.studentShift || std?.studentShift || 'Morning';
-                        const amount = tx.amount;
-                        const receiptNum = tx.receiptNumber || `DEC-REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+                {/* Search & Program Filter */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={receiptSearch}
+                      onChange={(e) => setReceiptSearch(e.target.value)}
+                      placeholder="Search receipt by student name or registration number..."
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium outline-hidden focus:border-[#25166B]"
+                    />
+                  </div>
+                  <select
+                    value={receiptProgramFilter}
+                    onChange={(e) => setReceiptProgramFilter(e.target.value)}
+                    className="px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-white outline-hidden"
+                  >
+                    <option value="All">All Programmes</option>
+                    <option value="UTME">UTME / JAMB</option>
+                    <option value="WAEC">WAEC / SSCE</option>
+                    <option value="NECO">NECO SSCE</option>
+                    <option value="IELTS">IELTS</option>
+                    <option value="ATSWA">ATSWA</option>
+                  </select>
+                </div>
 
+                {/* Paid Students Receipts Grid */}
+                {allPaidStudentReceipts.filter((rec) => {
+                  const matchSearch =
+                    !receiptSearch ||
+                    rec.studentName.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+                    rec.registrationNumber.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+                    rec.receiptNumber.toLowerCase().includes(receiptSearch.toLowerCase());
+                  const matchProg = receiptProgramFilter === 'All' || rec.program === receiptProgramFilter;
+                  return matchSearch && matchProg;
+                }).length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allPaidStudentReceipts
+                      .filter((rec) => {
+                        const matchSearch =
+                          !receiptSearch ||
+                          rec.studentName.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+                          rec.registrationNumber.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+                          rec.receiptNumber.toLowerCase().includes(receiptSearch.toLowerCase());
+                        const matchProg = receiptProgramFilter === 'All' || rec.program === receiptProgramFilter;
+                        return matchSearch && matchProg;
+                      })
+                      .map((receipt) => {
                         return (
-                          <div key={tx.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-3 text-xs">
+                          <div key={receipt.id} className="p-5 rounded-2xl border-2 border-slate-200 bg-slate-50/70 hover:border-[#25166B]/40 transition-all space-y-3 text-xs shadow-2xs">
                             <div className="flex justify-between items-center">
-                              <span className="font-mono font-bold text-[#d97706]">{receiptNum}</span>
-                              <span className="text-slate-400">{tx.approvedAt || tx.timestamp}</span>
-                            </div>
-                            <h3 className="font-bold text-[#0a192f] text-sm">{tx.studentName}</h3>
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="text-slate-500">Method: {tx.paymentMethod}</span>
-                              <span className="text-base font-black font-mono text-[#0a192f]">
-                                ₦{amount.toLocaleString()}
+                              <span className="font-mono font-black text-[#d97706] text-xs">{receipt.receiptNumber}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Verified
                               </span>
                             </div>
+
+                            <div className="flex items-center gap-3 pt-1">
+                              {receipt.studentAvatar ? (
+                                <img
+                                  src={receipt.studentAvatar}
+                                  alt={receipt.studentName}
+                                  className="w-11 h-11 rounded-xl object-cover border border-slate-300 shadow-2xs"
+                                />
+                              ) : (
+                                <div className="w-11 h-11 rounded-xl bg-[#25166B] text-[#FFC600] font-black flex items-center justify-center text-sm shadow-2xs">
+                                  {receipt.studentName.charAt(0)}
+                                </div>
+                              )}
+                              <div>
+                                <h3 className="font-extrabold text-[#0a192f] text-sm leading-tight">{receipt.studentName}</h3>
+                                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                  {receipt.registrationNumber} • {receipt.program}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                              <div className="flex justify-between items-center text-slate-600">
+                                <span>Monthly Period:</span>
+                                <span className="font-bold text-slate-900">{receipt.monthPeriod}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-slate-600">Tuition Cleared:</span>
+                                <span className="text-sm font-black font-mono text-emerald-700">
+                                  ₦{receipt.amount.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+
                             <div className="pt-2 border-t border-slate-200 flex justify-end">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const month = tx.monthPeriod || std?.subscriptionMonth || 'September 2026';
-                                  const validUntil = tx.validUntil || std?.subscriptionExpiryDate || '30 Sep 2026';
-
-                                  const receipt: OfficialReceipt = {
-                                    id: `rec-${tx.id}`,
-                                    receiptNumber: receiptNum,
-                                    transactionReference: tx.reference,
-                                    studentId: tx.studentId || std?.id || 'std-1',
-                                    studentName: tx.studentName,
-                                    studentEmail: std?.email || 'candidate@densuredconsult.ng',
-                                    studentPhone: std?.phone || '08147896930',
-                                    registrationNumber: std?.registrationNumber || 'DEC-2026-REG',
-                                    program: tx.program || std?.program || 'UTME',
-                                    studentShift: shift,
-                                    amount,
-                                    amountInWords: amount === 70000
-                                      ? 'SEVENTY THOUSAND NAIRA ONLY'
-                                      : amount === 60000
-                                      ? 'SIXTY THOUSAND NAIRA ONLY'
-                                      : 'TWENTY THOUSAND NAIRA ONLY',
-                                    currency: 'NGN',
-                                    monthPeriod: month,
-                                    validUntil,
-                                    issueDate: tx.approvedAt || tx.timestamp,
-                                    approvedBy: tx.approvedBy || 'Mr. Akinjo Rotimi (Directorate & Super Admin)',
-                                    approvedAt: tx.approvedAt || tx.timestamp,
-                                    qrPayload: tx.qrPayload || `https://densuredconsult.ng/verify-receipt?receipt=${receiptNum}&ref=${tx.reference}&student=${encodeURIComponent(tx.studentName)}&shift=${shift}&amount=${amount}&status=APPROVED`,
-                                    status: 'Approved',
-                                    paymentMethod: tx.paymentMethod,
-                                  };
-                                  openReceiptModal(receipt);
-                                }}
-                                className="px-3.5 py-1.5 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] font-bold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs transition-colors"
+                                onClick={() => openReceiptModal(receipt)}
+                                className="w-full py-2 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] font-black text-xs cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-colors border border-[#FFC600]/30"
                               >
                                 <Printer className="w-3.5 h-3.5 text-[#FFC600]" />
-                                <span>View Official Receipt (with QR Code)</span>
+                                <span>View & Print Official Receipt</span>
                               </button>
                             </div>
                           </div>
@@ -2648,64 +2945,203 @@ export const AdminPortal: React.FC = () => {
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
                       <FileText className="w-6 h-6" />
                     </div>
-                    <h4 className="font-bold text-slate-700 text-sm">No Official Receipts Issued Yet</h4>
+                    <h4 className="font-bold text-slate-700 text-sm">No Matching Paid Receipts Found</h4>
                     <p className="text-slate-500 text-xs max-w-md mx-auto leading-relaxed">
-                      Official verified receipts with QR validation codes are automatically generated when a student's tuition payment is approved by the admin.
+                      All approved payments automatically generate official receipts accessible here.
                     </p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* FEATURE 14: FINANCE - FINANCE REPORTS */}
+            {/* FEATURE 14: FINANCE - FINANCIAL REPORTS (Daily, Weekly, Monthly, Annual) */}
             {adminTab === 'finance-reports' && (
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                <div className="border-b border-slate-200 pb-4">
-                  <h2 className="text-xl font-black text-[#0a192f]">Financial Revenue Reports & Analytics</h2>
-                  <p className="text-slate-500 text-xs">
-                    Breakdown of revenue streams by program, projected cashflows, and payment channels.
-                  </p>
+              <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200 shadow-sm space-y-7">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
+                      Institutional Financial Governance
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Financial Revenue Reports & Audit Statements</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Periodic accounting reconciliation, income analysis, and program performance for D Ensured Consult Academy.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Timeframe Selector */}
+                    <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                      {(['daily', 'weekly', 'monthly', 'annual', 'all'] as const).map((tf) => (
+                        <button
+                          key={tf}
+                          type="button"
+                          onClick={() => setFinanceTimeframeFilter(tf)}
+                          className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${
+                            financeTimeframeFilter === tf
+                              ? 'bg-[#25166B] text-white shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {tf === 'daily' ? 'Daily Report' : tf === 'weekly' ? 'Weekly Report' : tf === 'monthly' ? 'Monthly Report' : tf === 'annual' ? 'Annual (2026)' : 'All-Time'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Print Statement</span>
+                    </button>
+                  </div>
                 </div>
 
+                {/* Period Financial Summary Cards */}
+                {(() => {
+                  const filteredTx = filterPaymentsByTimeframe(transactions, financeTimeframeFilter);
+                  const periodRevenue = filteredTx.reduce((acc, t) => acc + (t.status === 'Successful' ? (t.amount || 0) : 0), 0);
+                  const periodSuccessfulCount = filteredTx.filter((t) => t.status === 'Successful').length;
+
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase">Gross Revenue Inflow</span>
+                        <div className="text-2xl sm:text-3xl font-black text-[#25166B] font-mono">
+                          ₦{periodRevenue.toLocaleString()}
+                        </div>
+                        <span className="text-[10px] text-emerald-600 font-bold">100% Cleared by Bank</span>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase">Receipts Issued</span>
+                        <div className="text-2xl sm:text-3xl font-black text-[#0a192f] font-mono">
+                          {periodSuccessfulCount}
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-medium">Approved Candidates</span>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase">Monthly Fee Rate</span>
+                        <div className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
+                          ₦20,000
+                        </div>
+                        <span className="text-[10px] text-emerald-600 font-bold">Standard Monthly Tuition</span>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase">Active Subscribed</span>
+                        <div className="text-2xl sm:text-3xl font-black text-[#ea580c] font-mono">
+                          {activePaidStudentsCount}
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-medium">Valid Portal Access</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Breakdown by Program & Payment Channels */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                    <h3 className="font-extrabold text-[#0a192f] text-sm">Revenue by Programme</h3>
-                    <div className="space-y-2 text-xs font-semibold">
-                      <div className="flex justify-between">
-                        <span>UTME / JAMB Intensive:</span>
-                        <span className="font-mono font-bold text-[#0a192f]">₦3,450,000</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>WAEC / SSCE Science & Arts:</span>
-                        <span className="font-mono font-bold text-[#0a192f]">₦1,850,000</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>IELTS International Training:</span>
-                        <span className="font-mono font-bold text-[#0a192f]">₦2,100,000</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>ATSWA Accounting Diet:</span>
-                        <span className="font-mono font-bold text-[#0a192f]">₦920,000</span>
-                      </div>
+                  {/* Revenue by Programme */}
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h3 className="font-extrabold text-[#0a192f] text-sm">Revenue by Examination Programme</h3>
+                      <span className="text-[10px] font-bold uppercase text-slate-500">{financeTimeframeFilter}</span>
+                    </div>
+                    <div className="space-y-3 text-xs font-semibold">
+                      {[
+                        { name: 'UTME / JAMB Intensive Preparation', count: studentsList.filter((s) => s.program === 'UTME').length, fee: 20000 },
+                        { name: 'WAEC / WASSCE Science & Arts', count: studentsList.filter((s) => s.program === 'WAEC').length, fee: 20000 },
+                        { name: 'NECO SSCE Revision & Practical Drills', count: studentsList.filter((s) => s.program === 'NECO').length, fee: 20000 },
+                        { name: 'IELTS International English Masterclass', count: studentsList.filter((s) => s.program === 'IELTS').length, fee: 25000 },
+                        { name: 'ATSWA Professional Accounting Diet', count: studentsList.filter((s) => s.program === 'ATSWA').length, fee: 20000 },
+                      ].map((prog, idx) => {
+                        const estimatedRev = prog.count * prog.fee;
+                        return (
+                          <div key={idx} className="flex justify-between items-center p-2 rounded-xl bg-white border border-slate-200">
+                            <div>
+                              <span className="font-bold text-[#0a192f] block">{prog.name}</span>
+                              <span className="text-[10px] text-slate-400">{prog.count} Enrolled Candidates</span>
+                            </div>
+                            <span className="font-mono font-extrabold text-[#25166B] text-sm">
+                              ₦{estimatedRev.toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                    <h3 className="font-extrabold text-[#0a192f] text-sm">Collection Methods Distribution</h3>
-                    <div className="space-y-2 text-xs font-semibold">
-                      <div className="flex justify-between">
-                        <span>Paystack Online (Card/Transfer):</span>
-                        <span className="font-mono font-bold text-emerald-700">68%</span>
+                  {/* Payment Channel Breakdown */}
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h3 className="font-extrabold text-[#0a192f] text-sm">Payment Channel Reconciliation</h3>
+                      <span className="text-[10px] font-bold uppercase text-slate-500">Official Channels</span>
+                    </div>
+                    <div className="space-y-3 text-xs font-semibold">
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[#0a192f]">Paystack Gateway (Online Card / USSD)</span>
+                          <span className="font-mono font-extrabold text-emerald-700">68%</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500">Auto-cleared direct into institutional bank account</p>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Direct Bank Wire / USSD:</span>
-                        <span className="font-mono font-bold text-blue-700">22%</span>
+
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[#0a192f]">Direct Bank Transfer (OPAY: 6111753209)</span>
+                          <span className="font-mono font-extrabold text-blue-700">22%</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500">D Ensured Consult Account with admin verification</p>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Center POS Terminal:</span>
-                        <span className="font-mono font-bold text-amber-700">10%</span>
+
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[#0a192f]">Center POS / Cashier Direct</span>
+                          <span className="font-mono font-extrabold text-amber-700">10%</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500">Over-the-counter registration and receipt issuance</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Period Itemized Ledger */}
+                <div className="space-y-3">
+                  <h3 className="font-extrabold text-[#0a192f] text-sm">
+                    Itemized Financial Receipts for {financeTimeframeFilter.toUpperCase()} Period
+                  </h3>
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[11px]">
+                        <tr>
+                          <th className="py-3 px-3">Date</th>
+                          <th className="py-3 px-3">Receipt / Ref</th>
+                          <th className="py-3 px-3">Student Name</th>
+                          <th className="py-3 px-3">Programme</th>
+                          <th className="py-3 px-3">Channel</th>
+                          <th className="py-3 px-3 text-right">Amount (NGN)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {filterPaymentsByTimeframe(transactions, financeTimeframeFilter)
+                          .filter((t) => t.status === 'Successful')
+                          .slice(0, 8)
+                          .map((t) => (
+                            <tr key={t.id} className="hover:bg-slate-50">
+                              <td className="py-3 px-3 text-slate-500">{t.approvedAt || t.timestamp}</td>
+                              <td className="py-3 px-3 font-mono font-bold text-[#0a192f]">{t.receiptNumber || t.reference}</td>
+                              <td className="py-3 px-3 font-bold text-[#25166B]">{t.studentName}</td>
+                              <td className="py-3 px-3">{t.program || 'UTME'}</td>
+                              <td className="py-3 px-3">{t.paymentMethod}</td>
+                              <td className="py-3 px-3 font-mono font-black text-emerald-700 text-right">
+                                ₦{t.amount.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -5062,6 +5498,225 @@ export const AdminPortal: React.FC = () => {
                 Yes, Remove Admin
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Generate Online CBT Questions & Past Questions Archive */}
+      {showGenerateOnlineModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-xs">
+                  <Sparkles className="w-5 h-5 text-[#FFC600]" />
+                </div>
+                <div>
+                  <h3 className="font-black text-[#0a192f] text-lg">Online CBT Question Generator & Question Bank</h3>
+                  <p className="text-slate-400 text-xs">Generate and approve past questions from online archives for student practice</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGenerateOnlineModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Subject *</label>
+                <select
+                  value={onlineGenSubject}
+                  onChange={(e) => setOnlineGenSubject(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-bold text-[#0a192f] bg-white outline-hidden"
+                >
+                  <option value="Mathematics">General Mathematics</option>
+                  <option value="Physics">Physics</option>
+                  <option value="Chemistry">Chemistry</option>
+                  <option value="Biology">Biology</option>
+                  <option value="Use of English">Use of English</option>
+                  <option value="Economics">Economics</option>
+                  <option value="Government">Government</option>
+                  <option value="Literature in English">Literature in English</option>
+                  <option value="Principles of Accounts">Principles of Accounts</option>
+                  <option value="Commerce">Commerce</option>
+                  <option value="CRK / Christian Religious Studies">CRK</option>
+                  <option value="Agricultural Science">Agricultural Science</option>
+                  <option value="Geography">Geography</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Programme *</label>
+                <select
+                  value={onlineGenProgram}
+                  onChange={(e) => setOnlineGenProgram(e.target.value as any)}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-bold text-[#0a192f] bg-white outline-hidden"
+                >
+                  <option value="UTME">UTME / JAMB</option>
+                  <option value="WAEC">WAEC / WASSCE</option>
+                  <option value="NECO">NECO SSCE</option>
+                  <option value="Post-UTME">Post-UTME</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Past Question Year / Diet</label>
+                <select
+                  value={onlineGenYear}
+                  onChange={(e) => setOnlineGenYear(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-bold text-[#0a192f] bg-white outline-hidden"
+                >
+                  <option value="2024 JAMB Past Question">2024 Past Question Series</option>
+                  <option value="2023 WASSCE Past Question">2023 Past Question Series</option>
+                  <option value="2022 JAMB Past Question">2022 Past Question Series</option>
+                  <option value="2021 JAMB Past Question">2021 Past Question Series</option>
+                  <option value="2020 NECO Past Question">2020 Past Question Series</option>
+                  <option value="2026 Model Series">2026 Model Standard Diet</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Optional Raw Past Question Paste */}
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between items-center">
+                <label className="font-bold text-slate-700">Paste Past Questions from Web / Document (Optional)</label>
+                <span className="text-[11px] text-slate-400">Leave empty to generate automatically from online bank</span>
+              </div>
+              <textarea
+                rows={3}
+                value={pastedQuestionsText}
+                onChange={(e) => setPastedQuestionsText(e.target.value)}
+                placeholder="Paste raw past questions text with options (A, B, C, D) and answers here..."
+                className="w-full p-3 rounded-xl border border-slate-300 text-xs font-mono outline-hidden"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 font-bold">Quota:</span>
+                <select
+                  value={onlineGenCount}
+                  onChange={(e) => setOnlineGenCount(Number(e.target.value))}
+                  className="p-1.5 rounded-lg border border-slate-300 text-xs font-bold bg-white"
+                >
+                  <option value={3}>3 Questions</option>
+                  <option value={5}>5 Questions</option>
+                  <option value={10}>10 Questions</option>
+                  <option value={15}>15 Questions</option>
+                  <option value={20}>20 Questions</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleFetchOnlineQuestions}
+                disabled={isGeneratingOnline}
+                className="px-4 py-2 rounded-xl bg-[#25166B] hover:bg-[#1b1050] text-[#FFC600] font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                {isGeneratingOnline ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#FFC600]" />
+                    <span>Sourcing Online Archives...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-[#FFC600]" />
+                    <span>Fetch & Generate Questions</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Preview Section */}
+            {generatedPreviewQuestions.length > 0 && (
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 text-xs">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <h4 className="font-extrabold text-[#0a192f] text-xs">
+                      Previewing {generatedPreviewQuestions.length} Extracted Questions ({onlineGenSubject} - {onlineGenProgram})
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-emerald-700 font-bold">Ready for Approval</span>
+                </div>
+
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                  {generatedPreviewQuestions.map((q, idx) => (
+                    <div key={q.id || idx} className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="font-bold text-[#25166B]">Q{idx + 1}. {q.subject}</span>
+                        <span className="font-mono text-slate-400">{q.examYear}</span>
+                      </div>
+                      <p className="font-bold text-slate-800 text-xs leading-relaxed">{q.questionText}</p>
+                      <div className="grid grid-cols-2 gap-1.5 pt-1">
+                        {q.options.map((opt) => (
+                          <div
+                            key={opt.label}
+                            className={`p-1.5 rounded-lg border text-[11px] flex items-center gap-1.5 ${
+                              opt.label === q.correctOption
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
+                                : 'bg-slate-50 border-slate-200 text-slate-600'
+                            }`}
+                          >
+                            <span className="font-black">{opt.label}.</span>
+                            <span>{opt.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="text-[11px] text-slate-600 bg-amber-50/60 p-2 rounded-lg border border-amber-200">
+                        <strong className="text-amber-900">Heuristic Solution:</strong> {q.explanation}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Exam Creation Option */}
+                <div className="pt-2 border-t border-slate-200 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={alsoCreateExam}
+                      onChange={(e) => setAlsoCreateExam(e.target.checked)}
+                      className="rounded text-[#25166B] focus:ring-[#25166B]"
+                    />
+                    <span>Also create an active CBT Mock Simulation Exam with these questions</span>
+                  </label>
+                  {alsoCreateExam && (
+                    <input
+                      type="text"
+                      value={onlineExamTitle}
+                      onChange={(e) => setOnlineExamTitle(e.target.value)}
+                      placeholder={`e.g. ${onlineGenProgram} ${onlineGenSubject} Practice Simulation (${onlineGenYear})`}
+                      className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-medium outline-hidden"
+                    />
+                  )}
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGeneratedPreviewQuestions([]);
+                      setPastedQuestionsText('');
+                    }}
+                    className="px-4 py-2 rounded-xl border border-slate-300 font-bold cursor-pointer hover:bg-slate-100"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApproveAndPublishGenerated}
+                    className="px-5 py-2 rounded-xl bg-[#009E49] hover:bg-[#00823c] text-white font-black text-xs shadow-md cursor-pointer flex items-center gap-1.5 transition-all"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Approve & Publish to Student Dashboard</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

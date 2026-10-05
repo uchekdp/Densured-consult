@@ -24,6 +24,7 @@ import {
   GalleryItem,
   UploadedQuestionBatch,
   MonthlyPaymentSubmission,
+  MockTestResult,
 } from '../types';
 import { OfficialReceiptModal } from '../components/common/OfficialReceiptModal';
 import {
@@ -215,6 +216,7 @@ interface AppContextType {
   deleteStudyMaterial: (id: string) => void;
   practiceQuestions: PracticeQuestion[];
   addPracticeQuestion: (q: Omit<PracticeQuestion, 'id'>) => void;
+  addMultiplePracticeQuestions: (questions: (Omit<PracticeQuestion, 'id'> | PracticeQuestion)[]) => void;
   deletePracticeQuestion: (id: string) => void;
 
   // Question Batches (Word/PDF upload & approval)
@@ -2380,6 +2382,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('success', 'Question Added', 'New CBT practice item logged in database.');
   };
 
+  const addMultiplePracticeQuestions = (questions: (Omit<PracticeQuestion, 'id'> | PracticeQuestion)[]) => {
+    const newItems: PracticeQuestion[] = questions.map((q, idx) => ({
+      ...q,
+      id: (q as any).id || `pq-${Date.now()}-${idx}-${Math.floor(100 + Math.random() * 900)}`,
+      status: 'Approved' as const,
+    }));
+    setPracticeQuestions((prev) => [...newItems, ...prev]);
+    newItems.forEach((item) => {
+      setDoc(doc(db, 'practice_questions', item.id), item).catch(() => {});
+    });
+    addAuditLog('Batch Questions Added', `Added ${newItems.length} CBT practice questions`);
+    showToast('success', 'Questions Published', `${newItems.length} CBT questions approved and published to student portals.`);
+  };
+
   const deletePracticeQuestion = (id: string) => {
     setPracticeQuestions((prev) => {
       const updated = prev.filter((q) => q.id !== id);
@@ -2754,8 +2770,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         minute: '2-digit',
       }),
     };
+
     setCbtAttempts((prev) => [newAttempt, ...prev]);
-    showToast('success', 'CBT Test Submitted', `Score: ${newAttempt.score}/${newAttempt.maxScore} (${newAttempt.percentage}%)`);
+
+    // Requirement: Academic progression based on CBT practice score and performance
+    setStudentsList((prevStudents) =>
+      prevStudents.map((std) => {
+        if (std.id === attempt.studentId || std.registrationNumber === attempt.registrationNumber) {
+          const studentAttempts = [newAttempt, ...cbtAttempts.filter((a) => a.studentId === std.id || a.registrationNumber === std.registrationNumber)];
+          const avgScore = Math.round(
+            studentAttempts.reduce((acc, a) => acc + (a.score || 0), 0) / (studentAttempts.length || 1)
+          );
+          const newSyllabus = Math.min(100, Math.max(20, (std.syllabusCompletion || 50) + 4));
+
+          const mockResult: MockTestResult = {
+            id: `mtr-${newAttempt.id}`,
+            title: newAttempt.examTitle || 'CBT Practice Mock Simulation',
+            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            program: (std.program || 'UTME') as any,
+            totalScore: newAttempt.score,
+            maxScore: newAttempt.maxScore,
+            percentage: newAttempt.percentage,
+            percentile: Math.min(99, Math.round(newAttempt.percentage * 0.95)),
+            status: 'Completed',
+            subjects: (std.selectedSubjects || std.subjectCombinations || ['Use of English', 'Mathematics']).map((s) => ({
+              subject: s,
+              score: Math.round(newAttempt.percentage * 0.95),
+              maxScore: 100,
+              grade: newAttempt.percentage >= 75 ? 'A1' : newAttempt.percentage >= 65 ? 'B2' : newAttempt.percentage >= 50 ? 'C4' : 'F9',
+              trend: 'up',
+              teacherFeedback: newAttempt.percentage >= 70 ? 'Excellent mastery in CBT practice heuristics.' : 'Review missed question explanations for speed pacing.',
+            })),
+          };
+
+          const updatedStudent: StudentProfile = {
+            ...std,
+            currentAverageScore: avgScore,
+            syllabusCompletion: newSyllabus,
+            recentMockTests: [mockResult, ...(std.recentMockTests || [])],
+          };
+
+          if (currentStudent && (currentStudent.id === std.id || currentStudent.registrationNumber === std.registrationNumber)) {
+            setCurrentStudent(updatedStudent);
+          }
+
+          setDoc(doc(db, 'students', std.id), updatedStudent).catch(() => {});
+          return updatedStudent;
+        }
+        return std;
+      })
+    );
+
+    addAuditLog('CBT Attempt Recorded', `${newAttempt.studentName} completed ${newAttempt.examTitle}: ${newAttempt.score}/${newAttempt.maxScore} (${newAttempt.percentage}%)`);
+    showToast('success', 'CBT Test Submitted', `Score: ${newAttempt.score}/${newAttempt.maxScore} (${newAttempt.percentage}%) - Academic progress updated!`);
   };
 
   const saveAttendanceSession = (session: DailyAttendanceSession) => {
@@ -3365,6 +3432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteStudyMaterial,
         practiceQuestions,
         addPracticeQuestion,
+        addMultiplePracticeQuestions,
         deletePracticeQuestion,
 
         questionBatches,

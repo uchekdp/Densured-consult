@@ -44,6 +44,7 @@ import {
   UserCheck,
   Upload,
   Camera,
+  BookCheck,
 } from 'lucide-react';
 
 export const StudentPortal: React.FC = () => {
@@ -352,6 +353,10 @@ export const StudentPortal: React.FC = () => {
     return () => clearInterval(timer);
   }, [activeCbtExamId, isExamCompleted, examTimeLeft]);
 
+  const [selectedCbtSubjectFilter, setSelectedCbtSubjectFilter] = useState<string>('All');
+  const [cbtReviewFilter, setCbtReviewFilter] = useState<'failed' | 'all'>('failed');
+  const [completedExamQuestions, setCompletedExamQuestions] = useState<PracticeQuestion[]>([]);
+
   const registeredSubjects = currentStudent.selectedSubjects?.length
     ? currentStudent.selectedSubjects
     : currentStudent.subjectCombinations?.length
@@ -360,7 +365,7 @@ export const StudentPortal: React.FC = () => {
 
   // CBT questions dynamically generated from student's registered subjects
   const studentCbtQuestions = useMemo(() => {
-    const matching = practiceQuestions.filter((q) =>
+    let matching = practiceQuestions.filter((q) =>
       registeredSubjects.some(
         (subj) =>
           subj &&
@@ -369,8 +374,19 @@ export const StudentPortal: React.FC = () => {
             q.subject.toLowerCase().includes(subj.toLowerCase()))
       )
     );
-    return matching.length >= 4 ? matching : practiceQuestions;
-  }, [practiceQuestions, registeredSubjects]);
+    if (matching.length === 0) matching = practiceQuestions;
+
+    if (selectedCbtSubjectFilter !== 'All') {
+      const bySubject = matching.filter(
+        (q) =>
+          q.subject.toLowerCase().includes(selectedCbtSubjectFilter.toLowerCase()) ||
+          selectedCbtSubjectFilter.toLowerCase().includes(q.subject.toLowerCase())
+      );
+      if (bySubject.length > 0) return bySubject;
+    }
+
+    return matching;
+  }, [practiceQuestions, registeredSubjects, selectedCbtSubjectFilter]);
 
   // Study materials tailored to student's chosen subjects or all uploaded materials
   const filteredStudyMaterials = useMemo(() => {
@@ -399,6 +415,7 @@ export const StudentPortal: React.FC = () => {
     setExamTimeLeft(600);
     setIsExamCompleted(false);
     setExamScore(null);
+    setCompletedExamQuestions([]);
     showToast('info', 'CBT Mock Started', `Simulation generated for your registered subjects: ${registeredSubjects.join(', ')}`);
   };
 
@@ -410,7 +427,8 @@ export const StudentPortal: React.FC = () => {
   };
 
   const handleFinishExam = () => {
-    const examQuestions = studentCbtQuestions.slice(0, 5);
+    const examQuestions = studentCbtQuestions;
+    setCompletedExamQuestions(examQuestions);
     let correctCount = 0;
     examQuestions.forEach((q: PracticeQuestion, idx: number) => {
       if (selectedAnswers[idx] === q.correctOption) {
@@ -418,7 +436,7 @@ export const StudentPortal: React.FC = () => {
       }
     });
 
-    const total = examQuestions.length;
+    const total = examQuestions.length || 1;
     const percentage = Math.round((correctCount / total) * 100);
     const scaledScore = Math.round((percentage / 100) * 400);
 
@@ -432,7 +450,7 @@ export const StudentPortal: React.FC = () => {
     const activeExam = cbtExams.find((e) => e.id === activeCbtExamId);
     recordCBTAttempt({
       examId: activeCbtExamId || 'cbt-jam-01',
-      examTitle: activeExam ? `${activeExam.title}` : 'Registered Subject Mock Simulation',
+      examTitle: activeExam ? `${activeExam.title}` : `${selectedCbtSubjectFilter === 'All' ? 'Registered Subjects' : selectedCbtSubjectFilter} CBT Practice`,
       studentId: currentStudent.id,
       studentName: currentStudent.fullName,
       registrationNumber: currentStudent.registrationNumber,
@@ -1757,22 +1775,78 @@ export const StudentPortal: React.FC = () => {
         {/* TAB 5: CBT & EXAMINATIONS: MOCK EXAMS (CBT) */}
         {studentTab === 'cbt-mocks' && (
           <div className="space-y-6">
-            {!activeCbtExamId ? (
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                <div className="border-b border-slate-200 pb-4">
-                  <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">
-                    Computer-Based Test (CBT) Mock Simulations
-                  </h2>
-                  <p className="text-slate-500 text-xs mt-0.5">
-                    Real JAMB/WAEC exam simulation environment with countdown timer and instant heuristic grading.
+            {!isSubscriptionActive ? (
+              <div className="bg-amber-50 border-2 border-amber-500/40 rounded-3xl p-7 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+                  <Lock className="w-7 h-7 text-amber-700" />
+                </div>
+                <div className="max-w-md mx-auto space-y-1.5">
+                  <h3 className="text-xl font-black text-[#0a192f]">CBT Practice Feature Locked</h3>
+                  <p className="text-slate-600 text-xs leading-relaxed">
+                    Access to Computer-Based Test (CBT) simulations and past questions bank requires your full monthly tuition payment of <strong>₦20,000</strong> to be approved by the admin in the admin dashboard.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setStudentTab('finance')}
+                  className="px-5 py-2.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+                >
+                  Renew / Verify Monthly Payment
+                </button>
+              </div>
+            ) : !activeCbtExamId ? (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
+                      Exam Standard Simulation
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">
+                      Computer-Based Test (CBT) Practice Hub
+                    </h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Practice past questions tailored to your registered subjects with instant scoring and heuristic explanations.
+                    </p>
+                  </div>
 
+                  {/* Registered Subject Filter Toggle */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 font-bold">Subject:</span>
+                    <select
+                      value={selectedCbtSubjectFilter}
+                      onChange={(e) => setSelectedCbtSubjectFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-white outline-hidden focus:border-[#25166B]"
+                    >
+                      <option value="All">All Registered Subjects ({registeredSubjects.length})</option>
+                      {registeredSubjects.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Candidate's Registered Subjects Banner */}
+                <div className="p-4 bg-sky-50/70 rounded-2xl border border-sky-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <BookCheck className="w-5 h-5 text-[#0284c7]" />
+                    <div>
+                      <span className="font-extrabold text-[#0a192f]">Your Registered Subject Combination:</span>
+                      <p className="text-slate-600 text-[11px] mt-0.5">
+                        {registeredSubjects.join(' • ')} ({currentStudent.program} Track)
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                    {studentCbtQuestions.length} Questions in Pool
+                  </span>
+                </div>
+
+                {/* CBT Exam Simulations Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {cbtExams.map((exam) => (
                     <div
                       key={exam.id}
-                      className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all space-y-3"
+                      className="p-5 rounded-2xl border-2 border-slate-200 bg-slate-50/50 hover:border-[#d97706]/60 hover:bg-slate-50 transition-all space-y-3.5 shadow-2xs"
                     >
                       <div className="flex items-center justify-between">
                         <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#d97706] uppercase">
@@ -1788,13 +1862,15 @@ export const StudentPortal: React.FC = () => {
                       <p className="text-xs text-slate-600 leading-relaxed">{exam.instructions}</p>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
-                        <span className="text-slate-500 font-medium">Questions: <strong>{exam.totalQuestions} items</strong></span>
+                        <span className="text-slate-500 font-medium">
+                          Target Subjects: <strong>{selectedCbtSubjectFilter === 'All' ? 'Registered Combination' : selectedCbtSubjectFilter}</strong>
+                        </span>
                         <button
                           onClick={() => handleStartExam(exam.id)}
                           className="px-4 py-2 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-white font-extrabold text-xs shadow-sm cursor-pointer transition-all flex items-center gap-1.5"
                         >
                           <PlayCircle className="w-4 h-4" />
-                          <span>Start Simulation</span>
+                          <span>Start CBT Practice</span>
                         </button>
                       </div>
                     </div>
@@ -1840,7 +1916,7 @@ export const StudentPortal: React.FC = () => {
                     <div>
                       {/* Question Pallet */}
                       <div className="flex flex-wrap gap-1.5 mb-6 pb-4 border-b border-slate-200">
-                        {studentCbtQuestions.slice(0, 5).map((_: PracticeQuestion, idx: number) => (
+                        {studentCbtQuestions.map((_: PracticeQuestion, idx: number) => (
                           <button
                             key={idx}
                             onClick={() => setCurrentQuestionIndex(idx)}
@@ -1866,7 +1942,7 @@ export const StudentPortal: React.FC = () => {
                                 {studentCbtQuestions[currentQuestionIndex].subject}
                               </span>
                               <span className="text-xs text-slate-400 font-bold">
-                                Question {currentQuestionIndex + 1} of 5
+                                Question {currentQuestionIndex + 1} of {studentCbtQuestions.length}
                               </span>
                             </div>
                             <p className="text-base sm:text-lg font-bold text-[#0a192f] leading-relaxed">
@@ -1913,7 +1989,7 @@ export const StudentPortal: React.FC = () => {
                               ← Previous Question
                             </button>
 
-                            {currentQuestionIndex < 4 ? (
+                            {currentQuestionIndex < studentCbtQuestions.length - 1 ? (
                               <button
                                 onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
                                 className="px-5 py-2 rounded-xl bg-[#0a192f] text-white font-bold text-xs cursor-pointer hover:bg-[#112240]"
@@ -1933,40 +2009,176 @@ export const StudentPortal: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    /* Score Screen */
-                    <div className="text-center py-6 space-y-4 max-w-md mx-auto">
-                      <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                        <Check className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-2xl font-black text-[#0a192f]">Simulation Completed!</h3>
-                      <p className="text-slate-600 text-xs">
-                        Your test attempt has been officially scored and archived into your results ledger.
-                      </p>
-
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-2">
-                        <span className="text-xs text-slate-500 uppercase font-bold">Estimated JAMB Scaled Score</span>
-                        <div className="text-4xl font-black text-[#d97706] font-mono">
-                          {Math.round(((examScore?.percentage || 0) / 100) * 400)} / 400
+                    /* Score Screen & Failed Questions Heuristic Explanations Review */
+                    <div className="space-y-6">
+                      <div className="text-center py-4 space-y-3 max-w-md mx-auto">
+                        <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                          <Check className="w-8 h-8" />
                         </div>
-                        <p className="text-xs text-slate-600 font-medium">
-                          Accuracy: {examScore?.correct} of {examScore?.total} correct ({examScore?.percentage}%)
+                        <h3 className="text-2xl font-black text-[#0a192f]">Practice Simulation Completed!</h3>
+                        <p className="text-slate-600 text-xs">
+                          Your test has been officially scored and your academic progression has been updated.
                         </p>
+
+                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
+                          <span className="text-xs text-slate-500 uppercase font-bold">Estimated JAMB / WAEC Scaled Score</span>
+                          <div className="text-4xl font-black text-[#d97706] font-mono">
+                            {Math.round(((examScore?.percentage || 0) / 100) * 400)} / 400
+                          </div>
+                          <p className="text-xs text-slate-600 font-medium">
+                            Accuracy: {examScore?.correct} of {examScore?.total} correct ({examScore?.percentage}%) • Status:{' '}
+                            <strong className={(examScore?.percentage || 0) >= 60 ? 'text-emerald-700' : 'text-red-600'}>
+                              {(examScore?.percentage || 0) >= 60 ? 'PASSED' : 'NEEDS IMPROVEMENT'}
+                            </strong>
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2 justify-center pt-2">
+                          <button
+                            onClick={() => setActiveCbtExamId(null)}
+                            className="px-5 py-2.5 rounded-xl bg-[#0a192f] text-white font-bold text-xs cursor-pointer hover:bg-[#112240]"
+                          >
+                            Return to CBT Hub
+                          </button>
+                          <button
+                            onClick={() => handleStartExam(activeCbtExamId || 'cbt-jam-01')}
+                            className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs cursor-pointer hover:bg-slate-100 flex items-center gap-1.5"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Retake Test</span>
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="flex gap-2 justify-center pt-2">
-                        <button
-                          onClick={() => setActiveCbtExamId(null)}
-                          className="px-5 py-2.5 rounded-xl bg-[#0a192f] text-white font-bold text-xs cursor-pointer hover:bg-[#112240]"
-                        >
-                          Return to CBT Hub
-                        </button>
-                        <button
-                          onClick={() => handleStartExam(activeCbtExamId || 'cbt-jam-01')}
-                          className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs cursor-pointer hover:bg-slate-100 flex items-center gap-1.5"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Retake Test</span>
-                        </button>
+                      {/* Missed Questions & Explanations Review Section */}
+                      <div className="border-t border-slate-200 pt-6 space-y-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                          <div>
+                            <h4 className="font-black text-[#0a192f] text-sm">
+                              Detailed Answers & Heuristic Solution Review
+                            </h4>
+                            <p className="text-slate-500 text-xs">
+                              Review step-by-step explanations for questions to master the concepts.
+                            </p>
+                          </div>
+
+                          <div className="flex bg-white p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                            <button
+                              type="button"
+                              onClick={() => setCbtReviewFilter('failed')}
+                              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                                cbtReviewFilter === 'failed'
+                                  ? 'bg-red-600 text-white shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900'
+                              }`}
+                            >
+                              Failed Questions ({completedExamQuestions.filter((_, idx) => selectedAnswers[idx] !== completedExamQuestions[idx]?.correctOption).length})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCbtReviewFilter('all')}
+                              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                                cbtReviewFilter === 'all'
+                                  ? 'bg-[#0a192f] text-white shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900'
+                              }`}
+                            >
+                              All Questions ({completedExamQuestions.length})
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Questions List with Explanations */}
+                        <div className="space-y-4">
+                          {completedExamQuestions
+                            .map((q, idx) => ({ q, idx, userAns: selectedAnswers[idx], isCorrect: selectedAnswers[idx] === q.correctOption }))
+                            .filter((item) => (cbtReviewFilter === 'failed' ? !item.isCorrect : true))
+                            .map(({ q, idx, userAns, isCorrect }) => (
+                              <div
+                                key={q.id || idx}
+                                className={`p-5 rounded-2xl border-2 space-y-3 text-xs transition-all ${
+                                  isCorrect
+                                    ? 'bg-emerald-50/50 border-emerald-200'
+                                    : 'bg-red-50/40 border-red-200'
+                                }`}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#FFC600]">
+                                      {q.subject}
+                                    </span>
+                                    <span className="font-bold text-[#0a192f]">Question {idx + 1}</span>
+                                  </div>
+                                  <span
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                      isCorrect
+                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                        : 'bg-red-100 text-red-800 border border-red-300'
+                                    }`}
+                                  >
+                                    {isCorrect ? '✓ Correct Answer' : '✕ Missed / Failed'}
+                                  </span>
+                                </div>
+
+                                <p className="font-bold text-slate-900 text-sm leading-relaxed">
+                                  {q.questionText}
+                                </p>
+
+                                {/* Options breakdown */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                  {q.options.map((opt) => {
+                                    const isUserChoice = userAns === opt.label;
+                                    const isCorrectOpt = opt.label === q.correctOption;
+
+                                    return (
+                                      <div
+                                        key={opt.label}
+                                        className={`p-3 rounded-xl border flex items-center gap-2.5 ${
+                                          isCorrectOpt
+                                            ? 'border-emerald-500 bg-emerald-100/70 text-emerald-900 font-bold'
+                                            : isUserChoice && !isCorrectOpt
+                                            ? 'border-red-400 bg-red-100/70 text-red-900 font-bold'
+                                            : 'border-slate-200 bg-white text-slate-600'
+                                        }`}
+                                      >
+                                        <span
+                                          className={`w-6 h-6 rounded-md flex items-center justify-center font-black text-xs shrink-0 ${
+                                            isCorrectOpt
+                                              ? 'bg-emerald-600 text-white'
+                                              : isUserChoice && !isCorrectOpt
+                                              ? 'bg-red-600 text-white'
+                                              : 'bg-slate-100 text-slate-600'
+                                          }`}
+                                        >
+                                          {opt.label}
+                                        </span>
+                                        <span className="text-xs">{opt.text}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Step-by-Step Heuristic Solution */}
+                                <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-1">
+                                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                                    <span>Step-by-Step Solution & Heuristic Explanation:</span>
+                                  </div>
+                                  <p className="text-slate-700 text-xs leading-relaxed">
+                                    {q.explanation}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+
+                          {cbtReviewFilter === 'failed' &&
+                            completedExamQuestions.filter((_, idx) => selectedAnswers[idx] !== completedExamQuestions[idx]?.correctOption).length === 0 && (
+                              <div className="p-8 text-center bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-800 font-bold text-xs space-y-1">
+                                <p className="text-sm font-black">Outstanding Work! 100% Correct</p>
+                                <p className="text-emerald-600">You did not fail any questions in this practice simulation.</p>
+                              </div>
+                            )}
+                        </div>
                       </div>
                     </div>
                   )}
