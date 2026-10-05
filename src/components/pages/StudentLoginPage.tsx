@@ -62,10 +62,24 @@ export const StudentLoginPage: React.FC = () => {
         localStorage.setItem('deca_role', 'student');
         localStorage.setItem('deca_student_id', res.data.student.student_id);
 
-        setIsStudentLoggedIn(true);
-        setCurrentStudent(res.data.student);
+        const raw = res.data.student;
+        const normalized = {
+          ...raw,
+          id: raw.id || raw.student_id,
+          student_id: raw.student_id || raw.id,
+          registrationNumber: raw.registrationNumber || raw.student_id,
+          fullName: raw.fullName || raw.full_name || 'Enrolled Student',
+          full_name: raw.fullName || raw.full_name || 'Enrolled Student',
+          avatar: raw.avatar || raw.photo_url || raw.photoUrl || '',
+          photoUrl: raw.photoUrl || raw.photo_url || raw.avatar || '',
+          photo_url: raw.photo_url || raw.photoUrl || raw.avatar || '',
+          passportPhotoUrl: raw.passportPhotoUrl || raw.photo_url || raw.avatar || '',
+        };
 
-        showToast(`Welcome back, ${res.data.student.full_name}!`, 'success');
+        setIsStudentLoggedIn(true);
+        setCurrentStudent(normalized);
+
+        showToast(`Welcome back, ${normalized.fullName}!`, 'success');
         setCurrentPage('student-portal');
       } else {
         setErrorMsg(localRes.message || res.error || 'Invalid credentials. Please verify your Email Address and password.');

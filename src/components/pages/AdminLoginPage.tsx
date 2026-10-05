@@ -53,6 +53,10 @@ export const AdminLoginPage: React.FC = () => {
           <p className="text-xs text-slate-500">
             D Ensured Consult Directorate • Confidential Terminal
           </p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-[11px] font-mono text-slate-600 border border-slate-200">
+            <Lock className="w-3 h-3 text-[#0284c7]" />
+            <span>https://www.densuredconsultacademy.com.ng/admin</span>
+          </div>
         </div>
 
         {errorMsg && (

@@ -553,7 +553,13 @@ apiRouter.post('/students/register', (req, res) => {
     res.status(201).json({
       success: true,
       student_id: studentId,
-      student: newStudent,
+      student: {
+        ...newStudent,
+        registrationNumber: studentId,
+        fullName: newStudent.full_name,
+        photoUrl: newStudent.photo_url,
+        passportPhotoUrl: newStudent.photo_url,
+      },
       message: 'Registration submitted successfully. Please proceed to submit your tuition payment.',
     });
   } catch (err: any) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useApp, AdminPortalTab } from '../../context/AppContext';
+import { useApp, AdminPortalTab, findValidPhoto } from '../../context/AppContext';
 import {
   StudentProfile,
   ProgramItem,
@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Lock,
   UserCheck,
+  User,
   Users,
   Calendar,
   CreditCard,
@@ -134,12 +135,13 @@ export const AdminPortal: React.FC = () => {
     fullName: '',
     email: '',
     phone: '',
+    avatar: '',
     program: 'UTME' as any,
     studyMode: 'Physical Weekday' as any,
     targetScore: '320+',
     targetExamDate: 'April 2026',
-    tuitionTotal: 85000,
-    tuitionPaid: 50000,
+    tuitionTotal: 20000,
+    tuitionPaid: 20000,
   });
 
   // Daily attendance session creator state
@@ -383,11 +385,38 @@ export const AdminPortal: React.FC = () => {
       paymentMethod: 'Bank Transfer',
     };
 
+    const matchingApp = applications.find(
+      (a) =>
+        (a.email && (a.email || '').toLowerCase() === (student.email || '').toLowerCase()) ||
+        (a.fullName && (a.fullName || '').toLowerCase() === (student.fullName || '').toLowerCase()) ||
+        a.id === student.id ||
+        a.id === student.registrationNumber ||
+        (a as any).student_id === student.id ||
+        (a as any).student_id === student.registrationNumber
+    );
+
+    const finalAvatar = findValidPhoto(
+      student.passportPhotoUrl,
+      student.photoUrl,
+      student.photo_url,
+      student.avatar,
+      matchingApp?.passportPhotoUrl,
+      (matchingApp as any)?.photoUrl,
+      (matchingApp as any)?.photo_url,
+      (matchingApp as any)?.avatar,
+      (student.email && localStorage.getItem(`dec_photo_${student.email.toLowerCase().trim()}`)),
+      (student.id && localStorage.getItem(`dec_photo_${student.id}`)),
+      (student.registrationNumber && localStorage.getItem(`dec_photo_${student.registrationNumber}`))
+    );
+
     setIdCardReceiptModal({
       isOpen: true,
-      receipt: receiptData,
+      receipt: {
+        ...receiptData,
+        studentAvatar: finalAvatar,
+      },
       initialTab: tab,
-      studentAvatar: student.avatar,
+      studentAvatar: finalAvatar,
     });
   };
 
@@ -462,13 +491,24 @@ export const AdminPortal: React.FC = () => {
     e.preventDefault();
     const balance = Math.max(0, newStudentForm.tuitionTotal - newStudentForm.tuitionPaid);
     const regNo = `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const studentPhoto = newStudentForm.avatar && !newStudentForm.avatar.includes('<svg') ? newStudentForm.avatar : '';
+
+    if (studentPhoto) {
+      try {
+        if (newStudentForm.email) localStorage.setItem(`dec_photo_${newStudentForm.email.toLowerCase().trim()}`, studentPhoto);
+        localStorage.setItem(`dec_photo_${regNo}`, studentPhoto);
+      } catch {}
+    }
 
     addStudent({
       registrationNumber: regNo,
       fullName: newStudentForm.fullName,
       email: newStudentForm.email,
       phone: newStudentForm.phone,
-      avatar: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>',
+      avatar: studentPhoto || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>',
+      photoUrl: studentPhoto || '',
+      photo_url: studentPhoto || '',
+      passportPhotoUrl: studentPhoto || '',
       program: newStudentForm.program,
       studyMode: newStudentForm.studyMode,
       targetExamDate: newStudentForm.targetExamDate,
@@ -496,12 +536,13 @@ export const AdminPortal: React.FC = () => {
       fullName: '',
       email: '',
       phone: '',
+      avatar: '',
       program: 'UTME',
       studyMode: 'Physical Weekday',
       targetScore: '320+',
       targetExamDate: 'April 2026',
-      tuitionTotal: 85000,
-      tuitionPaid: 50000,
+      tuitionTotal: 20000,
+      tuitionPaid: 20000,
     });
   };
 
@@ -817,6 +858,22 @@ export const AdminPortal: React.FC = () => {
               <p className="text-xs text-slate-300 font-medium">
                 Logged in as: <strong className="text-white">{adminUser ? adminUser.name : 'Directorate Executive'}</strong> • Session 2026
               </p>
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <span className="text-[11px] text-amber-300 font-mono bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1.5">
+                  <span className="text-slate-400">Dashboard Link:</span>
+                  <span>https://www.densuredconsultacademy.com.ng/admin</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText('https://www.densuredconsultacademy.com.ng/admin');
+                    showToast('Admin link copied to clipboard!', 'success');
+                  }}
+                  className="text-[10px] text-sky-300 hover:text-white underline cursor-pointer"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
           </div>
 
@@ -3362,6 +3419,75 @@ export const AdminPortal: React.FC = () => {
                     }
                     className="w-full p-2.5 rounded-xl border border-slate-300 font-mono font-bold outline-hidden"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Passport Photograph (Optional)</label>
+                <div className="flex items-center gap-3">
+                  {newStudentForm.avatar && !newStudentForm.avatar.includes('<svg') ? (
+                    <img src={newStudentForm.avatar} alt="Preview" className="w-12 h-12 rounded-xl object-cover border-2 border-amber-300" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                      <User className="w-5 h-5" />
+                    </div>
+                  )}
+                  <label className="cursor-pointer px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-300 inline-flex items-center gap-1.5 transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const rawUrl = (event.target?.result as string) || '';
+                            const img = new Image();
+                            img.onload = () => {
+                              const maxDim = 320;
+                              let width = img.width;
+                              let height = img.height;
+                              if (width > height && width > maxDim) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                              } else if (height > maxDim) {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                              }
+                              const canvas = document.createElement('canvas');
+                              canvas.width = width;
+                              canvas.height = height;
+                              const ctx = canvas.getContext('2d');
+                              if (ctx) {
+                                ctx.drawImage(img, 0, 0, width, height);
+                                const compressed = canvas.toDataURL('image/jpeg', 0.85);
+                                setNewStudentForm((prev) => ({ ...prev, avatar: compressed }));
+                              } else {
+                                setNewStudentForm((prev) => ({ ...prev, avatar: rawUrl }));
+                              }
+                            };
+                            img.onerror = () => {
+                              setNewStudentForm((prev) => ({ ...prev, avatar: rawUrl }));
+                            };
+                            img.src = rawUrl;
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  {newStudentForm.avatar && (
+                    <button
+                      type="button"
+                      onClick={() => setNewStudentForm((prev) => ({ ...prev, avatar: '' }))}
+                      className="text-xs text-red-500 hover:underline cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
 

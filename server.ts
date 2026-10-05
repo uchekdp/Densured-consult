@@ -25,11 +25,9 @@ async function startServer() {
   // Serve static uploads (materials, gallery, student photos)
   app.use('/uploads', express.static(uploadsDir));
 
-  // Mount backend API routes under /api, /auth, /admin, and direct
+  // Mount backend API routes under /api and /auth
   app.use('/api', apiRouter);
   app.use('/auth', apiRouter);
-  app.use('/admin', apiRouter);
-  app.use(apiRouter);
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
@@ -37,10 +35,11 @@ async function startServer() {
   });
 
   const isProduction = process.env.NODE_ENV === 'production';
+  let vite: any;
 
   if (!isProduction) {
     // Vite middleware in development
-    const vite = await createViteServer({
+    vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
@@ -49,10 +48,64 @@ async function startServer() {
     // Serve production build
     const distDir = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distDir));
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve(distDir, 'index.html'));
-    });
   }
+
+  // Explicit route for /admin and /admin/* (Admin Dashboard direct link & refresh)
+  app.get(['/admin', '/admin/*', '/admin-login'], async (req, res, next) => {
+    try {
+      if (isProduction) {
+        const distAdmin = path.resolve(process.cwd(), 'dist', 'admin', 'index.html');
+        if (fs.existsSync(distAdmin)) {
+          return res.sendFile(distAdmin);
+        }
+        const distIndex = path.resolve(process.cwd(), 'dist', 'index.html');
+        if (fs.existsSync(distIndex)) {
+          return res.sendFile(distIndex);
+        }
+      }
+
+      const indexPath = path.resolve(process.cwd(), 'index.html');
+      let template = fs.readFileSync(indexPath, 'utf-8');
+      if (vite) {
+        template = await vite.transformIndexHtml(req.originalUrl, template);
+      }
+      return res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+    } catch (e) {
+      if (vite) {
+        vite.ssrFixStacktrace(e as Error);
+      }
+      next(e);
+    }
+  });
+
+  // SPA fallback for /admin and all client-side application routes
+  app.use('*', async (req, res, next) => {
+    // Do not intercept backend API routes or static uploads
+    if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
+      return next();
+    }
+
+    try {
+      if (isProduction) {
+        const distIndex = path.resolve(process.cwd(), 'dist', 'index.html');
+        if (fs.existsSync(distIndex)) {
+          return res.sendFile(distIndex);
+        }
+      }
+
+      const indexPath = path.resolve(process.cwd(), 'index.html');
+      let template = fs.readFileSync(indexPath, 'utf-8');
+      if (vite) {
+        template = await vite.transformIndexHtml(req.originalUrl, template);
+      }
+      res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+    } catch (e) {
+      if (vite) {
+        vite.ssrFixStacktrace(e as Error);
+      }
+      next(e);
+    }
+  });
 
   // Global error handler ensuring JSON responses
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

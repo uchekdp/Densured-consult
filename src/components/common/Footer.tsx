@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { navigateTo } = useApp();
+  const { navigateTo, isAdminLoggedIn } = useApp();
   return (
     <footer className="bg-[#0f172a] text-slate-300 border-t-4 border-[#0284c7] font-['Poppins',sans-serif]">
       {/* Upper CTA Banner - Deep Academic Navy with Orange & Yellow */}
@@ -188,14 +188,18 @@ export const Footer: React.FC = () => {
               Student Portal
             </button>
             <span className="text-slate-700">•</span>
-            <button
-              type="button"
-              onClick={() => navigateTo('admin-login')}
+            <a
+              href="/admin"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo(isAdminLoggedIn ? 'admin-portal' : 'admin-login');
+              }}
               className="inline-flex items-center gap-1 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+              title="Admin Dashboard (https://www.densuredconsultacademy.com.ng/admin)"
             >
               <Lock className="w-3 h-3 text-amber-400" />
-              <span>Directorate Hub</span>
-            </button>
+              <span>Admin Dashboard</span>
+            </a>
           </div>
         </div>
       </div>

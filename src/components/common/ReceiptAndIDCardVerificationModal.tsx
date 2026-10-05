@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { OfficialReceipt } from '../../types';
 import { generateCryptographicReceipt, CryptographicPayload } from '../../utils/cryptoVerification';
+import { useApp } from '../../context/AppContext';
 import {
   X,
   Printer,
@@ -41,6 +42,7 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
   studentAvatar,
   onPaymentSuccess,
 }) => {
+  const { studentsList, applications, currentStudent } = useApp();
   const [activeTab, setActiveTab] = useState<'receipt' | 'id-card' | 'gateway'>(initialTab);
   const [idCardScale, setIdCardScale] = useState<number>(1.15);
 
@@ -198,9 +200,92 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
     }, 1200);
   };
 
-  const avatarUrl =
-    studentAvatar ||
-    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
+  const isValidPhoto = (url?: any): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    if (trimmed.length === 0) return false;
+    if (trimmed.includes('<svg') || trimmed.includes('data:image/svg') || trimmed.includes('unsplash.com')) return false;
+    return true;
+  };
+
+  const findValidPhoto = (...candidates: any[]): string => {
+    for (const c of candidates) {
+      if (isValidPhoto(c)) return c;
+    }
+    return '';
+  };
+
+  const getStudentPhoto = (studentObj: any): string => {
+    if (!studentObj) return '';
+    return findValidPhoto(
+      studentObj.passportPhotoUrl,
+      studentObj.photoUrl,
+      studentObj.photo_url,
+      studentObj.studentAvatar,
+      studentObj.avatar,
+      studentObj.image,
+      studentObj.picture
+    );
+  };
+
+  const avatarUrl = useMemo(() => {
+    // 1. Explicit prop if valid
+    if (isValidPhoto(studentAvatar)) {
+      return studentAvatar!;
+    }
+
+    // 2. Receipt direct fields
+    const receiptPic = getStudentPhoto(receipt);
+    if (receiptPic) return receiptPic;
+
+    // 3. Current logged in student
+    const currentStudentPic = getStudentPhoto(currentStudent);
+    if (currentStudentPic) return currentStudentPic;
+
+    // 4. Match from studentsList
+    if (receipt) {
+      const matchStd = studentsList.find(
+        (s) =>
+          (receipt.studentId && (s.id === receipt.studentId || s.registrationNumber === receipt.studentId)) ||
+          (receipt.registrationNumber && s.registrationNumber === receipt.registrationNumber) ||
+          (receipt.studentEmail && (s.email || '').toLowerCase() === receipt.studentEmail.toLowerCase()) ||
+          (receipt.studentName && (s.fullName || '').toLowerCase() === receipt.studentName.toLowerCase())
+      );
+      const matchStdPic = getStudentPhoto(matchStd);
+      if (matchStdPic) return matchStdPic;
+
+      // 5. Match from applications
+      const matchApp = applications.find(
+        (a) =>
+          (receipt.studentId && (a.id === receipt.studentId || (a as any).student_id === receipt.studentId)) ||
+          (receipt.registrationNumber && (a as any).registrationNumber === receipt.registrationNumber) ||
+          (receipt.studentEmail && (a.email || '').toLowerCase() === receipt.studentEmail.toLowerCase()) ||
+          (receipt.studentName && (a.fullName || '').toLowerCase() === receipt.studentName.toLowerCase())
+      );
+      const matchAppPic = getStudentPhoto(matchApp);
+      if (matchAppPic) return matchAppPic;
+
+      // 6. Match from localStorage
+      const localPhoto =
+        (receipt.studentEmail && localStorage.getItem(`dec_photo_${receipt.studentEmail.toLowerCase().trim()}`)) ||
+        (receipt.studentId && localStorage.getItem(`dec_photo_${receipt.studentId}`)) ||
+        (receipt.registrationNumber && localStorage.getItem(`dec_photo_${receipt.registrationNumber}`));
+      if (isValidPhoto(localPhoto)) return localPhoto!;
+    }
+
+    // 7. Check current student localStorage
+    if (currentStudent) {
+      const localPhoto =
+        (currentStudent.email && localStorage.getItem(`dec_photo_${currentStudent.email.toLowerCase().trim()}`)) ||
+        (currentStudent.id && localStorage.getItem(`dec_photo_${currentStudent.id}`)) ||
+        (currentStudent.registrationNumber && localStorage.getItem(`dec_photo_${currentStudent.registrationNumber}`));
+      if (isValidPhoto(localPhoto)) return localPhoto!;
+    }
+
+    return (
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>'
+    );
+  }, [studentAvatar, receipt, studentsList, applications, currentStudent]);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white animate-in fade-in duration-200 font-['Poppins',sans-serif]">
@@ -546,6 +631,10 @@ export const ReceiptAndIDCardVerificationModal: React.FC<ReceiptAndIDCardModalPr
                         alt={cryptoPayload.studentName}
                         style={{ width: '0.72in', height: '0.90in' }}
                         className="rounded-lg object-cover border-2 border-[#FFC600] ring-1 ring-[#0a192f]/20 shadow-xs bg-slate-100"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
+                        }}
                       />
                       <div className="absolute -bottom-1 -right-0.5 px-1 py-0.2 rounded bg-[#028D3B] text-white font-black text-[6.5px] uppercase tracking-wider shadow-2xs">
                         CLEARED

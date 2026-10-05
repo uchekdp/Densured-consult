@@ -139,13 +139,38 @@ export const StudentRegistrationPage: React.FC = () => {
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
             const compressed = canvas.toDataURL('image/jpeg', 0.82);
-            setFormData((prev) => ({ ...prev, photoUrl: compressed }));
+            setFormData((prev) => ({
+              ...prev,
+              photoUrl: compressed,
+              avatar: compressed,
+              passportPhotoUrl: compressed,
+            }));
+            if (formData.email) {
+              try {
+                localStorage.setItem(`dec_photo_${formData.email.toLowerCase().trim()}`, compressed);
+              } catch {}
+            }
           } else {
-            setFormData((prev) => ({ ...prev, photoUrl: rawUrl }));
+            setFormData((prev) => ({
+              ...prev,
+              photoUrl: rawUrl,
+              avatar: rawUrl,
+              passportPhotoUrl: rawUrl,
+            }));
+            if (formData.email) {
+              try {
+                localStorage.setItem(`dec_photo_${formData.email.toLowerCase().trim()}`, rawUrl);
+              } catch {}
+            }
           }
         };
         img.onerror = () => {
-          setFormData((prev) => ({ ...prev, photoUrl: rawUrl }));
+          setFormData((prev) => ({
+            ...prev,
+            photoUrl: rawUrl,
+            avatar: rawUrl,
+            passportPhotoUrl: rawUrl,
+          }));
         };
         img.src = rawUrl;
       };
@@ -215,14 +240,38 @@ export const StudentRegistrationPage: React.FC = () => {
     try {
       const res = await studentApi.register(formData);
       if (res.ok && res.data) {
+        const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim();
+        const unifiedStudent = {
+          ...formData,
+          ...res.data.student,
+          id: res.data.student_id || res.data.student?.id,
+          student_id: res.data.student_id || res.data.student?.student_id,
+          registrationNumber: res.data.student_id || res.data.student?.registrationNumber,
+          fullName,
+          full_name: fullName,
+          avatar: formData.photoUrl || res.data.student?.avatar || res.data.student?.photo_url || '',
+          photoUrl: formData.photoUrl || res.data.student?.photoUrl || '',
+          photo_url: formData.photoUrl || res.data.student?.photo_url || '',
+          passportPhotoUrl: formData.photoUrl || res.data.student?.passportPhotoUrl || '',
+          program: formData.preferredProgramme || 'UTME',
+          status: 'Pending Payment',
+        };
+
         setRegistrationResult({
           student_id: res.data.student_id,
-          student: res.data.student,
+          student: unifiedStudent,
         });
 
+        if (formData.photoUrl) {
+          try {
+            if (formData.email) localStorage.setItem(`dec_photo_${formData.email.toLowerCase().trim()}`, formData.photoUrl);
+            localStorage.setItem(`dec_photo_${res.data.student_id}`, formData.photoUrl);
+          } catch {}
+        }
+
         // Persist to Firebase Firestore
-        setDoc(doc(db, 'students', res.data.student_id), res.data.student).catch(() => {});
-        setDoc(doc(db, 'applications', res.data.student_id), res.data.student).catch(() => {});
+        setDoc(doc(db, 'students', res.data.student_id), unifiedStudent).catch(() => {});
+        setDoc(doc(db, 'applications', res.data.student_id), unifiedStudent).catch(() => {});
 
         showToast('Registration submitted successfully! Please submit your tuition payment.', 'success');
         return;
@@ -260,6 +309,13 @@ export const StudentRegistrationPage: React.FC = () => {
         student: studentRecord,
       });
 
+      if (formData.photoUrl) {
+        try {
+          if (formData.email) localStorage.setItem(`dec_photo_${formData.email.toLowerCase().trim()}`, formData.photoUrl);
+          localStorage.setItem(`dec_photo_${fallbackId}`, formData.photoUrl);
+        } catch {}
+      }
+
       // Persist to Firebase Firestore
       setDoc(doc(db, 'students', fallbackId), studentRecord).catch(() => {});
       setDoc(doc(db, 'applications', fallbackId), studentRecord).catch(() => {});
@@ -292,6 +348,13 @@ export const StudentRegistrationPage: React.FC = () => {
         student: studentRecord,
       });
 
+      if (formData.photoUrl) {
+        try {
+          if (formData.email) localStorage.setItem(`dec_photo_${formData.email.toLowerCase().trim()}`, formData.photoUrl);
+          localStorage.setItem(`dec_photo_${fallbackId}`, formData.photoUrl);
+        } catch {}
+      }
+
       // Persist to Firebase Firestore
       setDoc(doc(db, 'students', fallbackId), studentRecord).catch(() => {});
       setDoc(doc(db, 'applications', fallbackId), studentRecord).catch(() => {});
@@ -313,12 +376,24 @@ export const StudentRegistrationPage: React.FC = () => {
     setPaySubmitting(true);
     try {
       // Synchronize into AppContext for instant Directorate verification & portal tracking
-      submitStudentApplicationWithPayment(formData, {
-        amount: Number(payAmount),
-        paymentMonth: payMonth,
-        reference: payRef.trim(),
-        method: payMethod,
-      });
+      submitStudentApplicationWithPayment(
+        {
+          ...formData,
+          id: registrationResult.student_id,
+          student_id: registrationResult.student_id,
+          registrationNumber: registrationResult.student_id,
+          avatar: formData.photoUrl || registrationResult.student?.avatar || '',
+          passportPhotoUrl: formData.photoUrl || registrationResult.student?.passportPhotoUrl || '',
+          photoUrl: formData.photoUrl || registrationResult.student?.photoUrl || '',
+          photo_url: formData.photoUrl || registrationResult.student?.photo_url || '',
+        },
+        {
+          amount: Number(payAmount),
+          paymentMonth: payMonth,
+          reference: payRef.trim(),
+          method: payMethod,
+        }
+      );
 
       try {
         await paymentApi.submitPayment({

@@ -76,6 +76,9 @@ export interface AdmissionApplication {
   passportNumber?: string;
   passportExpiry?: string;
   passportPhotoUrl?: string;
+  avatar?: string;
+  photoUrl?: string;
+  photo_url?: string;
   atswaStage?: string;
   satCollegeBoardId?: string;
 }
@@ -140,6 +143,8 @@ export interface OfficialReceipt {
   qrPayload: string;
   status: 'Approved' | 'Pending Verification';
   paymentMethod: string;
+  studentAvatar?: string;
+  photoUrl?: string;
 }
 
 export interface TransactionRecord {
@@ -171,6 +176,9 @@ export interface StudentProfile {
   email: string;
   phone: string;
   avatar: string;
+  photoUrl?: string;
+  photo_url?: string;
+  passportPhotoUrl?: string;
   program: ExamProgram;
   studyMode: StudyMode;
   studentShift: StudentShift;

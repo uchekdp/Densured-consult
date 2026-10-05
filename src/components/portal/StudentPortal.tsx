@@ -42,6 +42,8 @@ import {
   Eye,
   EyeOff,
   UserCheck,
+  Upload,
+  Camera,
 } from 'lucide-react';
 
 export const StudentPortal: React.FC = () => {
@@ -50,7 +52,9 @@ export const StudentPortal: React.FC = () => {
     setStudentTab,
     currentStudent,
     studentsList,
+    applications,
     switchStudent,
+    updateStudentPhoto,
     isStudentLoggedIn,
     loginStudent,
     logoutStudent,
@@ -86,6 +90,120 @@ export const StudentPortal: React.FC = () => {
   const [idCardZoom, setIdCardZoom] = useState<number>(1.25);
   const [materialSubjectFilter, setMaterialSubjectFilter] = useState<string>('All');
 
+  const isValidPhoto = (url?: any): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    if (trimmed.length === 0) return false;
+    if (trimmed.includes('<svg') || trimmed.includes('data:image/svg') || trimmed.includes('unsplash.com')) return false;
+    return true;
+  };
+
+  const findValidPhoto = (...candidates: any[]): string => {
+    for (const c of candidates) {
+      if (isValidPhoto(c)) return c;
+    }
+    return '';
+  };
+
+  const getStudentPhoto = (studentObj: any): string => {
+    if (!studentObj) return '';
+    return findValidPhoto(
+      studentObj.passportPhotoUrl,
+      studentObj.photoUrl,
+      studentObj.photo_url,
+      studentObj.studentAvatar,
+      studentObj.avatar,
+      studentObj.image,
+      studentObj.picture
+    );
+  };
+
+  // Multi-tier photo resolution for student ID card
+  const studentAvatarImg = useMemo(() => {
+    // 1. Direct photo on currentStudent
+    const directPic = getStudentPhoto(currentStudent);
+    if (directPic) return directPic;
+
+    // 2. Matching application
+    const matchingApp = applications.find(
+      (a) =>
+        (a.email && (a.email || '').toLowerCase() === (currentStudent.email || '').toLowerCase()) ||
+        (a.fullName && (a.fullName || '').toLowerCase() === (currentStudent.fullName || '').toLowerCase()) ||
+        a.id === currentStudent.id ||
+        a.id === currentStudent.registrationNumber ||
+        (a as any).student_id === currentStudent.id ||
+        (a as any).student_id === currentStudent.registrationNumber
+    );
+    const appPic = getStudentPhoto(matchingApp);
+    if (appPic) return appPic;
+
+    // 3. Match from studentsList
+    const inList = studentsList.find(
+      (s) =>
+        s.id === currentStudent.id ||
+        s.registrationNumber === currentStudent.registrationNumber ||
+        (s.email && (s.email || '').toLowerCase() === (currentStudent.email || '').toLowerCase())
+    );
+    const inListPic = getStudentPhoto(inList);
+    if (inListPic) return inListPic;
+
+    // 4. LocalStorage
+    const localPhoto =
+      (currentStudent.email && localStorage.getItem(`dec_photo_${currentStudent.email.toLowerCase().trim()}`)) ||
+      (currentStudent.id && localStorage.getItem(`dec_photo_${currentStudent.id}`)) ||
+      (currentStudent.registrationNumber && localStorage.getItem(`dec_photo_${currentStudent.registrationNumber}`));
+    if (isValidPhoto(localPhoto)) return localPhoto!;
+
+    return (
+      (isValidPhoto(currentStudent.avatar) ? currentStudent.avatar : '') ||
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>'
+    );
+  }, [currentStudent, applications, studentsList]);
+
+  // Handler to upload / replace student passport photo directly from ID card view
+  const handleStudentPassportUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('error', 'File Too Large', 'Passport photo must be under 5 MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawUrl = (event.target?.result as string) || '';
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 320;
+          let width = img.width;
+          let height = img.height;
+          if (width > height && width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.85);
+            updateStudentPhoto(currentStudent.id, compressed);
+          } else {
+            updateStudentPhoto(currentStudent.id, rawUrl);
+          }
+        };
+        img.onerror = () => {
+          updateStudentPhoto(currentStudent.id, rawUrl);
+        };
+        img.src = rawUrl;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Sync shift selection when switching candidates
   useEffect(() => {
     if (currentStudent.studentShift) {
@@ -96,7 +214,10 @@ export const StudentPortal: React.FC = () => {
   // Open the authentic Official Receipt with Logo and QR Code
   const handleOpenOfficialReceipt = (tx?: any) => {
     if (currentStudent.lastApprovedReceipt && (!tx || tx.reference === currentStudent.lastApprovedReceipt.transactionReference)) {
-      openReceiptModal(currentStudent.lastApprovedReceipt);
+      openReceiptModal({
+        ...currentStudent.lastApprovedReceipt,
+        studentAvatar: studentAvatarImg,
+      });
       return;
     }
 
@@ -129,6 +250,8 @@ export const StudentPortal: React.FC = () => {
       qrPayload: `https://densuredconsult.ng/verify-receipt?receipt=${receiptNum}&student=${encodeURIComponent(currentStudent.fullName)}&reg=${currentStudent.registrationNumber}&shift=${shift}&amount=${amount}&status=APPROVED`,
       status: 'Approved',
       paymentMethod: (targetTx?.paymentMethod as any) || 'Bank Transfer',
+      studentAvatar: studentAvatarImg,
+      photoUrl: studentAvatarImg,
     };
 
     openReceiptModal(officialReceipt);
@@ -492,7 +615,7 @@ export const StudentPortal: React.FC = () => {
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img
-              src={currentStudent.avatar}
+              src={studentAvatarImg}
               alt={currentStudent.fullName}
               className="w-12 h-12 rounded-xl object-cover ring-2 ring-[#098CD0]/40"
             />
@@ -1145,6 +1268,16 @@ export const StudentPortal: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
+                  <label className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-[#0284c7] font-bold text-xs shadow-xs cursor-pointer transition-all border border-[#0284c7]">
+                    <Upload className="w-4 h-4" />
+                    <span>Upload/Change Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleStudentPassportUpload}
+                      className="hidden"
+                    />
+                  </label>
                   <button
                     type="button"
                     onClick={() => handleOpenOfficialReceipt()}
@@ -1259,10 +1392,14 @@ export const StudentPortal: React.FC = () => {
                         {/* Photo with clean gold & navy ring */}
                         <div className="relative shrink-0">
                           <img
-                            src={currentStudent.avatar || (currentStudent as any).photo_url || (currentStudent as any).photoUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>'}
+                            src={studentAvatarImg}
                             alt={currentStudent.fullName}
                             style={{ width: '0.72in', height: '0.90in' }}
                             className="rounded-lg object-cover border-2 border-[#FFC600] ring-1 ring-[#0a192f]/20 shadow-xs bg-slate-100"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
+                            }}
                           />
                           <div className="absolute -bottom-1 -right-0.5 px-1 py-0.2 rounded bg-[#028D3B] text-white font-black text-[6.5px] uppercase tracking-wider shadow-2xs">
                             CLEARED
@@ -1392,11 +1529,22 @@ export const StudentPortal: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Profile Card Summary */}
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-center space-y-3">
-                <img
-                  src={currentStudent.avatar}
-                  alt={currentStudent.fullName}
-                  className="w-24 h-24 rounded-2xl object-cover mx-auto ring-4 ring-[#d97706]/40 shadow-md"
-                />
+                <div className="relative inline-block mx-auto">
+                  <img
+                    src={studentAvatarImg}
+                    alt={currentStudent.fullName}
+                    className="w-24 h-24 rounded-2xl object-cover mx-auto ring-4 ring-[#d97706]/40 shadow-md bg-white"
+                  />
+                  <label className="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-[#0284c7] hover:bg-[#026aa2] text-white shadow-md cursor-pointer transition-transform hover:scale-110" title="Update Passport Photo">
+                    <Camera className="w-3.5 h-3.5" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleStudentPassportUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <div>
                   <h3 className="font-extrabold text-[#0a192f] text-lg">{currentStudent.fullName}</h3>
                   <span className="text-xs text-[#d97706] font-bold block">{currentStudent.email}</span>

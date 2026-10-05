@@ -155,6 +155,7 @@ interface AppContextType {
   addStudent: (student: Omit<StudentProfile, 'id'>) => void;
   deleteStudent: (studentId: string) => void;
   switchStudent: (studentId: string) => void;
+  updateStudentPhoto: (studentId: string, photoDataUrl: string) => void;
 
   // Admissions
   applications: AdmissionApplication[];
@@ -372,6 +373,34 @@ function parseHashLocation(): { page: PageId; tab?: string } {
   return { page: matchedPage, tab };
 }
 
+export const isValidPhoto = (url?: any): boolean => {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (trimmed.length === 0) return false;
+  if (trimmed.includes('<svg') || trimmed.includes('data:image/svg') || trimmed.includes('unsplash.com')) return false;
+  return true;
+};
+
+export const findValidPhoto = (...candidates: any[]): string => {
+  for (const c of candidates) {
+    if (isValidPhoto(c)) return c;
+  }
+  return '';
+};
+
+export const getStudentPhoto = (studentObj: any): string => {
+  if (!studentObj) return '';
+  return findValidPhoto(
+    studentObj.passportPhotoUrl,
+    studentObj.photoUrl,
+    studentObj.photo_url,
+    studentObj.studentAvatar,
+    studentObj.avatar,
+    studentObj.image,
+    studentObj.picture
+  );
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Parse initial route from URL hash
   const initialRoute = parseHashLocation();
@@ -416,14 +445,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.map((s: StudentProfile) => ({
-            ...s,
-            studentShift: s.studentShift || 'Morning',
-            monthlyFee: s.monthlyFee || (s.studentShift === 'Evening' ? 15000 : 20000),
-            subscriptionStatus: s.subscriptionStatus || (s.id === 'std-3' ? 'Pending Approval' : 'Active'),
-            subscriptionMonth: s.subscriptionMonth || 'September 2026',
-            subscriptionExpiryDate: s.subscriptionExpiryDate || '30 Sep 2026, 11:59 PM',
-          }));
+          return parsed.map((s: StudentProfile) => {
+            const shift = s.studentShift || 'Morning';
+            const monthlyFee = s.monthlyFee || (shift === 'Evening' ? 15000 : 20000);
+            // Requirement: Full monthly payment is 20,000 Naira. Remove balance of 40,000 Naira.
+            let tuitionBalance = s.tuitionBalance ?? 0;
+            let tuitionTotal = s.tuitionTotal || monthlyFee;
+            let tuitionPaid = s.tuitionPaid ?? 0;
+            if (tuitionBalance === 40000 || (tuitionTotal === 60000 && tuitionPaid >= 20000)) {
+              tuitionBalance = 0;
+              tuitionTotal = monthlyFee;
+              tuitionPaid = monthlyFee;
+            }
+            return {
+              ...s,
+              studentShift: shift,
+              monthlyFee,
+              tuitionTotal,
+              tuitionPaid,
+              tuitionBalance,
+              subscriptionStatus: s.subscriptionStatus || (s.id === 'std-3' ? 'Pending Approval' : 'Active'),
+              subscriptionMonth: s.subscriptionMonth || 'September 2026',
+              subscriptionExpiryDate: s.subscriptionExpiryDate || '30 Sep 2026, 11:59 PM',
+            };
+          });
         }
       } catch {
         // fallback
@@ -967,7 +1012,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const unsubApps = onSnapshot(
         collection(db, 'applications'),
         (snapshot) => {
-          const remoteApps = snapshot.docs.map((d) => d.data() as AdmissionApplication);
+          const remoteApps = snapshot.docs.map((d) => {
+            const data = d.data() as any;
+            const photo = data.passportPhotoUrl || data.photoUrl || data.photo_url || data.avatar || '';
+            return {
+              ...data,
+              id: data.id || d.id,
+              passportPhotoUrl: photo,
+              photoUrl: photo,
+              photo_url: photo,
+              avatar: photo,
+            } as AdmissionApplication;
+          });
           if (remoteApps.length > 0) {
             setApplications(remoteApps);
             try {
@@ -986,12 +1042,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const unsubStudents = onSnapshot(
         collection(db, 'students'),
         (snapshot) => {
-          const remoteStudents = snapshot.docs.map((d) => d.data() as StudentProfile);
+          const remoteStudents = snapshot.docs.map((d) => {
+            const data = d.data() as any;
+            const fullName = data.fullName || data.full_name || `${data.firstName || data.first_name || ''} ${data.lastName || data.last_name || ''}`.trim() || 'Student';
+            const regNo = data.registrationNumber || data.student_id || d.id;
+            const avatar = data.avatar || data.photoUrl || data.photo_url || data.passportPhotoUrl || '';
+            return {
+              ...data,
+              id: data.id || d.id,
+              fullName,
+              registrationNumber: regNo,
+              avatar,
+              photoUrl: avatar,
+              photo_url: avatar,
+              passportPhotoUrl: avatar,
+            } as StudentProfile;
+          });
           if (remoteStudents.length > 0) {
             setStudentsList(remoteStudents);
             try {
               localStorage.setItem('dec_students', JSON.stringify(remoteStudents));
             } catch {}
+            setCurrentStudent((cur) => {
+              if (!cur) return cur;
+              const matched = remoteStudents.find((s) => s.id === cur.id || s.registrationNumber === cur.registrationNumber);
+              if (matched && matched.avatar && (!cur.avatar || cur.avatar.includes('<svg') || cur.avatar.includes('unsplash.com'))) {
+                return { ...cur, avatar: matched.avatar, photoUrl: matched.avatar, photo_url: matched.avatar, passportPhotoUrl: matched.avatar };
+              }
+              return cur;
+            });
           } else if (snapshot.empty && !snapshot.metadata.hasPendingWrites) {
             setStudentsList([]);
             try {
@@ -1340,12 +1419,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    setCurrentStudent(found);
+    // Resolve student photo from profile, matching application, or localStorage
+    let resolvedStudent = found;
+    const matchApp = applications.find(
+      (a) =>
+        (a.email && (a.email || '').toLowerCase() === (found.email || '').toLowerCase()) ||
+        (a.fullName && (a.fullName || '').toLowerCase() === (found.fullName || '').toLowerCase()) ||
+        a.id === found.id ||
+        a.id === found.registrationNumber ||
+        (a as any).student_id === found.id ||
+        (a as any).student_id === found.registrationNumber
+    );
+
+    const validPhoto = findValidPhoto(
+      found.passportPhotoUrl,
+      found.photoUrl,
+      found.photo_url,
+      found.avatar,
+      matchApp?.passportPhotoUrl,
+      (matchApp as any)?.photoUrl,
+      (matchApp as any)?.photo_url,
+      (matchApp as any)?.avatar,
+      (found.email && localStorage.getItem(`dec_photo_${found.email.toLowerCase().trim()}`)),
+      (found.id && localStorage.getItem(`dec_photo_${found.id}`)),
+      (found.registrationNumber && localStorage.getItem(`dec_photo_${found.registrationNumber}`))
+    );
+
+    if (validPhoto) {
+      resolvedStudent = {
+        ...found,
+        avatar: validPhoto,
+        photoUrl: validPhoto,
+        photo_url: validPhoto,
+        passportPhotoUrl: validPhoto,
+      };
+      setStudentsList((prev) => prev.map((s) => (s.id === found.id ? resolvedStudent : s)));
+      setDoc(doc(db, 'students', found.id), resolvedStudent).catch(() => {});
+    }
+
+    setCurrentStudent(resolvedStudent);
     setIsStudentLoggedIn(true);
     localStorage.setItem('dec_student_logged_in', 'true');
     setUserRole('student');
-    showToast('success', 'Portal Access Granted', `Welcome to your individual e-portal, ${found.fullName}!`);
-    return { success: true, message: 'Welcome to your student portal.', student: found };
+    showToast('success', 'Portal Access Granted', `Welcome to your individual e-portal, ${resolvedStudent.fullName}!`);
+    return { success: true, message: 'Welcome to your student portal.', student: resolvedStudent };
   };
 
   const logoutStudent = () => {
@@ -1362,6 +1479,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('dec_student_logged_in', 'true');
       showToast('info', 'Active Student Switched', `Now viewing profile for ${found.fullName}`);
     }
+  };
+
+  const updateStudentPhoto = (studentId: string, photoDataUrl: string) => {
+    if (!photoDataUrl || typeof photoDataUrl !== 'string') return;
+
+    setStudentsList((prev) =>
+      prev.map((s) => {
+        if (s.id === studentId || s.registrationNumber === studentId) {
+          const updated = {
+            ...s,
+            avatar: photoDataUrl,
+            photoUrl: photoDataUrl,
+            photo_url: photoDataUrl,
+            passportPhotoUrl: photoDataUrl,
+          };
+          setDoc(doc(db, 'students', s.id), updated).catch(() => {});
+          if (s.registrationNumber && s.registrationNumber !== s.id) {
+            setDoc(doc(db, 'students', s.registrationNumber), updated).catch(() => {});
+          }
+          return updated;
+        }
+        return s;
+      })
+    );
+
+    if (currentStudent && (currentStudent.id === studentId || currentStudent.registrationNumber === studentId)) {
+      const updatedCurrent = {
+        ...currentStudent,
+        avatar: photoDataUrl,
+        photoUrl: photoDataUrl,
+        photo_url: photoDataUrl,
+        passportPhotoUrl: photoDataUrl,
+      };
+      setCurrentStudent(updatedCurrent);
+    }
+
+    setApplications((prev) =>
+      prev.map((a) => {
+        if (
+          a.id === studentId ||
+          (a as any).student_id === studentId ||
+          (currentStudent && a.email && currentStudent.email && a.email.toLowerCase() === currentStudent.email.toLowerCase())
+        ) {
+          const updatedApp = {
+            ...a,
+            passportPhotoUrl: photoDataUrl,
+            photoUrl: photoDataUrl,
+            photo_url: photoDataUrl,
+            avatar: photoDataUrl,
+          };
+          setDoc(doc(db, 'applications', a.id), updatedApp).catch(() => {});
+          return updatedApp;
+        }
+        return a;
+      })
+    );
+
+    try {
+      localStorage.setItem(`dec_photo_${studentId}`, photoDataUrl);
+      if (currentStudent?.email) {
+        localStorage.setItem(`dec_photo_${currentStudent.email.toLowerCase().trim()}`, photoDataUrl);
+      }
+      if (currentStudent?.registrationNumber) {
+        localStorage.setItem(`dec_photo_${currentStudent.registrationNumber}`, photoDataUrl);
+      }
+    } catch {}
+
+    showToast('success', 'Photo Updated', 'Your student passport photo has been updated successfully on your ID card!');
   };
 
   const addStudent = (newStd: Omit<StudentProfile, 'id'>) => {
@@ -1671,7 +1856,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ((s.email || '').toLowerCase().trim() === (app.email || '').toLowerCase().trim()) ||
               ((s.fullName || '').toLowerCase().trim() === (app.fullName || '').toLowerCase().trim())
           );
-          if (already) return prev;
+          if (already) {
+            const photo = app.passportPhotoUrl || (app as any).photoUrl || (app as any).photo_url || (app as any).avatar;
+            if (photo && (!already.avatar || already.avatar.includes('<svg') || already.avatar.includes('unsplash.com'))) {
+              const updated = { ...already, avatar: photo, photoUrl: photo, photo_url: photo, passportPhotoUrl: photo };
+              setDoc(doc(db, 'students', already.id), updated).catch(() => {});
+              return prev.map((s) => (s.id === already.id ? updated : s));
+            }
+            return prev;
+          }
 
           const progStr = (app.program || 'UTME').toUpperCase();
           const amount = progStr.includes('IELTS') ? 70000 : progStr.includes('ADULT') ? 60000 : 20000;
@@ -1680,6 +1873,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const expiryDateFormatted = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`;
           const regNum = `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
           const enrolledId = `std-${Date.now()}`;
+          const photo = app.passportPhotoUrl || (app as any).photoUrl || (app as any).photo_url || (app as any).avatar || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
 
           const enrolled: StudentProfile = {
             id: enrolledId,
@@ -1687,7 +1881,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             fullName: app.fullName,
             email: app.email,
             phone: app.phone,
-            avatar: app.passportPhotoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+            avatar: photo,
+            photoUrl: photo,
+            photo_url: photo,
+            passportPhotoUrl: photo,
             program: app.program as any,
             studyMode: app.studyMode || 'Physical Weekday',
             studentShift: app.studentShift || 'Morning',
@@ -1701,9 +1898,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             currentAverageScore: 0,
             attendanceRate: 100,
             syllabusCompletion: 5,
-            tuitionTotal: amount * 3,
+            tuitionTotal: amount,
             tuitionPaid: amount,
-            tuitionBalance: amount * 2,
+            tuitionBalance: 0,
             currency: 'NGN',
             nextClass: 'Monday 08:30 AM (Lecture Hall A)',
             assignedAdvisor: 'Mr. Akinjo Rotimi (Directorate)',
@@ -1790,8 +1987,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   ): { studentId: string; applicationId: string; transactionId: string } => {
     const applicationId = `APP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const studentTempId = `std-app-${Date.now()}`;
+    const studentTempId = formData.id || formData.student_id || formData.registrationNumber || `std-app-${Date.now()}`;
+    const studentRegNum = formData.registrationNumber || formData.student_id || `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const fullName = `${formData.firstName || ''} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName || ''}`.trim() || 'New Applicant';
+    const studentPhoto =
+      findValidPhoto(
+        formData.passportPhotoUrl,
+        formData.photoUrl,
+        formData.photo_url,
+        formData.avatar,
+        (formData.email && localStorage.getItem(`dec_photo_${formData.email.toLowerCase().trim()}`)),
+        (formData.id && localStorage.getItem(`dec_photo_${formData.id}`)),
+        (formData.student_id && localStorage.getItem(`dec_photo_${formData.student_id}`)),
+        (formData.registrationNumber && localStorage.getItem(`dec_photo_${formData.registrationNumber}`))
+      ) || '';
+
+    if (studentPhoto) {
+      try {
+        if (formData.email) localStorage.setItem(`dec_photo_${formData.email.toLowerCase().trim()}`, studentPhoto);
+        localStorage.setItem(`dec_photo_${studentTempId}`, studentPhoto);
+        localStorage.setItem(`dec_photo_${studentRegNum}`, studentPhoto);
+      } catch {}
+    }
 
     const newApp: AdmissionApplication = {
       id: applicationId,
@@ -1819,6 +2036,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       submittedAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
       status: 'Pending Review',
       password: formData.password || 'student123',
+      passportPhotoUrl: studentPhoto,
+      photoUrl: studentPhoto,
+      photo_url: studentPhoto,
+      avatar: studentPhoto,
       notes: `Initial tuition payment submitted: ${paymentInfo.reference} (${paymentInfo.method})`,
     };
 
@@ -1843,7 +2064,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `sub-${Date.now()}`,
       studentId: studentTempId,
       studentName: fullName,
-      registrationNumber: 'Pending Verification',
+      registrationNumber: studentRegNum,
       studentShift: 'Morning',
       amount: Number(paymentInfo.amount) || 20000,
       monthPeriod: paymentInfo.paymentMonth,
@@ -1855,12 +2076,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       adminRemarks: `Initial tuition payment for ${fullName} awaiting clearance`,
     };
 
+    const studentProfile: StudentProfile = {
+      id: studentTempId,
+      registrationNumber: studentRegNum,
+      fullName,
+      email: formData.email,
+      phone: formData.phone,
+      avatar: studentPhoto || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>',
+      photoUrl: studentPhoto,
+      photo_url: studentPhoto,
+      passportPhotoUrl: studentPhoto,
+      program: formData.preferredProgramme || 'UTME',
+      studyMode: 'Physical Weekday',
+      studentShift: 'Morning',
+      monthlyFee: Number(paymentInfo.amount) || 20000,
+      subscriptionStatus: 'Pending Approval',
+      subscriptionMonth: paymentInfo.paymentMonth,
+      targetExamDate: 'April 2026',
+      daysRemaining: 180,
+      targetScore: '320+',
+      currentAverageScore: 0,
+      attendanceRate: 100,
+      syllabusCompletion: 5,
+      tuitionTotal: Number(paymentInfo.amount) || 20000,
+      tuitionPaid: Number(paymentInfo.amount) || 20000,
+      tuitionBalance: 0,
+      currency: 'NGN',
+      nextClass: 'Monday 08:30 AM (Lecture Hall A)',
+      assignedAdvisor: 'Mr. Akinjo Rotimi (Directorate)',
+      recentMockTests: [],
+      password: formData.password || 'student123',
+      subjectCombinations: formData.subjects || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
+    };
+
     setApplications((prev) => [newApp, ...prev]);
     setTransactions((prev) => [newTx, ...prev]);
     setMonthlyPaymentSubmissions((prev) => [newSub, ...prev]);
+    setStudentsList((prev) => {
+      const idx = prev.findIndex((s) => s.id === studentTempId || (s.email && s.email.toLowerCase() === (formData.email || '').toLowerCase()));
+      if (idx >= 0) {
+        return prev.map((s, i) => (i === idx ? { ...s, ...studentProfile, avatar: studentPhoto || s.avatar } : s));
+      }
+      return [studentProfile, ...prev];
+    });
 
     setDoc(doc(db, 'applications', newApp.id), newApp).catch(() => {});
     setDoc(doc(db, 'payments', newTx.id), newTx).catch(() => {});
+    setDoc(doc(db, 'students', studentTempId), studentProfile).catch(() => {});
 
     addAuditLog(
       'New Candidate Application & Payment Received',
@@ -1962,14 +2224,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setStudentsList((prev) =>
         prev.map((std) => {
           if (std.id === student.id) {
-            const newPaid = Math.min(std.tuitionTotal, std.tuitionPaid + amount);
-            const newBalance = Math.max(0, std.tuitionTotal - newPaid);
+            const targetTotal = (std.tuitionTotal === 60000 || !std.tuitionTotal) ? (std.monthlyFee || amount || 20000) : std.tuitionTotal;
+            const newPaid = Math.max(std.tuitionPaid + amount, targetTotal);
+            const newBalance = 0;
             const updated: StudentProfile = {
               ...std,
               subscriptionStatus: 'Active',
               subscriptionExpiryDate: `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`,
               subscriptionMonth: monthPeriod,
               lastApprovedReceipt: officialReceipt,
+              tuitionTotal: targetTotal,
               tuitionPaid: newPaid,
               tuitionBalance: newBalance,
             };
@@ -2688,15 +2952,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const regNum = `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       const studentId = tx.studentId && tx.studentId.startsWith('std-') ? tx.studentId : `std-${Date.now()}`;
 
+      const studentPhoto =
+        findValidPhoto(
+          matchingApp?.passportPhotoUrl,
+          (matchingApp as any)?.photoUrl,
+          (matchingApp as any)?.photo_url,
+          (matchingApp as any)?.avatar,
+          (matchingApp?.email && localStorage.getItem(`dec_photo_${matchingApp.email.toLowerCase().trim()}`)),
+          (tx.studentId && localStorage.getItem(`dec_photo_${tx.studentId}`))
+        );
+
       enrolledStudent = {
         id: studentId,
         registrationNumber: regNum,
         fullName: tx.studentName || matchingApp?.fullName || 'Enrolled Student',
         email: matchingApp?.email || `${((tx.studentName || 'student')).toLowerCase().replace(/\s+/g, '.')}@candidate.densured.ng`,
         phone: matchingApp?.phone || '08147896930',
-        avatar:
-          matchingApp?.passportPhotoUrl ||
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+        avatar: studentPhoto || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>',
+        photoUrl: studentPhoto || '',
+        photo_url: studentPhoto || '',
+        passportPhotoUrl: studentPhoto || '',
         program: (tx.program as any) || matchingApp?.program || 'UTME',
         studyMode: matchingApp?.studyMode || 'Physical Weekday',
         studentShift: shift,
@@ -2710,9 +2985,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentAverageScore: 0,
         attendanceRate: 100,
         syllabusCompletion: 5,
-        tuitionTotal: amount * 3,
+        tuitionTotal: amount,
         tuitionPaid: amount,
-        tuitionBalance: amount * 2,
+        tuitionBalance: 0,
         currency: 'NGN',
         nextClass: 'Monday 08:30 AM (Lecture Hall A)',
         assignedAdvisor: 'Mr. Akinjo Rotimi (Directorate)',
@@ -2730,6 +3005,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       student = enrolledStudent;
     } else {
+      // Check if existing student profile needs photo from matching application or localStorage
+      const matchingApp = applications.find(
+        (a) =>
+          a.id === tx.studentId ||
+          (a.fullName && tx.studentName && a.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim()) ||
+          (a.email && tx.studentId && a.email.toLowerCase().trim() === tx.studentId.toLowerCase().trim())
+      );
+      const appPhoto = findValidPhoto(
+        matchingApp?.passportPhotoUrl,
+        (matchingApp as any)?.photoUrl,
+        (matchingApp as any)?.photo_url,
+        (matchingApp as any)?.avatar,
+        student.passportPhotoUrl,
+        student.photoUrl,
+        student.photo_url,
+        student.avatar,
+        (student.email && localStorage.getItem(`dec_photo_${student.email.toLowerCase().trim()}`)),
+        (student.id && localStorage.getItem(`dec_photo_${student.id}`)),
+        (student.registrationNumber && localStorage.getItem(`dec_photo_${student.registrationNumber}`))
+      );
+      if (appPhoto) {
+        student = {
+          ...student,
+          avatar: appPhoto,
+          photoUrl: appPhoto,
+          photo_url: appPhoto,
+          passportPhotoUrl: appPhoto,
+        };
+      }
       enrolledStudent = student;
     }
 
@@ -2759,6 +3063,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       qrPayload,
       status: 'Approved',
       paymentMethod: tx.paymentMethod,
+      studentAvatar: enrolledStudent.passportPhotoUrl || enrolledStudent.photoUrl || enrolledStudent.avatar,
+      photoUrl: enrolledStudent.passportPhotoUrl || enrolledStudent.photoUrl || enrolledStudent.avatar,
     };
 
     enrolledStudent.lastApprovedReceipt = officialReceipt;
@@ -2823,8 +3129,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               subscriptionExpiryDate: expiryDateFormatted,
               subscriptionMonth: monthPeriod,
               lastApprovedReceipt: officialReceipt,
-              tuitionPaid: (s.tuitionPaid || 0) + amount,
-              tuitionBalance: Math.max(0, (s.tuitionBalance || 0) - amount),
+              tuitionTotal: s.monthlyFee || amount || 20000,
+              tuitionPaid: Math.max((s.tuitionPaid || 0) + amount, amount),
+              tuitionBalance: 0,
             };
             if (currentStudent.id === s.id) {
               setCurrentStudent(updated);
@@ -3019,6 +3326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addStudent,
         deleteStudent,
         switchStudent,
+        updateStudentPhoto,
 
         applications,
         submitAdmission,
@@ -3111,6 +3419,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         receipt={selectedReceipt}
         isOpen={isReceiptModalOpen}
         onClose={closeReceiptModal}
+        studentAvatar={
+          findValidPhoto(
+            selectedReceipt?.studentAvatar,
+            selectedReceipt?.photoUrl,
+            (selectedReceipt as any)?.passportPhotoUrl,
+            currentStudent?.passportPhotoUrl,
+            currentStudent?.photoUrl,
+            currentStudent?.avatar
+          ) || undefined
+        }
       />
     </AppContext.Provider>
   );
