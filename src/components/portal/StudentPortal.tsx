@@ -38,6 +38,7 @@ import {
   Check,
   DollarSign,
   LogOut,
+  XCircle,
   Lock,
   Eye,
   EyeOff,
@@ -338,6 +339,7 @@ export const StudentPortal: React.FC = () => {
 
   // Practice sets filter & interactive answer reveal
   const [practiceSubjectFilter, setPracticeSubjectFilter] = useState<string>('All');
+  const [practiceYearFilter, setPracticeYearFilter] = useState<string>('All');
   const [revealedExplanations, setRevealedExplanations] = useState<Record<string, boolean>>({});
   const [practiceUserAnswers, setPracticeUserAnswers] = useState<Record<string, string>>({});
 
@@ -926,7 +928,11 @@ export const StudentPortal: React.FC = () => {
                 <div className="text-2xl sm:text-3xl font-black text-[#0a192f] font-mono">
                   {currentStudent.attendanceRate}%
                 </div>
-                <p className="text-xs text-slate-500 font-medium">32 of 34 lectures attended</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  {currentStudent.attendanceHistory && currentStudent.attendanceHistory.length > 0
+                    ? `${currentStudent.attendanceHistory.filter((h) => h.status === 'Present' || h.status === 'Late').length} of ${currentStudent.attendanceHistory.length} lectures attended`
+                    : '0 lectures logged yet'}
+                </p>
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
@@ -1526,11 +1532,42 @@ export const StudentPortal: React.FC = () => {
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Daily Attendance Record</h2>
                 <p className="text-slate-500 text-xs mt-0.5">
-                  Biometric and register logs across physical and online tutorial sessions.
+                  Official roll call and register logs taken by the Directorate Office.
                 </p>
               </div>
-              <div className="px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-                Overall Attendance: {currentStudent.attendanceRate}% (Excellent)
+              <div className="flex items-center gap-2">
+                <div className="px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                  Standing: {currentStudent.attendanceRate}% Attendance Rate
+                </div>
+              </div>
+            </div>
+
+            {/* Attendance Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-1">
+                <span className="text-[11px] text-slate-500 font-bold uppercase">Total Sessions Logged</span>
+                <div className="text-2xl font-black text-[#0a192f] font-mono">
+                  {(currentStudent.attendanceHistory || []).length}
+                </div>
+                <span className="text-[11px] text-slate-400 block">Lectures &amp; CBT Practicals</span>
+              </div>
+
+              <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200 text-center space-y-1">
+                <span className="text-[11px] text-emerald-800 font-bold uppercase">Sessions Attended</span>
+                <div className="text-2xl font-black text-emerald-800 font-mono">
+                  {(currentStudent.attendanceHistory || []).filter((h) => h.status === 'Present' || h.status === 'Late').length}
+                </div>
+                <span className="text-[11px] text-emerald-700 block">Punctual &amp; Late Sessions</span>
+              </div>
+
+              <div className="p-4 bg-sky-50/60 rounded-2xl border border-sky-200 text-center space-y-1">
+                <span className="text-[11px] text-[#0284c7] font-bold uppercase">Overall Rate</span>
+                <div className="text-2xl font-black text-[#0284c7] font-mono">
+                  {currentStudent.attendanceRate}%
+                </div>
+                <span className="text-[11px] text-sky-700 block">
+                  {currentStudent.attendanceRate >= 80 ? 'Good Standing' : currentStudent.attendanceRate >= 60 ? 'Satisfactory' : 'Attention Required'}
+                </span>
               </div>
             </div>
 
@@ -1539,69 +1576,80 @@ export const StudentPortal: React.FC = () => {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[11px]">
                   <tr>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Subject / Module</th>
-                    <th className="py-3 px-4">Time Slot</th>
-                    <th className="py-3 px-4">Hall / Venue</th>
-                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3.5 px-4">Date</th>
+                    <th className="py-3.5 px-4">Time Logged</th>
+                    <th className="py-3.5 px-4">Session / Module</th>
+                    <th className="py-3.5 px-4">Hall / Venue</th>
+                    <th className="py-3.5 px-4 text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-3.5 px-4 font-bold text-[#0a192f]">22 Mar 2026</td>
-                    <td className="py-3.5 px-4">Physics: Electric Field Calculations</td>
-                    <td className="py-3.5 px-4">08:30 AM - 11:00 AM</td>
-                    <td className="py-3.5 px-4">CBT Lab 1</td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                        Present
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-3.5 px-4 font-bold text-[#0a192f]">20 Mar 2026</td>
-                    <td className="py-3.5 px-4">Mathematics: Coordinate Geometry</td>
-                    <td className="py-3.5 px-4">09:00 AM - 11:30 AM</td>
-                    <td className="py-3.5 px-4">Lecture Hall A</td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                        Present
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-3.5 px-4 font-bold text-[#0a192f]">18 Mar 2026</td>
-                    <td className="py-3.5 px-4">Grand Mock Test 4 Simulation</td>
-                    <td className="py-3.5 px-4">10:00 AM - 12:00 PM</td>
-                    <td className="py-3.5 px-4">CBT Suite A</td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                        Present
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-3.5 px-4 font-bold text-[#0a192f]">16 Mar 2026</td>
-                    <td className="py-3.5 px-4">Chemistry: Qualitative Analysis Practical</td>
-                    <td className="py-3.5 px-4">01:00 PM - 03:30 PM</td>
-                    <td className="py-3.5 px-4">Science Lab B</td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
-                        Late (15 mins)
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-3.5 px-4 font-bold text-[#0a192f]">14 Mar 2026</td>
-                    <td className="py-3.5 px-4">Use of English: Lexis & Structure</td>
-                    <td className="py-3.5 px-4">09:00 AM - 11:00 AM</td>
-                    <td className="py-3.5 px-4">Lecture Hall A</td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                        Present
-                      </span>
-                    </td>
-                  </tr>
+                  {currentStudent.attendanceHistory && currentStudent.attendanceHistory.length > 0 ? (
+                    currentStudent.attendanceHistory.map((att) => {
+                      const isPresent = att.status === 'Present';
+                      const isLate = att.status === 'Late';
+                      const isAbsent = att.status === 'Absent';
+
+                      return (
+                        <tr key={att.id} className="hover:bg-slate-50">
+                          <td className="py-3.5 px-4 font-bold font-mono text-[#0a192f]">
+                            {att.date}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-600">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 font-bold text-slate-700">
+                              <Clock className="w-3 h-3 text-[#0284c7]" />
+                              <span>{att.time || '09:00 AM'}</span>
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-[#0a192f] block">
+                              {att.remark || att.subject || `${currentStudent.program} Core Lecture`}
+                            </span>
+                            {att.cohort && (
+                              <span className="text-[10px] text-slate-400 font-medium block">
+                                Cohort: {att.cohort}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600">
+                            {att.venue || 'Lecture Hall A (Okomaiko Campus)'}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <span
+                              className={`px-3 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1 border ${
+                                isPresent
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  : isLate
+                                  ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                  : isAbsent
+                                  ? 'bg-red-100 text-red-800 border-red-300'
+                                  : 'bg-blue-100 text-blue-800 border-blue-300'
+                              }`}
+                            >
+                              {isPresent && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                              {isLate && <Clock className="w-3 h-3 text-amber-600" />}
+                              {isAbsent && <XCircle className="w-3 h-3 text-red-600" />}
+                              <span>{att.status}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center">
+                        <div className="max-w-md mx-auto space-y-3">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto border border-slate-200">
+                            <CalendarCheck className="w-6 h-6 text-[#0284c7]" />
+                          </div>
+                          <p className="font-bold text-slate-800 text-sm">No Attendance Records Logged Yet</p>
+                          <p className="text-slate-500 text-xs leading-relaxed">
+                            When the admin takes daily attendance from the Directorate Admin Dashboard, the session date, exact time, venue, and status will automatically appear here.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -2008,343 +2056,462 @@ export const StudentPortal: React.FC = () => {
         )}
 
         {/* TAB 6: MY RESULTS */}
-        {studentTab === 'results' && (
-          <div className="space-y-6">
-            {!isSubscriptionActive ? (
-              <LockedFeatureNotice featureName="My CBT Examination Results" />
-            ) : (
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">My Results & Test History</h2>
-                    <p className="text-slate-500 text-xs mt-0.5">
-                      Detailed subject performance analytics and tutor diagnostic feedback.
-                    </p>
+        {studentTab === 'results' && (() => {
+          const studentCbtAttempts = cbtAttempts.filter(
+            (att) => att.studentId === currentStudent.id || att.registrationNumber === currentStudent.registrationNumber
+          );
+          const totalAttempts = studentCbtAttempts.length;
+          const avgScore = totalAttempts > 0
+            ? Math.round(studentCbtAttempts.reduce((acc, a) => acc + (a.percentage || 0), 0) / totalAttempts)
+            : 0;
+          const passedCount = studentCbtAttempts.filter((a) => a.status === 'Passed').length;
+
+          return (
+            <div className="space-y-6">
+              {!isSubscriptionActive ? (
+                <LockedFeatureNotice featureName="My CBT Examination Results" />
+              ) : (
+                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                    <div>
+                      <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">My CBT Test Results</h2>
+                      <p className="text-slate-500 text-xs mt-0.5">
+                        Real-time test scores, accuracy percentages, and pass/fail standings from your CBT practice simulations.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => window.print()}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>Print Result Slip</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={() => window.print()}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>Print Result Slip</span>
-                  </button>
-                </div>
 
-                {/* Test Results Cards */}
-                <div className="space-y-6">
-                  {currentStudent.recentMockTests.map((test) => (
-                    <div key={test.id} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-4">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-extrabold text-[#0a192f] text-base">{test.title}</h3>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800">
-                              {test.status}
-                            </span>
-                          </div>
-                          <span className="text-xs text-slate-400">{test.date} • Standard Testing Format</span>
+                  {studentCbtAttempts.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#d97706] flex items-center justify-center mx-auto">
+                        <Award className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-base font-extrabold text-[#0a192f]">No Real-Time CBT Results Logged Yet</h3>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        Take an interactive CBT practice simulation or mock exam to generate your live test score, accuracy percentage, and pass/fail standing!
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setStudentTab('cbt-mocks')}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-white font-extrabold text-xs shadow-sm cursor-pointer transition-all"
+                      >
+                        <PlayCircle className="w-4 h-4" />
+                        <span>Start CBT Practice Now</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">Tests Attempted</span>
+                          <div className="text-2xl font-black text-[#0a192f] font-mono">{totalAttempts}</div>
                         </div>
-
-                        <div className="text-right">
-                          <span className="text-2xl font-black text-[#0a192f] font-mono">
-                            {test.totalScore} <span className="text-xs text-slate-400 font-normal">/ {test.maxScore}</span>
-                          </span>
-                          <span className="text-xs text-emerald-600 font-bold block">
-                            {test.percentage}% (Percentile: {test.percentile}th)
-                          </span>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">Average Score</span>
+                          <div className="text-2xl font-black text-[#0284c7] font-mono">{avgScore}%</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">Passed Tests</span>
+                          <div className="text-2xl font-black text-emerald-700 font-mono">{passedCount} / {totalAttempts}</div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">Overall Standing</span>
+                          <div className={`text-base font-extrabold ${passedCount >= totalAttempts / 2 ? 'text-emerald-700' : 'text-red-600'}`}>
+                            {passedCount >= totalAttempts / 2 ? 'PASSED' : 'NEEDS IMPROVEMENT'}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Subject Scores */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {test.subjects.map((sub, idx) => (
-                          <div key={idx} className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-1 text-xs">
-                            <div className="flex justify-between items-center font-bold">
-                              <span className="text-[#0a192f]">{sub.subject}</span>
-                              <span className="font-mono text-[#d97706]">
-                                {sub.score} / {sub.maxScore}
-                              </span>
+                      <div className="space-y-4">
+                        {studentCbtAttempts.map((test) => (
+                          <div key={test.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3 text-xs">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-extrabold text-[#0a192f] text-sm">{test.examTitle}</h3>
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                                    test.status === 'Passed' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-red-100 text-red-800 border-red-300'
+                                  }`}>
+                                    {test.status} Standing
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-slate-400 font-mono">{test.submittedAt}</span>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="text-xl font-black text-[#0a192f] font-mono">
+                                  {test.score} <span className="text-xs text-slate-400 font-normal">/ {test.maxScore}</span>
+                                </span>
+                                <span className="text-xs text-emerald-600 font-extrabold block">
+                                  Accuracy: {test.percentage.toFixed(1)}%
+                                </span>
+                              </div>
                             </div>
-                            <p className="text-slate-500 text-[11px] italic">"{sub.teacherFeedback}"</p>
                           </div>
                         ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
 
-        {/* TAB 6B: ACADEMIC PROGRESS (Requirement 34) */}
-        {studentTab === 'progress' && (
-          <div className="space-y-6">
-            {!isSubscriptionActive ? (
-              <LockedFeatureNotice featureName="Academic Progress Scorecard" />
-            ) : (
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
-                      Academic Performance Ledger
-                    </span>
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900">Continuous Academic Progress</h2>
-                    <p className="text-slate-500 text-xs mt-0.5">
-                      Multi-assessment heuristic progress, subject mastery curves, and teacher evaluation comments.
-                    </p>
+        {/* TAB 6B: ACADEMIC PROGRESS */}
+        {studentTab === 'progress' && (() => {
+          const studentCbtAttempts = cbtAttempts.filter(
+            (att) => att.studentId === currentStudent.id || att.registrationNumber === currentStudent.registrationNumber
+          );
+          const totalAttemptsCount = studentCbtAttempts.length;
+          const totalMaxQuestions = studentCbtAttempts.reduce((acc, a) => acc + (a.maxScore || 0), 0);
+          const totalAchievedScore = studentCbtAttempts.reduce((acc, a) => acc + (a.score || 0), 0);
+          const overallAccuracyPercentage = totalMaxQuestions > 0
+            ? ((totalAchievedScore / totalMaxQuestions) * 100).toFixed(1)
+            : '0.0';
+
+          const cumulativeAverageScore = totalAttemptsCount > 0
+            ? Math.round(studentCbtAttempts.reduce((acc, a) => acc + (a.percentage || 0), 0) / totalAttemptsCount)
+            : 0;
+
+          const passedCount = studentCbtAttempts.filter((a) => a.status === 'Passed').length;
+          const passStanding = totalAttemptsCount === 0
+            ? 'No Test History'
+            : passedCount >= Math.ceil(totalAttemptsCount / 2)
+            ? 'Passed Standing'
+            : 'Needs Improvement';
+
+          return (
+            <div className="space-y-6">
+              {!isSubscriptionActive ? (
+                <LockedFeatureNotice featureName="Academic Progress Scorecard" />
+              ) : (
+                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
+                        Academic Performance Ledger
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-black text-slate-900">Continuous Academic Progress</h2>
+                      <p className="text-slate-500 text-xs mt-0.5">
+                        Real-time test scores, accuracy percentages, and pass/fail standings dynamically tracked per student.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-[#0284c7] border border-sky-300 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>Print Progress Report</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-[#0284c7] border border-sky-300 text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>Print Progress Report</span>
-                  </button>
-                </div>
 
-            {/* High-Level Standing Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Cumulative Average</span>
-                <div className="text-2xl sm:text-3xl font-black text-[#0284c7] font-mono">
-                  {Math.round(
-                    currentStudent.recentMockTests.reduce((acc, t) => acc + (t.percentage || 78), 0) /
-                      (currentStudent.recentMockTests.length || 1)
-                  )}%
-                </div>
-                <span className="text-[10px] text-emerald-600 font-bold">Excellence Benchmark</span>
-              </div>
+                  {/* High-Level Standing Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Cumulative Average</span>
+                      <div className="text-2xl sm:text-3xl font-black text-[#0284c7] font-mono">
+                        {totalAttemptsCount > 0 ? `${cumulativeAverageScore}%` : '--'}
+                      </div>
+                      <span className="text-[10px] text-emerald-600 font-bold">Real-time CBT Score</span>
+                    </div>
 
-              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Assessments Logged</span>
-                <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
-                  {currentStudent.recentMockTests.length + cbtAttempts.length}
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium">Class Tests &amp; Mocks</span>
-              </div>
+                    <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Assessments Logged</span>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
+                        {totalAttemptsCount}
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-medium">Real-time Submissions</span>
+                    </div>
 
-              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Target Score</span>
-                <div className="text-2xl sm:text-3xl font-black text-[#ea580c] font-mono">
-                  {currentStudent.targetScore || '320+'}
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium">{currentStudent.program} Track</span>
-              </div>
+                    <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Accuracy Rate</span>
+                      <div className="text-2xl sm:text-3xl font-black text-[#ea580c] font-mono">
+                        {overallAccuracyPercentage}%
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-medium">{totalAchievedScore}/{totalMaxQuestions} Marks</span>
+                    </div>
 
-              <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase">Attendance Standing</span>
-                <div className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
-                  {currentStudent.attendanceRate || 96}%
+                    <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase">Academic Standing</span>
+                      <div className={`text-lg sm:text-xl font-black font-mono ${passStanding === 'Passed Standing' ? 'text-emerald-700' : passStanding === 'Needs Improvement' ? 'text-red-600' : 'text-slate-400'}`}>
+                        {passStanding}
+                      </div>
+                      <span className="text-[10px] text-emerald-700 font-bold">{passedCount} Passed / {totalAttemptsCount} Total</span>
+                    </div>
+                  </div>
+
+                  {/* Assessment History Table */}
+                  <div className="space-y-4">
+                    <h3 className="font-extrabold text-slate-900 text-sm">Real-Time Assessment Log &amp; Accuracy Standings</h3>
+                    {totalAttemptsCount === 0 ? (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center mx-auto">
+                          <Award className="w-6 h-6" />
+                        </div>
+                        <h4 className="text-sm font-extrabold text-[#0a192f]">No Real-Time CBT Scores Recorded Yet</h4>
+                        <p className="text-xs text-slate-500 max-w-md mx-auto">
+                          Complete a CBT practice simulation or mock exam to generate real-time test scores, accuracy percentages, and pass/fail standings!
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setStudentTab('cbt-mocks')}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0284c7] hover:bg-sky-700 text-white font-extrabold text-xs shadow-sm cursor-pointer transition-all"
+                        >
+                          <PlayCircle className="w-4 h-4" />
+                          <span>Start CBT Practice</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                            <tr>
+                              <th className="p-3.5">Assessment Type</th>
+                              <th className="p-3.5">Test Title</th>
+                              <th className="p-3.5">Date &amp; Time</th>
+                              <th className="p-3.5">Score</th>
+                              <th className="p-3.5">Accuracy %</th>
+                              <th className="p-3.5">Pass / Fail Standing</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {studentCbtAttempts.map((att) => (
+                              <tr key={att.id} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="p-3.5 font-bold text-slate-800">
+                                  <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-extrabold border border-amber-200">
+                                    CBT Practice
+                                  </span>
+                                </td>
+                                <td className="p-3.5 font-bold text-slate-900">{att.examTitle}</td>
+                                <td className="p-3.5 font-mono text-slate-500">{att.submittedAt}</td>
+                                <td className="p-3.5 font-mono font-bold text-slate-800">
+                                  {att.score} / {att.maxScore}
+                                </td>
+                                <td className="p-3.5">
+                                  <span className="px-2.5 py-0.5 rounded-full font-bold font-mono text-[11px] bg-sky-100 text-sky-800">
+                                    {att.percentage.toFixed(1)}%
+                                  </span>
+                                </td>
+                                <td className="p-3.5">
+                                  <span className={`px-2.5 py-1 rounded-full font-extrabold text-[11px] border ${
+                                    att.status === 'Passed' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-red-100 text-red-800 border-red-300'
+                                  }`}>
+                                    {att.status} Standing
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <span className="text-[10px] text-emerald-700 font-bold">Good Standing</span>
-              </div>
+              )}
             </div>
-
-            {/* Assessment History Table */}
-            <div className="space-y-4">
-              <h3 className="font-extrabold text-slate-900 text-sm">Assessment History &amp; Diagnostics</h3>
-              <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
-                    <tr>
-                      <th className="p-3.5">Assessment Type</th>
-                      <th className="p-3.5">Title / Subject</th>
-                      <th className="p-3.5">Date</th>
-                      <th className="p-3.5">Score</th>
-                      <th className="p-3.5">Percentage</th>
-                      <th className="p-3.5">Teacher / Proctor Feedback</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {currentStudent.recentMockTests.map((test) => (
-                      <tr key={test.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 font-bold text-slate-800">
-                          <span className="px-2.5 py-1 rounded-md bg-sky-50 text-[#0284c7] font-extrabold border border-sky-200">
-                            Mock Examination
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-bold text-slate-900">{test.title}</td>
-                        <td className="p-3.5 font-mono text-slate-500">{test.date}</td>
-                        <td className="p-3.5 font-mono font-bold text-slate-800">
-                          {test.totalScore} / {test.maxScore}
-                        </td>
-                        <td className="p-3.5">
-                          <span className="px-2.5 py-0.5 rounded-full font-bold font-mono text-[11px] bg-emerald-100 text-emerald-800">
-                            {test.percentage}%
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-slate-600 italic">
-                          "Consistent accuracy in calculation heuristics. Recommended for speed pacing drills."
-                        </td>
-                      </tr>
-                    ))}
-                    {cbtAttempts.slice(0, 3).map((att) => (
-                      <tr key={att.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 font-bold text-slate-800">
-                          <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-extrabold border border-amber-200">
-                            CBT Practice
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-bold text-slate-900">{att.examTitle}</td>
-                        <td className="p-3.5 font-mono text-slate-500">{att.submittedAt}</td>
-                        <td className="p-3.5 font-mono font-bold text-slate-800">
-                          {att.score} / {att.maxScore}
-                        </td>
-                        <td className="p-3.5">
-                          <span className="px-2.5 py-0.5 rounded-full font-bold font-mono text-[11px] bg-emerald-100 text-emerald-800">
-                            {att.percentage}%
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-slate-600 italic">
-                          Automatic CBT scoring. Status: {att.status}.
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {/* TAB 7: PRACTICE SETS */}
-        {studentTab === 'practice-sets' && (
-          <div className="space-y-6">
-            {!isSubscriptionActive ? (
-              <LockedFeatureNotice featureName="Interactive Practice Question Bank" />
-            ) : (
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Interactive Practice Question Bank</h2>
-                    <p className="text-slate-500 text-xs mt-0.5">
-                      Topical past questions with instant answer checking and step-by-step heuristic solutions.
-                    </p>
-                  </div>
+        {studentTab === 'practice-sets' && (() => {
+          const yearsList = Array.from({ length: 21 }, (_, i) => (2005 + i).toString()).reverse(); // 2025 down to 2005
 
-                  {/* Subject Filter */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500 font-semibold">Subject:</span>
-                    <select
-                      value={practiceSubjectFilter}
-                      onChange={(e) => setPracticeSubjectFilter(e.target.value)}
-                      className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-white outline-hidden"
-                    >
-                      <option value="All">All Subjects</option>
-                      <option value="Physics">Physics</option>
-                      <option value="Mathematics">Mathematics</option>
-                      <option value="Chemistry">Chemistry</option>
-                      <option value="Biology">Biology</option>
-                      <option value="Use of English & Literature">Use of English</option>
-                    </select>
-                  </div>
-                </div>
+          const filteredQuestions = practiceQuestions.filter((q) => {
+            const matchSubject = practiceSubjectFilter === 'All' || q.subject.toLowerCase().includes(practiceSubjectFilter.toLowerCase());
+            const matchYear = practiceYearFilter === 'All' || (q.examYear || '').includes(practiceYearFilter);
+            return matchSubject && matchYear;
+          });
 
-                {/* Questions List */}
-                <div className="space-y-4">
-                  {practiceQuestions
-                    .filter((q) => practiceSubjectFilter === 'All' || q.subject.includes(practiceSubjectFilter))
-                    .map((q, idx) => {
-                      const isRevealed = revealedExplanations[q.id];
-                      const chosenOpt = practiceUserAnswers[q.id];
-                      return (
-                        <div
-                          key={q.id}
-                          className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3 text-xs"
+          return (
+            <div className="space-y-6">
+              {!isSubscriptionActive ? (
+                <LockedFeatureNotice featureName="Interactive Practice Question Bank" />
+              ) : (
+                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                    <div>
+                      <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Interactive Practice Question Bank</h2>
+                      <p className="text-slate-500 text-xs mt-0.5">
+                        20 Years Past Question Archives (2005–2025) year after year across all subjects with instant answer checking and heuristic solutions.
+                      </p>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-500 font-bold">Subject:</span>
+                        <select
+                          value={practiceSubjectFilter}
+                          onChange={(e) => setPracticeSubjectFilter(e.target.value)}
+                          className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-white outline-hidden focus:border-[#25166B]"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#d97706]">
-                                {q.subject}
+                          <option value="All">All Subjects</option>
+                          <option value="Mathematics">Mathematics</option>
+                          <option value="Physics">Physics</option>
+                          <option value="Chemistry">Chemistry</option>
+                          <option value="Biology">Biology</option>
+                          <option value="Use of English">Use of English</option>
+                          <option value="Economics">Economics</option>
+                          <option value="Government">Government</option>
+                          <option value="Literature in English">Literature</option>
+                          <option value="Commerce">Commerce &amp; Accounts</option>
+                          <option value="Agricultural Science">Agric Science</option>
+                          <option value="CRK">CRK / Religious Studies</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-slate-500 font-bold">Exam Year:</span>
+                        <select
+                          value={practiceYearFilter}
+                          onChange={(e) => setPracticeYearFilter(e.target.value)}
+                          className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-white outline-hidden focus:border-[#25166B]"
+                        >
+                          <option value="All">All Years (2005 - 2025)</option>
+                          {yearsList.map((y) => (
+                            <option key={y} value={y}>{y} Past Questions</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Banner Counter */}
+                  <div className="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200 flex items-center justify-between text-xs">
+                    <span className="font-extrabold text-[#0a192f]">
+                      Showing {filteredQuestions.length} Past Questions
+                      {practiceSubjectFilter !== 'All' ? ` for ${practiceSubjectFilter}` : ' across All Subjects'}
+                      {practiceYearFilter !== 'All' ? ` (${practiceYearFilter} Edition)` : ' (2005–2025 Archive)'}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-black text-[10px]">
+                      Year-by-Year Past Questions
+                    </span>
+                  </div>
+
+                  {/* Questions List */}
+                  {filteredQuestions.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                      <p className="text-xs text-slate-500 font-medium">No past questions matched the selected subject and year filter.</p>
+                      <button
+                        onClick={() => {
+                          setPracticeSubjectFilter('All');
+                          setPracticeYearFilter('All');
+                        }}
+                        className="text-xs text-[#0284c7] font-bold hover:underline cursor-pointer"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredQuestions.map((q, idx) => {
+                        const isRevealed = revealedExplanations[q.id];
+                        const chosenOpt = practiceUserAnswers[q.id];
+                        return (
+                          <div
+                            key={q.id}
+                            className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3 text-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#d97706]">
+                                  {q.subject}
+                                </span>
+                                <span className="text-slate-600 font-mono font-bold text-[11px] bg-slate-200 px-2 py-0.5 rounded">{q.examYear}</span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">
+                                {q.difficulty}
                               </span>
-                              <span className="text-slate-400 font-mono text-[11px]">{q.examYear}</span>
                             </div>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">
-                              {q.difficulty}
-                            </span>
-                          </div>
 
-                          <h4 className="font-bold text-[#0a192f] text-sm leading-relaxed">
-                            {idx + 1}. {q.questionText}
-                          </h4>
+                            <h4 className="font-bold text-[#0a192f] text-sm leading-relaxed">
+                              {idx + 1}. {q.questionText}
+                            </h4>
 
-                          {/* Options */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            {q.options.map((opt) => {
-                              const isSelected = chosenOpt === opt.label;
-                              const isCorrect = isRevealed && opt.label === q.correctOption;
-                              const isWrong = isRevealed && isSelected && opt.label !== q.correctOption;
-                              return (
-                                <button
-                                  key={opt.label}
-                                  onClick={() => {
-                                    setPracticeUserAnswers((prev) => ({ ...prev, [q.id]: opt.label }));
-                                  }}
-                                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                                    isCorrect
-                                      ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
-                                      : isWrong
-                                      ? 'border-red-400 bg-red-50 text-red-900'
-                                      : isSelected
-                                      ? 'border-[#d97706] bg-amber-50/50 text-[#0a192f] font-bold'
-                                      : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
-                                  }`}
-                                >
-                                  <span
-                                    className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                            {/* Options */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                              {q.options.map((opt) => {
+                                const isSelected = chosenOpt === opt.label;
+                                const isCorrect = isRevealed && opt.label === q.correctOption;
+                                const isWrong = isRevealed && isSelected && opt.label !== q.correctOption;
+                                return (
+                                  <button
+                                    key={opt.label}
+                                    onClick={() => {
+                                      setPracticeUserAnswers((prev) => ({ ...prev, [q.id]: opt.label }));
+                                    }}
+                                    className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                                       isCorrect
-                                        ? 'bg-emerald-600 text-white'
+                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
                                         : isWrong
-                                        ? 'bg-red-600 text-white'
+                                        ? 'border-red-400 bg-red-50 text-red-900'
                                         : isSelected
-                                        ? 'bg-[#d97706] text-white'
-                                        : 'bg-slate-100 text-slate-600'
+                                        ? 'border-[#d97706] bg-amber-50/50 text-[#0a192f] font-bold'
+                                        : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
                                     }`}
                                   >
-                                    {opt.label}
-                                  </span>
-                                  <span className="text-xs">{opt.text}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {/* Reveal Explanation Button */}
-                          <div className="pt-2 flex items-center justify-between border-t border-slate-200">
-                            <button
-                              onClick={() => {
-                                setRevealedExplanations((prev) => ({
-                                  ...prev,
-                                  [q.id]: !prev[q.id],
-                                }));
-                              }}
-                              className="text-xs text-[#d97706] font-bold hover:underline cursor-pointer flex items-center gap-1"
-                            >
-                              <HelpCircle className="w-3.5 h-3.5" />
-                              <span>{isRevealed ? 'Hide Solution' : 'Check Correct Answer & Heuristic Solution'}</span>
-                            </button>
-                          </div>
-
-                          {isRevealed && (
-                            <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200 text-slate-800 space-y-1">
-                              <span className="font-bold text-[#0a192f] block">
-                                Correct Answer: Option {q.correctOption}
-                              </span>
-                              <p className="text-[11px] leading-relaxed text-slate-600">{q.explanation}</p>
+                                    <span
+                                      className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                                        isCorrect
+                                          ? 'bg-emerald-600 text-white'
+                                          : isWrong
+                                          ? 'bg-red-600 text-white'
+                                          : isSelected
+                                          ? 'bg-[#d97706] text-white'
+                                          : 'bg-slate-100 text-slate-600'
+                                      }`}
+                                    >
+                                      {opt.label}
+                                    </span>
+                                    <span className="text-xs">{opt.text}</span>
+                                  </button>
+                                );
+                              })}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+
+                            {/* Reveal Explanation Button */}
+                            <div className="pt-2 flex items-center justify-between border-t border-slate-200">
+                              <button
+                                onClick={() => {
+                                  setRevealedExplanations((prev) => ({
+                                    ...prev,
+                                    [q.id]: !prev[q.id],
+                                  }));
+                                }}
+                                className="text-xs text-[#d97706] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                              >
+                                <HelpCircle className="w-3.5 h-3.5" />
+                                <span>{isRevealed ? 'Hide Solution' : 'Check Correct Answer & Heuristic Solution'}</span>
+                              </button>
+                            </div>
+
+                            {isRevealed && (
+                              <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200 text-slate-800 space-y-1">
+                                <span className="font-bold text-[#0a192f] block">
+                                  Correct Answer: Option {q.correctOption}
+                                </span>
+                                <p className="text-[11px] leading-relaxed text-slate-600">{q.explanation}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
 
         {/* TAB 8: TIMETABLES */}
         {studentTab === 'timetables' && (

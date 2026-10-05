@@ -236,7 +236,19 @@ export interface StudentProfile {
   residentialAddress?: string;
   jambProfileCode?: string;
   selectedSubjects?: string[];
-  attendanceHistory?: { id: string; date: string; status: 'Present' | 'Late' | 'Absent' | 'Excused'; remark?: string }[];
+  attendanceHistory?: StudentAttendanceRecord[];
+}
+
+export interface StudentAttendanceRecord {
+  id: string;
+  date: string;
+  time?: string;
+  status: 'Present' | 'Late' | 'Absent' | 'Excused';
+  remark?: string;
+  cohort?: string;
+  subject?: string;
+  venue?: string;
+  takenBy?: string;
 }
 
 export interface MonthlyPaymentSubmission {
@@ -406,14 +418,18 @@ export interface AttendanceEntry {
   studentName: string;
   registrationNumber: string;
   status: 'Present' | 'Late' | 'Absent' | 'Excused';
+  time?: string;
   remark?: string;
 }
 
 export interface DailyAttendanceSession {
   id: string;
   date: string;
+  time?: string;
   program: ExamProgram | 'All';
   cohort: string;
+  subject?: string;
+  venue?: string;
   takenBy: string;
   entries: AttendanceEntry[];
 }

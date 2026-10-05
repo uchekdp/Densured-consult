@@ -17,7 +17,7 @@ import {
   WebsitePageTarget,
   UploadedQuestionBatch,
 } from '../../types';
-import { generateCbtQuestionsOnline, parsePastQuestionDocument } from '../../utils/onlineQuestionBank';
+import { generateCbtQuestionsOnline, parsePastQuestionDocument, generate20YearPastQuestionsArchive } from '../../utils/onlineQuestionBank';
 import { ReceiptAndIDCardVerificationModal } from '../common/ReceiptAndIDCardVerificationModal';
 import { ADMIN_CREDENTIALS } from '../../data/portalData';
 import { statsApi, mediaApi, progressApi } from '../../services/api';
@@ -178,6 +178,7 @@ export const AdminPortal: React.FC = () => {
 
   // Daily attendance session creator state
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [attendanceTime, setAttendanceTime] = useState(() => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }));
   const [attendanceProg, setAttendanceProg] = useState('All');
   const [attendanceCohort, setAttendanceCohort] = useState('Morning Weekday Batch A');
   const [attendanceEntries, setAttendanceEntries] = useState<Record<string, 'Present' | 'Late' | 'Absent' | 'Excused'>>({});
@@ -243,6 +244,7 @@ export const AdminPortal: React.FC = () => {
   const [selectedStudentDetails, setSelectedStudentDetails] = useState<StudentProfile | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<StudentProfile | null>(null);
   const [individualAttendanceDate, setIndividualAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [individualAttendanceTime, setIndividualAttendanceTime] = useState(() => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }));
   const [individualAttendanceStatus, setIndividualAttendanceStatus] = useState<'Present' | 'Late' | 'Absent' | 'Excused'>('Present');
   const [individualAttendanceRemark, setIndividualAttendanceRemark] = useState('');
 
@@ -615,16 +617,20 @@ export const AdminPortal: React.FC = () => {
       (s) => attendanceProg === 'All' || s.program === attendanceProg
     );
 
+    const timeToUse = attendanceTime || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
     const entries: AttendanceEntry[] = relevantStudents.map((std) => ({
       studentId: std.id,
       studentName: std.fullName,
       registrationNumber: std.registrationNumber,
       status: attendanceEntries[std.id] || 'Present',
+      time: timeToUse,
     }));
 
     const session: DailyAttendanceSession = {
       id: `att-sess-${Date.now()}`,
       date: attendanceDate,
+      time: timeToUse,
       program: attendanceProg as any,
       cohort: attendanceCohort,
       takenBy: adminUser ? adminUser.name : 'Directorate Office',
@@ -681,6 +687,22 @@ export const AdminPortal: React.FC = () => {
       explanation: '',
       difficulty: 'Medium',
     });
+  };
+
+  // Handle 20-Year Past Questions Generation across All Subjects
+  const handleGenerate20YearsPastQuestions = () => {
+    setIsGeneratingOnline(true);
+    setTimeout(() => {
+      const allQuestions = generate20YearPastQuestionsArchive();
+      addMultiplePracticeQuestions(allQuestions);
+      setIsGeneratingOnline(false);
+      setShowGenerateOnlineModal(false);
+      showToast(
+        'success',
+        '20-Year Past Questions Bank Approved',
+        `Generated and approved ${allQuestions.length} past questions (2005 - 2025) across ALL subjects! Integrated immediately into all student portals.`
+      );
+    }, 350);
   };
 
   // Handle Online CBT Question Generation
@@ -2094,7 +2116,7 @@ export const AdminPortal: React.FC = () => {
                 </div>
 
                 {/* Session Configuration */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Session Date</label>
                     <input
@@ -2102,6 +2124,16 @@ export const AdminPortal: React.FC = () => {
                       value={attendanceDate}
                       onChange={(e) => setAttendanceDate(e.target.value)}
                       className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Session Time</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 09:00 AM - 11:30 AM"
+                      value={attendanceTime}
+                      onChange={(e) => setAttendanceTime(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden bg-white"
                     />
                   </div>
                   <div>
@@ -2344,11 +2376,19 @@ export const AdminPortal: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
+                      onClick={handleGenerate20YearsPastQuestions}
+                      className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#FFC600]" />
+                      <span>Generate 20 Years Past Questions (All Subjects)</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setShowGenerateOnlineModal(true)}
                       className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm cursor-pointer flex items-center gap-1.5 transition-all"
                     >
                       <Sparkles className="w-4 h-4 text-[#FFC600]" />
-                      <span>Generate Online Question Bank</span>
+                      <span>Online Generator</span>
                     </button>
                     <button
                       type="button"
@@ -5297,13 +5337,23 @@ export const AdminPortal: React.FC = () => {
                   <span className="font-bold text-[#25166B] text-xs block">
                     Take Daily Attendance for {selectedStudentDetails.fullName}:
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 mb-1 uppercase">Date</label>
                       <input
                         type="date"
                         value={individualAttendanceDate}
                         onChange={(e) => setIndividualAttendanceDate(e.target.value)}
+                        className="w-full p-2 rounded-xl border border-slate-300 bg-white font-medium outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1 uppercase">Time</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 09:30 AM"
+                        value={individualAttendanceTime}
+                        onChange={(e) => setIndividualAttendanceTime(e.target.value)}
                         className="w-full p-2 rounded-xl border border-slate-300 bg-white font-medium outline-hidden"
                       />
                     </div>
@@ -5335,17 +5385,20 @@ export const AdminPortal: React.FC = () => {
                         type="button"
                         onClick={() => {
                           const remark = individualAttendanceRemark || `Logged on ${individualAttendanceDate}`;
+                          const timeToUse = individualAttendanceTime || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
                           recordIndividualStudentAttendance(
                             selectedStudentDetails.id,
                             individualAttendanceDate,
                             individualAttendanceStatus,
-                            remark
+                            remark,
+                            timeToUse
                           );
                           // Update local copy immediately for instant UI refresh
                           const existingHistory = selectedStudentDetails.attendanceHistory || [];
                           const newEntry = {
                             id: `att-${Date.now()}`,
                             date: individualAttendanceDate,
+                            time: timeToUse,
                             status: individualAttendanceStatus,
                             remark,
                           };
@@ -5389,6 +5442,7 @@ export const AdminPortal: React.FC = () => {
                       <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0 uppercase text-[10px]">
                         <tr>
                           <th className="py-2.5 px-3">Date</th>
+                          <th className="py-2.5 px-3">Time</th>
                           <th className="py-2.5 px-3">Status</th>
                           <th className="py-2.5 px-3">Remark</th>
                         </tr>
@@ -5397,6 +5451,7 @@ export const AdminPortal: React.FC = () => {
                         {(selectedStudentDetails.attendanceHistory || []).map((att, i) => (
                           <tr key={i} className="hover:bg-slate-50">
                             <td className="py-2 px-3 font-mono text-slate-600">{att.date}</td>
+                            <td className="py-2 px-3 font-mono text-slate-500">{att.time || '09:00 AM'}</td>
                             <td className="py-2 px-3">
                               <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -5417,7 +5472,7 @@ export const AdminPortal: React.FC = () => {
                         ))}
                         {(!selectedStudentDetails.attendanceHistory || selectedStudentDetails.attendanceHistory.length === 0) && (
                           <tr>
-                            <td colSpan={3} className="py-4 text-center text-slate-400">
+                            <td colSpan={4} className="py-4 text-center text-slate-400">
                               No attendance recorded yet. Use the logger above to record the first session.
                             </td>
                           </tr>
@@ -6025,6 +6080,24 @@ export const AdminPortal: React.FC = () => {
                 className="text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer"
               >
                 ✕
+              </button>
+            </div>
+
+            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-[#0a192f] text-xs">⚡ Fast 1-Click Past Question Bank Generator</span>
+                <span className="text-[10px] text-amber-800 font-bold bg-amber-200/80 px-2 py-0.5 rounded">2005 - 2025 Archives</span>
+              </div>
+              <p className="text-[11px] text-slate-600">
+                Instantly generate and approve 20 years of authentic past questions year-after-year across ALL subjects.
+              </p>
+              <button
+                type="button"
+                onClick={handleGenerate20YearsPastQuestions}
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-[#0a192f] via-[#112240] to-[#25166B] hover:opacity-95 text-white font-black text-xs rounded-xl border border-amber-400/40 shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-[#FFC600] animate-pulse" />
+                <span>Auto-Generate & Approve 20 Years Past Questions (All Subjects)</span>
               </button>
             </div>
 

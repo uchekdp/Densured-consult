@@ -25,6 +25,7 @@ import {
   UploadedQuestionBatch,
   MonthlyPaymentSubmission,
   MockTestResult,
+  StudentAttendanceRecord,
 } from '../types';
 import { OfficialReceiptModal } from '../components/common/OfficialReceiptModal';
 import {
@@ -64,6 +65,7 @@ import {
   adminApi,
   questionApi,
 } from '../services/api';
+import { generate20YearPastQuestionsArchive } from '../utils/onlineQuestionBank';
 
 export interface CloudDatabaseStatus {
   status: 'Connected' | 'Syncing' | 'Offline';
@@ -256,7 +258,14 @@ interface AppContextType {
   attendanceSessions: DailyAttendanceSession[];
   saveAttendanceSession: (session: DailyAttendanceSession) => void;
   deleteAttendanceSession: (date: string, cohort?: string) => void;
-  recordIndividualStudentAttendance: (studentId: string, date: string, status: 'Present' | 'Late' | 'Absent' | 'Excused', remark?: string) => void;
+  recordIndividualStudentAttendance: (
+    studentId: string,
+    date: string,
+    status: 'Present' | 'Late' | 'Absent' | 'Excused',
+    remark?: string,
+    time?: string,
+    extra?: { cohort?: string; subject?: string; venue?: string; takenBy?: string }
+  ) => void;
 
   // Admin & Audit
   auditLogs: AuditLogItem[];
@@ -460,6 +469,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               tuitionTotal = monthlyFee;
               tuitionPaid = monthlyFee;
             }
+            // Clear out all initial mock attendance records so student portal starts clean
+            const cleanHistory = (s.attendanceHistory || []).filter(
+              (h: any) =>
+                h &&
+                typeof h.id === 'string' &&
+                !h.id.startsWith('att-init-') &&
+                !['att-1', 'att-2', 'att-3', 'att-4', 'att-5', 'att-6', 'att-7', 'att-8', 'att-9', 'att-10', 'att-201', 'att-202', 'att-203', 'att-204', 'att-205', 'att-301', 'att-302', 'att-303', 'att-304', 'att-305'].includes(h.id)
+            );
+            const presentCount = cleanHistory.filter((h) => h.status === 'Present' || h.status === 'Late').length;
+            const computedRate = cleanHistory.length > 0 ? Math.round((presentCount / cleanHistory.length) * 100) : 100;
+
             return {
               ...s,
               studentShift: shift,
@@ -467,6 +487,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               tuitionTotal,
               tuitionPaid,
               tuitionBalance,
+              attendanceHistory: cleanHistory,
+              attendanceRate: computedRate,
               subscriptionStatus: s.subscriptionStatus || (s.id === 'std-3' ? 'Pending Approval' : 'Active'),
               subscriptionMonth: s.subscriptionMonth || 'September 2026',
               subscriptionExpiryDate: s.subscriptionExpiryDate || '30 Sep 2026, 11:59 PM',
@@ -568,10 +590,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length >= 30) return parsed;
       } catch {}
     }
-    return PRACTICE_QUESTIONS_DATA;
+    return generate20YearPastQuestionsArchive();
   });
 
   // CBT Exams & Attempts
@@ -588,7 +610,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [cbtAttempts, setCbtAttempts] = useState<CBTAttempt[]>(() => {
     const saved = localStorage.getItem('dec_cbt_attempts');
-    return saved !== null ? JSON.parse(saved) : CBT_ATTEMPTS_DATA;
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((a: any) => !['att-1', 'att-2', 'att-3', 'att-4', 'att-5'].includes(a.id));
+        }
+      } catch {}
+    }
+    return [];
   });
 
   // Attendance Sessions
@@ -1674,22 +1704,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     studentId: string,
     date: string,
     status: 'Present' | 'Late' | 'Absent' | 'Excused',
-    remark?: string
+    remark?: string,
+    time?: string,
+    extra?: { cohort?: string; subject?: string; venue?: string; takenBy?: string }
   ) => {
-    const newEntry = {
+    const formattedTime =
+      time ||
+      new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+    const newEntry: StudentAttendanceRecord = {
       id: `att-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       date,
+      time: formattedTime,
       status,
-      remark: remark || (status === 'Present' ? 'Full Session' : status),
+      remark: remark || (status === 'Present' ? 'Daily Lecture Session' : status),
+      cohort: extra?.cohort,
+      subject: extra?.subject,
+      venue: extra?.venue || 'Lecture Hall A',
+      takenBy: extra?.takenBy || 'Directorate Office',
     };
 
     setStudentsList((prev) =>
       prev.map((student) => {
-        if (student.id !== studentId) return student;
+        if (student.id !== studentId && student.registrationNumber !== studentId) return student;
 
         const currentHistory = student.attendanceHistory || [];
         const existingIdx = currentHistory.findIndex((h) => h.date === date);
-        let updatedHistory;
+        let updatedHistory: StudentAttendanceRecord[];
         if (existingIdx >= 0) {
           updatedHistory = currentHistory.map((h, idx) => (idx === existingIdx ? newEntry : h));
         } else {
@@ -1708,16 +1753,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           attendanceRate: newRate,
         };
 
-        if (currentStudent && currentStudent.id === studentId) {
+        if (
+          currentStudent &&
+          (currentStudent.id === student.id ||
+            currentStudent.registrationNumber === student.registrationNumber ||
+            (currentStudent.email && student.email && currentStudent.email.toLowerCase().trim() === student.email.toLowerCase().trim()))
+        ) {
           setCurrentStudent(updatedStudent);
         }
 
+        setDoc(doc(db, 'students', student.id), updatedStudent, { merge: true }).catch(() => {});
         return updatedStudent;
       })
     );
 
-    addAuditLog('Daily Attendance Logged', `Recorded "${status}" for student ID ${studentId} on ${date}`);
-    showToast('success', 'Attendance Recorded', `Saved ${status} for ${date}.`);
+    addAuditLog('Daily Attendance Logged', `Recorded "${status}" (${formattedTime}) for student ID ${studentId} on ${date}`);
+    showToast('success', 'Attendance Recorded', `Saved ${status} for ${date} at ${formattedTime}.`);
   };
 
   const submitAdmission = (data: Omit<AdmissionApplication, 'id' | 'submittedAt' | 'status'>): string => {
@@ -1861,14 +1912,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             password: app.password || 'student123',
             subjectCombinations: app.subjectCombinations || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
             selectedSubjects: app.subjectCombinations || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
-            attendanceHistory: [
-              {
-                id: `att-init-${Date.now()}`,
-                date: new Date().toISOString().split('T')[0],
-                status: 'Present',
-                remark: 'Enrollment Approved & Student Account Activated',
-              },
-            ],
+            attendanceHistory: [],
           };
 
           setDoc(doc(db, 'students', enrolledId), enrolled).catch(() => {});
@@ -2839,32 +2883,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const saveAttendanceSession = (session: DailyAttendanceSession) => {
+    const sessionTime =
+      session.time ||
+      new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+
     // Prevent duplicate attendance records for the same student/date/session (Requirement 31)
     setAttendanceSessions((prev) => {
       const filtered = prev.filter(
         (s) => !(s.date === session.date && s.program === session.program && s.cohort === session.cohort)
       );
-      return [session, ...filtered];
+      return [{ ...session, time: sessionTime }, ...filtered];
     });
 
-    setDoc(doc(db, 'attendance', `${session.date}-${(session.cohort || 'all').replace(/\s+/g, '_')}`), session).catch(() => {});
+    setDoc(doc(db, 'attendance', `${session.date}-${(session.cohort || 'all').replace(/\s+/g, '_')}`), {
+      ...session,
+      time: sessionTime,
+    }).catch(() => {});
 
     // Update attendanceHistory and attendanceRate for all students in this session
     setStudentsList((prevStudents) =>
       prevStudents.map((student) => {
-        const entry = session.entries.find((e) => e.studentId === student.id);
+        const entry = session.entries.find(
+          (e) => e.studentId === student.id || e.registrationNumber === student.registrationNumber
+        );
         if (!entry) return student;
 
         const currentHistory = student.attendanceHistory || [];
         const existingIdx = currentHistory.findIndex((h) => h.date === session.date);
-        const newHistEntry = {
+        const newHistEntry: StudentAttendanceRecord = {
           id: `att-${Date.now()}-${student.id}`,
           date: session.date,
+          time: entry.time || sessionTime,
           status: entry.status,
-          remark: `${session.cohort || session.program} Lecture Session`,
+          remark: entry.remark || `${session.cohort || session.program || 'Class'} Session`,
+          cohort: session.cohort,
+          subject: session.subject || `${student.program} Lecture`,
+          venue: session.venue || 'Lecture Hall A',
+          takenBy: session.takenBy,
         };
 
-        let updatedHistory;
+        let updatedHistory: StudentAttendanceRecord[];
         if (existingIdx >= 0) {
           updatedHistory = currentHistory.map((h, idx) => (idx === existingIdx ? newHistEntry : h));
         } else {
@@ -2877,16 +2939,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const total = updatedHistory.length;
         const newRate = total > 0 ? Math.round((presentCount / total) * 100) : 100;
 
-        return {
+        const updatedStudent: StudentProfile = {
           ...student,
           attendanceHistory: updatedHistory,
           attendanceRate: newRate,
         };
+
+        if (
+          currentStudent &&
+          (currentStudent.id === student.id ||
+            currentStudent.registrationNumber === student.registrationNumber ||
+            (currentStudent.email && student.email && currentStudent.email.toLowerCase().trim() === student.email.toLowerCase().trim()))
+        ) {
+          setCurrentStudent(updatedStudent);
+        }
+
+        setDoc(doc(db, 'students', student.id), updatedStudent, { merge: true }).catch(() => {});
+        return updatedStudent;
       })
     );
 
-    addAuditLog('Daily Attendance Logged', `Attendance marked for ${session.date} (${session.cohort})`);
-    showToast('success', 'Attendance Recorded', `Saved attendance entries for ${session.entries.length} students on ${session.date}.`);
+    addAuditLog('Daily Attendance Logged', `Attendance marked for ${session.date} at ${sessionTime} (${session.cohort})`);
+    showToast('success', 'Attendance Recorded', `Saved attendance entries for ${session.entries.length} students on ${session.date} (${sessionTime}).`);
   };
 
   const deleteAttendanceSession = (date: string, cohort?: string) => {
@@ -3078,14 +3152,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         recentMockTests: [],
         password: matchingApp?.password || 'student123',
         subjectCombinations: matchingApp?.subjectCombinations || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
-        attendanceHistory: [
-          {
-            id: `att-init-${Date.now()}`,
-            date: now.toISOString().split('T')[0],
-            status: 'Present',
-            remark: 'Tuition Cleared & Enrolled in Directorate Directory',
-          },
-        ],
+        attendanceHistory: [],
       };
       student = enrolledStudent;
     } else {
