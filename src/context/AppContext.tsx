@@ -3056,9 +3056,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         studyMode: matchingApp?.studyMode || 'Physical Weekday',
         studentShift: shift,
         monthlyFee: amount,
+        enrollmentStatus: 'APPROVED',
+        paymentStatus: 'APPROVED',
         subscriptionStatus: 'Active',
         subscriptionMonth: monthPeriod,
+        paymentMonth: monthPeriod,
         subscriptionExpiryDate: expiryDateFormatted,
+        paymentExpiryDate: expiryDateFormatted,
         targetExamDate: (tx.program || '').includes('IELTS') ? 'June 2026' : 'April 2026',
         daysRemaining: 180,
         targetScore: (tx.program || '').includes('IELTS') ? 'Band 8.0' : '320+',
@@ -3152,7 +3156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Update Transaction
     setTransactions((prev) =>
       prev.map((t) =>
-        t.id === transactionId
+        t.id === transactionId || t.reference === tx.reference
           ? {
               ...t,
               status: 'Successful',
@@ -3166,7 +3170,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    // Update matching application status to 'Enrolled'
+    // Update matching application status to 'Approved' with payment approved
     setApplications((prev) =>
       prev.map((a) =>
         a.id === tx.studentId ||
@@ -3174,7 +3178,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         a.email === tx.studentId
           ? {
               ...a,
-              status: 'Enrolled',
+              status: 'Approved',
+              enrollmentStatus: 'APPROVED',
+              paymentStatus: 'APPROVED',
               notes: `Enrolled upon tuition payment clearance. Reg No: ${student!.registrationNumber}`,
             }
           : a
@@ -3184,7 +3190,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Update monthlyPaymentSubmissions if matching
     setMonthlyPaymentSubmissions((prev) =>
       prev.map((m) =>
-        m.transactionReference === tx.reference || m.studentId === tx.studentId
+        m.transactionReference === tx.reference ||
+        m.studentId === tx.studentId ||
+        (student && m.studentId === student.id) ||
+        (student && m.studentName && m.studentName.toLowerCase().trim() === student.fullName.toLowerCase().trim())
           ? { ...m, status: 'Approved', registrationNumber: student!.registrationNumber }
           : m
       )
@@ -3205,15 +3214,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ...s,
               studentShift: shift,
               monthlyFee: amount,
+              enrollmentStatus: 'APPROVED',
+              paymentStatus: 'APPROVED',
               subscriptionStatus: 'Active',
               subscriptionExpiryDate: expiryDateFormatted,
+              paymentExpiryDate: expiryDateFormatted,
               subscriptionMonth: monthPeriod,
+              paymentMonth: monthPeriod,
               lastApprovedReceipt: officialReceipt,
               tuitionTotal: s.monthlyFee || amount || 20000,
               tuitionPaid: Math.max((s.tuitionPaid || 0) + amount, amount),
               tuitionBalance: 0,
             };
-            if (currentStudent.id === s.id) {
+            if (
+              currentStudent.id === s.id ||
+              (currentStudent.email && s.email && currentStudent.email.toLowerCase().trim() === s.email.toLowerCase().trim()) ||
+              (currentStudent.registrationNumber && s.registrationNumber && currentStudent.registrationNumber === s.registrationNumber)
+            ) {
               setCurrentStudent(updated);
             }
             return updated;
@@ -3221,6 +3238,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return s;
         });
       } else {
+        if (
+          currentStudent.id === enrolledStudent.id ||
+          (currentStudent.email && enrolledStudent.email && currentStudent.email.toLowerCase().trim() === enrolledStudent.email.toLowerCase().trim())
+        ) {
+          setCurrentStudent(enrolledStudent);
+        }
         // PREPEND newly enrolled student so their name appears immediately at the top of the Student Directory!
         return [enrolledStudent, ...prev];
       }
@@ -3230,10 +3253,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDoc(doc(db, 'payments', tx.id), { ...tx, status: 'Successful', receiptNumber: receiptNum }).catch(() => {});
 
     addAuditLog(
-      'Monthly Tuition Approved & Student Enrolled',
-      `Payment #${tx.reference} (₦${amount.toLocaleString()}) approved for ${student.fullName}. Candidate ${
-        isNewEnrollment ? 'officially enrolled into Student Directory and' : ''
-      } Official Receipt ${receiptNum} generated.`
+      'Monthly Tuition Approved & Cleared',
+      `Payment #${tx.reference} (₦${amount.toLocaleString()}) approved for ${student.fullName}. Official Receipt ${receiptNum} generated. Unlocked until ${validUntil}.`
     );
 
     try {
@@ -3250,7 +3271,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(
       'success',
       'Payment Approved & Cleared!',
-      `Receipt ${receiptNum} generated for ${student.fullName}. Candidate is enrolled in Student Directory!`
+      `Receipt ${receiptNum} generated for ${student.fullName}. Portal features unlocked until ${validUntil}!`
     );
 
     return officialReceipt;
@@ -3261,14 +3282,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!tx) return;
 
     setTransactions((prev) =>
-      prev.map((t) => (t.id === transactionId ? { ...t, status: 'Failed' } : t))
+      prev.map((t) => (t.id === transactionId || t.reference === tx.reference ? { ...t, status: 'Failed' } : t))
+    );
+
+    setMonthlyPaymentSubmissions((prev) =>
+      prev.map((m) =>
+        m.transactionReference === tx.reference || m.studentId === tx.studentId
+          ? { ...m, status: 'Rejected' }
+          : m
+      )
     );
 
     setStudentsList((prev) =>
       prev.map((s) => {
-        if (s.id === tx.studentId) {
+        if (s.id === tx.studentId || (tx.studentName && s.fullName.toLowerCase().trim() === tx.studentName.toLowerCase().trim())) {
           const updated: StudentProfile = {
             ...s,
+            paymentStatus: 'REJECTED',
             subscriptionStatus: 'Unpaid',
           };
           if (currentStudent.id === s.id) {

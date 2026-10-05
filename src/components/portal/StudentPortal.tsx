@@ -81,8 +81,19 @@ export const StudentPortal: React.FC = () => {
   // Monthly Tuition Subscription & Lock Gate State
   const isSubscriptionActive = isStudentSubscriptionActive(currentStudent);
   const pendingTx = transactions.find(
-    (t) => t.studentId === currentStudent.id && t.status === 'Pending'
+    (t) =>
+      (t.studentId === currentStudent.id ||
+        t.studentId === currentStudent.registrationNumber ||
+        (t.studentName && t.studentName.toLowerCase().trim() === currentStudent.fullName.toLowerCase().trim())) &&
+      t.status === 'Pending'
   );
+
+  const now = new Date();
+  const currentMonthPeriod = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const defaultEndOfMonth = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`;
+  const defaultValidUntil = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}`;
+
   const [selectedShift, setSelectedShift] = useState<StudentShift>(
     currentStudent.studentShift || 'Morning'
   );
@@ -770,7 +781,7 @@ export const StudentPortal: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  Monthly Tuition: <strong>₦{currentStudent.monthlyFee.toLocaleString()}/mo</strong> • Valid until end of month: <strong className="text-[#25166B]">{currentStudent.subscriptionExpiryDate || '30 Sep 2026, 11:59 PM'}</strong>.
+                  Monthly Tuition: <strong>₦{currentStudent.monthlyFee.toLocaleString()}/mo</strong> • Valid until end of month: <strong className="text-[#25166B]">{currentStudent.subscriptionExpiryDate || currentStudent.paymentExpiryDate || defaultEndOfMonth}</strong>.
                 </p>
               </div>
             </div>
@@ -2550,7 +2561,7 @@ export const StudentPortal: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Monthly Fee: <strong className="font-mono text-[#25166B]">₦{currentStudent.monthlyFee.toLocaleString()}/month</strong> • Current Cycle: <strong>{currentStudent.subscriptionMonth || 'September 2026'}</strong> • Valid Until: <strong className="text-[#25166B]">{currentStudent.subscriptionExpiryDate || '30 Sep 2026'}</strong>
+                    Monthly Fee: <strong className="font-mono text-[#25166B]">₦{currentStudent.monthlyFee.toLocaleString()}/month</strong> • Current Cycle: <strong>{currentStudent.subscriptionMonth || currentStudent.paymentMonth || currentMonthPeriod}</strong> • Valid Until: <strong className="text-[#25166B]">{currentStudent.subscriptionExpiryDate || currentStudent.paymentExpiryDate || defaultEndOfMonth}</strong>
                   </p>
                 </div>
               </div>
