@@ -159,6 +159,8 @@ export interface TransactionRecord {
   paymentMethod: 'Paystack Card' | 'Bank Transfer' | 'USSD' | 'Cash / POS';
   description: string;
   timestamp: string;
+  date?: string;
+  type?: string;
   receiptUrl?: string;
   receiptNumber?: string;
   studentShift?: StudentShift;
@@ -241,6 +243,7 @@ export interface MonthlyPaymentSubmission {
   approvedAt?: string;
   transactionReference?: string;
   studentShift?: StudentShift;
+  receiptNumber?: string;
 }
 
 export interface UploadedQuestionBatch {

@@ -1193,6 +1193,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         () => {}
       );
 
+      const unsubSubmissions = onSnapshot(
+        collection(db, 'submissions'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as MonthlyPaymentSubmission);
+          if (remote.length > 0) {
+            setMonthlyPaymentSubmissions(remote);
+          }
+        },
+        () => {}
+      );
+
+      const unsubAuditLogs = onSnapshot(
+        collection(db, 'audit_logs'),
+        (snapshot) => {
+          const remote = snapshot.docs.map((d) => d.data() as AuditLogItem);
+          if (remote.length > 0) {
+            setAuditLogs(remote);
+          }
+        },
+        () => {}
+      );
+
       return () => {
         unsubApps();
         unsubStudents();
@@ -1204,6 +1226,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         unsubAttendance();
         unsubGallery();
         unsubAdminUsers();
+        unsubSubmissions();
+        unsubAuditLogs();
       };
     } catch {
       // Graceful fallback
@@ -2621,10 +2645,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'Pending',
     };
     setMonthlyPaymentSubmissions((prev) => [newSubmission, ...prev]);
+    setDoc(doc(db, 'submissions', newSubmission.id), newSubmission).catch(() => {});
 
     // Mark student's status as 'Pending Approval'
     setStudentsList((prev) =>
-      prev.map((s) => (s.id === submission.studentId ? { ...s, subscriptionStatus: 'Pending Approval' } : s))
+      prev.map((s) => {
+        if (s.id === submission.studentId) {
+          const updated = { ...s, subscriptionStatus: 'Pending Approval' as const };
+          setDoc(doc(db, 'students', s.id), updated, { merge: true }).catch(() => {});
+          return updated;
+        }
+        return s;
+      })
     );
     if (currentStudent && currentStudent.id === submission.studentId) {
       setCurrentStudent((prev) => ({ ...prev, subscriptionStatus: 'Pending Approval' }));
@@ -2671,12 +2703,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       paymentMethod: submission.paymentMethod as any,
     };
 
-    // Update submission
+    // Update submission in state and Firestore
+    const updatedSubmission: MonthlyPaymentSubmission = { ...submission, status: 'Approved', receiptNumber: receiptNum };
     setMonthlyPaymentSubmissions((prev) =>
-      prev.map((m) => (m.id === submissionId ? { ...m, status: 'Approved', receiptNumber: receiptNum } : m))
+      prev.map((m) => (m.id === submissionId ? updatedSubmission : m))
     );
+    setDoc(doc(db, 'submissions', submissionId), updatedSubmission, { merge: true }).catch(() => {});
 
-    // Update student to Active
+    // Create corresponding Transaction Record for Financial Reports
+    const newTx: TransactionRecord = {
+      id: `tx-${Date.now()}`,
+      studentId: student.id,
+      studentName: student.fullName,
+      amount: submission.amount,
+      currency: 'NGN',
+      description: `Monthly Tuition Payment - ${submission.monthPeriod}`,
+      type: 'Tuition',
+      paymentMethod: (submission.paymentMethod as any) || 'Bank Transfer',
+      reference: submission.transactionReference || `DEC-TX-${Date.now()}`,
+      date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      timestamp: now.toISOString(),
+      status: 'Successful',
+      monthPeriod: submission.monthPeriod,
+      validUntil,
+      receiptNumber: receiptNum,
+      approvedBy: 'Mr. Akinjo Rotimi (Founder)',
+      approvedAt: approvedAtFormatted,
+      program: student.program,
+      studentShift: submission.studentShift || student.studentShift || 'Morning',
+      qrPayload,
+    };
+    setTransactions((prev) => [newTx, ...prev]);
+    setDoc(doc(db, 'payments', newTx.id), newTx).catch(() => {});
+
+    // Update student to Active in state and Firestore
     const expiryDateFormatted = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`;
     setStudentsList((prev) =>
       prev.map((s) => {
@@ -2691,6 +2751,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             studentShift: submission.studentShift || s.studentShift || 'Morning',
             tuitionPaid: (s.tuitionPaid || 0) + submission.amount,
           };
+          setDoc(doc(db, 'students', s.id), updated, { merge: true }).catch(() => {});
           if (currentStudent && currentStudent.id === s.id) {
             setCurrentStudent(updated);
           }
@@ -2709,14 +2770,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const submission = monthlyPaymentSubmissions.find((m) => m.id === submissionId);
     if (!submission) return;
 
+    const updatedSub: MonthlyPaymentSubmission = { ...submission, status: 'Rejected' };
     setMonthlyPaymentSubmissions((prev) =>
-      prev.map((m) => (m.id === submissionId ? { ...m, status: 'Rejected' } : m))
+      prev.map((m) => (m.id === submissionId ? updatedSub : m))
     );
+    setDoc(doc(db, 'submissions', submissionId), updatedSub, { merge: true }).catch(() => {});
 
     setStudentsList((prev) =>
       prev.map((s) => {
         if (s.id === submission.studentId) {
           const updated: StudentProfile = { ...s, subscriptionStatus: 'Unpaid' };
+          setDoc(doc(db, 'students', s.id), updated, { merge: true }).catch(() => {});
           if (currentStudent && currentStudent.id === s.id) {
             setCurrentStudent(updated);
           }
