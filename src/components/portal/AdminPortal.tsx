@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp, AdminPortalTab, findValidPhoto } from '../../context/AppContext';
 import {
   StudentProfile,
+  AdmissionApplication,
   ProgramItem,
   SubjectItem,
   CourseModule,
@@ -49,6 +50,7 @@ import {
   ExternalLink,
   Trash2,
   Edit,
+  Edit2,
   TrendingUp,
   Download,
   Filter,
@@ -62,6 +64,7 @@ import {
   Upload,
   FileUp,
   X,
+  XCircle,
   Sparkles,
   ChevronDown,
   Globe,
@@ -85,6 +88,7 @@ export const AdminPortal: React.FC = () => {
     recordIndividualStudentAttendance,
     applications,
     updateApplicationStatus,
+    updateApplication,
     programmes,
     subjects,
     updateSubjectCoverage,
@@ -138,6 +142,27 @@ export const AdminPortal: React.FC = () => {
   const [studentSearch, setStudentSearch] = useState('');
   const [studentProgFilter, setStudentProgFilter] = useState('All');
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+
+  // Enrollment Management search, filter & modal states
+  const [enrollmentSearch, setEnrollmentSearch] = useState('');
+  const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<'All' | 'Pending Review' | 'Approved' | 'Rejected'>('All');
+  const [enrollmentProgFilter, setEnrollmentProgFilter] = useState('All');
+  const [selectedApplication, setSelectedApplication] = useState<AdmissionApplication | null>(null);
+  const [editingApplication, setEditingApplication] = useState<AdmissionApplication | null>(null);
+  const [editAppForm, setEditAppForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    program: 'UTME',
+    studyMode: 'Physical Weekday',
+    targetScore: '320+',
+    targetExamDate: 'April 2026',
+    parentName: '',
+    parentPhone: '',
+    parentEmail: '',
+    address: '',
+    secondarySchool: '',
+  });
   const [newStudentForm, setNewStudentForm] = useState({
     fullName: '',
     email: '',
@@ -1732,100 +1757,310 @@ export const AdminPortal: React.FC = () => {
               </div>
             )}
 
-            {/* FEATURE 1B: REGISTRATIONS MANAGEMENT */}
+            {/* FEATURE 1B: ENROLLMENT MANAGEMENT */}
             {adminTab === 'registrations' && (
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                {/* Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                   <div>
-                    <h2 className="text-xl font-black text-slate-900">Online Admission Registrations</h2>
-                    <p className="text-slate-500 text-xs">
-                      Review submitted student registration dossiers, exam subject combinations, and guardian approvals.
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#25166B]/10 text-[#25166B] border border-[#25166B]/20">
+                        Enrollment Directorate
+                      </span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+                      Student Enrollment Management
+                    </h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Review submitted registration applications, approve student admission, edit candidate details, and manage student credentials.
                     </p>
                   </div>
-                  <span className="px-3 py-1.5 rounded-xl bg-sky-50 text-[#0284c7] font-extrabold text-xs border border-sky-200">
-                    {applications.length} Applications Total
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-extrabold text-xs border border-slate-200">
+                      Total: {applications.length}
+                    </span>
+                  </div>
                 </div>
 
-                {applications.length > 0 ? (
-                  <div className="space-y-4">
-                    {applications.map((app) => (
-                      <div
-                        key={app.id}
-                        className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-4 text-xs"
-                      >
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-black text-slate-900 text-sm">{app.fullName}</h3>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  app.status === 'Approved'
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : app.status === 'Rejected'
-                                    ? 'bg-red-100 text-red-800'
-                                    : 'bg-amber-100 text-amber-800'
-                                }`}
-                              >
-                                {app.status || 'Pending'}
-                              </span>
-                            </div>
-                            <span className="text-[11px] text-slate-500 font-mono">
-                              App #{app.id} • Submitted: {app.submittedAt || '2026/2027 Session'}
-                            </span>
-                          </div>
+                {/* Status Summary Counter Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div
+                    onClick={() => setEnrollmentStatusFilter('All')}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      enrollmentStatusFilter === 'All'
+                        ? 'bg-[#25166B] text-white border-[#25166B] shadow-sm'
+                        : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+                    }`}
+                  >
+                    <span className="text-[11px] font-bold block uppercase tracking-wider opacity-80">All Applications</span>
+                    <span className="text-2xl font-black font-mono mt-1 block">{applications.length}</span>
+                  </div>
 
-                          <div className="flex items-center gap-2">
-                            {app.status !== 'Approved' && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  updateApplicationStatus(app.id, 'Approved');
-                                }}
-                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Approve & Issue Receipt</span>
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateApplicationStatus(app.id, 'Rejected');
-                              }}
-                              className="px-3.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1 border border-red-200 shadow-2xs"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                              <span>Reject & Delete</span>
-                            </button>
-                          </div>
-                        </div>
+                  <div
+                    onClick={() => setEnrollmentStatusFilter('Pending Review')}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      enrollmentStatusFilter === 'Pending Review'
+                        ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                        : 'bg-amber-50/60 hover:bg-amber-100/60 border-amber-200 text-amber-900'
+                    }`}
+                  >
+                    <span className="text-[11px] font-bold block uppercase tracking-wider opacity-90">Pending Review</span>
+                    <span className="text-2xl font-black font-mono mt-1 block">
+                      {applications.filter((a) => a.status === 'Pending Review' || a.status === 'Pending' || a.enrollmentStatus === 'PENDING').length}
+                    </span>
+                  </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-slate-600">
-                          <div>
-                            <span className="text-slate-400 block font-medium">Contact:</span>
-                            <span className="font-bold text-slate-800">{app.email}</span>
-                            <span className="block text-slate-700 font-mono">{app.phone}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block font-medium">Programme &amp; Mode:</span>
-                            <span className="font-bold text-slate-800">{app.program}</span>
-                            <span className="block text-slate-700">{app.studyMode || 'Physical Weekday'}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block font-medium">Parent / Guardian:</span>
-                            <span className="font-bold text-slate-800">{app.parentName || 'N/A'}</span>
-                            <span className="block text-slate-700 font-mono">{app.parentPhone || 'N/A'}</span>
-                          </div>
-                        </div>
+                  <div
+                    onClick={() => setEnrollmentStatusFilter('Approved')}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      enrollmentStatusFilter === 'Approved'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-emerald-50/60 hover:bg-emerald-100/60 border-emerald-200 text-emerald-900'
+                    }`}
+                  >
+                    <span className="text-[11px] font-bold block uppercase tracking-wider opacity-90">Enrolled (Approved)</span>
+                    <span className="text-2xl font-black font-mono mt-1 block">
+                      {applications.filter((a) => a.status === 'Approved' || a.enrollmentStatus === 'APPROVED').length}
+                    </span>
+                  </div>
+
+                  <div
+                    onClick={() => setEnrollmentStatusFilter('Rejected')}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      enrollmentStatusFilter === 'Rejected'
+                        ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                        : 'bg-red-50/60 hover:bg-red-100/60 border-red-200 text-red-900'
+                    }`}
+                  >
+                    <span className="text-[11px] font-bold block uppercase tracking-wider opacity-90">Rejected</span>
+                    <span className="text-2xl font-black font-mono mt-1 block">
+                      {applications.filter((a) => a.status === 'Rejected' || a.enrollmentStatus === 'REJECTED').length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Search & Filter Bar */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="relative w-full md:w-80">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search applicant name, email, phone, ID..."
+                      value={enrollmentSearch}
+                      onChange={(e) => setEnrollmentSearch(e.target.value)}
+                      className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:ring-2 focus:ring-[#25166B]/30"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+                    <span className="text-xs text-slate-500 font-semibold">Status:</span>
+                    <select
+                      value={enrollmentStatusFilter}
+                      onChange={(e) => setEnrollmentStatusFilter(e.target.value as any)}
+                      className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white focus:outline-hidden"
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="Pending Review">Pending Review</option>
+                      <option value="Approved">Approved / Enrolled</option>
+                      <option value="Rejected">Rejected</option>
+                    </select>
+
+                    <span className="text-xs text-slate-500 font-semibold ml-2">Program:</span>
+                    <select
+                      value={enrollmentProgFilter}
+                      onChange={(e) => setEnrollmentProgFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white focus:outline-hidden"
+                    >
+                      <option value="All">All Programs</option>
+                      <option value="UTME">UTME / JAMB</option>
+                      <option value="WAEC">WAEC (SSCE)</option>
+                      <option value="NECO">NECO</option>
+                      <option value="IELTS">IELTS Prep</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Applications List */}
+                {(() => {
+                  const filteredApps = applications.filter((app) => {
+                    const matchesSearch =
+                      !enrollmentSearch ||
+                      (app.fullName && app.fullName.toLowerCase().includes(enrollmentSearch.toLowerCase())) ||
+                      (app.email && app.email.toLowerCase().includes(enrollmentSearch.toLowerCase())) ||
+                      (app.phone && app.phone.includes(enrollmentSearch)) ||
+                      (app.id && app.id.toLowerCase().includes(enrollmentSearch.toLowerCase())) ||
+                      (app.student_id && String(app.student_id).toLowerCase().includes(enrollmentSearch.toLowerCase()));
+
+                    const matchesStatus =
+                      enrollmentStatusFilter === 'All' ||
+                      (enrollmentStatusFilter === 'Pending Review' && (app.status === 'Pending Review' || app.status === 'Pending' || app.enrollmentStatus === 'PENDING')) ||
+                      (enrollmentStatusFilter === 'Approved' && (app.status === 'Approved' || app.enrollmentStatus === 'APPROVED')) ||
+                      (enrollmentStatusFilter === 'Rejected' && (app.status === 'Rejected' || app.enrollmentStatus === 'REJECTED'));
+
+                    const matchesProg = enrollmentProgFilter === 'All' || app.program === enrollmentProgFilter;
+
+                    return matchesSearch && matchesStatus && matchesProg;
+                  });
+
+                  if (filteredApps.length === 0) {
+                    return (
+                      <div className="py-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 space-y-2">
+                        <Users className="w-8 h-8 text-slate-400 mx-auto" />
+                        <p className="font-bold text-slate-700 text-sm">No Enrollment Applications Found</p>
+                        <p className="text-slate-400 text-xs">
+                          {enrollmentSearch || enrollmentStatusFilter !== 'All' || enrollmentProgFilter !== 'All'
+                            ? 'No applications match your current search/filter criteria.'
+                            : 'Submitted online student registration applications will appear here for admin review.'}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-12 text-center text-slate-400 text-xs">
-                    No online admission applications submitted yet.
-                  </div>
-                )}
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      {filteredApps.map((app) => {
+                        const isApproved = app.status === 'Approved' || app.enrollmentStatus === 'APPROVED';
+                        const isPending = !isApproved && (app.status === 'Pending Review' || app.status === 'Pending' || app.enrollmentStatus === 'PENDING' || !app.status);
+                        const isRejected = app.status === 'Rejected' || app.enrollmentStatus === 'REJECTED';
+
+                        return (
+                          <div
+                            key={app.id}
+                            className={`p-5 rounded-2xl border transition-all text-xs space-y-4 ${
+                              isApproved
+                                ? 'bg-emerald-50/30 border-emerald-200'
+                                : isRejected
+                                ? 'bg-red-50/30 border-red-200'
+                                : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
+                            }`}
+                          >
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-slate-700 overflow-hidden shrink-0">
+                                  {app.passportPhotoUrl || app.photoUrl || (app as any).photo_url ? (
+                                    <img
+                                      src={app.passportPhotoUrl || app.photoUrl || (app as any).photo_url}
+                                      alt={app.fullName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-5 h-5 text-slate-500" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-extrabold text-slate-900 text-sm">{app.fullName}</h3>
+                                    <span
+                                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${
+                                        isApproved
+                                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                          : isRejected
+                                          ? 'bg-red-100 text-red-800 border-red-300'
+                                          : 'bg-amber-100 text-amber-800 border-amber-300'
+                                      }`}
+                                    >
+                                      {isApproved ? 'ENROLLMENT APPROVED' : isRejected ? 'ENROLLMENT REJECTED' : 'ENROLLMENT PENDING'}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                    App ID: <strong>{app.id}</strong> {app.student_id ? `• Student ID: ${app.student_id}` : ''} • Submitted: {app.submittedAt || '2026/2027'}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedApplication(app)}
+                                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 border border-slate-200"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>View Details</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingApplication(app);
+                                    setEditAppForm({
+                                      fullName: app.fullName || '',
+                                      email: app.email || '',
+                                      phone: app.phone || '',
+                                      program: app.program || 'UTME',
+                                      studyMode: app.studyMode || 'Physical Weekday',
+                                      targetScore: app.targetScore || '320+',
+                                      targetExamDate: app.targetExamDate || 'April 2026',
+                                      parentName: app.parentName || '',
+                                      parentPhone: app.parentPhone || '',
+                                      parentEmail: app.parentEmail || '',
+                                      address: app.address || '',
+                                      secondarySchool: (app as any).secondarySchool || '',
+                                    });
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-[#0284c7] font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 border border-sky-200"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <span>Edit Info</span>
+                                </button>
+
+                                {!isApproved && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateApplicationStatus(app.id, 'Approved');
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Approve Enrollment</span>
+                                  </button>
+                                )}
+
+                                {!isRejected && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateApplicationStatus(app.id, 'Rejected');
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1 border border-red-200"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5 text-red-600" />
+                                    <span>Reject</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Info Columns */}
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-slate-600">
+                              <div>
+                                <span className="text-slate-400 block font-medium">Contact:</span>
+                                <span className="font-bold text-slate-800">{app.email}</span>
+                                <span className="block text-slate-700 font-mono">{app.phone}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-medium">Program &amp; Study Mode:</span>
+                                <span className="font-bold text-slate-800">{app.program}</span>
+                                <span className="block text-slate-700">{app.studyMode || 'Physical Weekday'} • {app.studentShift || 'Morning'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-medium">Parent / Guardian:</span>
+                                <span className="font-bold text-slate-800">{app.parentName || 'N/A'}</span>
+                                <span className="block text-slate-700 font-mono">{app.parentPhone || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block font-medium">Target Exam &amp; Score:</span>
+                                <span className="font-bold text-slate-800">{app.targetExamDate || 'April 2026'}</span>
+                                <span className="block text-[#D5241B] font-bold">Goal: {app.targetScore || '320+'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -3751,6 +3986,275 @@ export const AdminPortal: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal: View Full Application Details */}
+      {selectedApplication && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-5 my-8">
+            <div className="flex justify-between items-start border-b border-slate-200 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                  {selectedApplication.passportPhotoUrl || selectedApplication.photoUrl || (selectedApplication as any).photo_url ? (
+                    <img
+                      src={selectedApplication.passportPhotoUrl || selectedApplication.photoUrl || (selectedApplication as any).photo_url}
+                      alt={selectedApplication.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-6 h-6 text-slate-500" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-lg sm:text-xl">{selectedApplication.fullName}</h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs font-mono text-slate-500">ID: {selectedApplication.id}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                        selectedApplication.status === 'Approved' || selectedApplication.enrollmentStatus === 'APPROVED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : selectedApplication.status === 'Rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {selectedApplication.status || 'Pending Review'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedApplication(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <h4 className="font-extrabold text-[#25166B] uppercase text-[11px]">Academic Track</h4>
+                <div className="flex justify-between"><span className="text-slate-500">Program:</span><strong>{selectedApplication.program}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Study Mode:</span><strong>{selectedApplication.studyMode || 'Physical Weekday'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Student Shift:</span><strong>{selectedApplication.studentShift || 'Morning'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Target Exam:</span><strong>{selectedApplication.targetExamDate || 'April 2026'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Target Score:</span><strong className="text-[#D5241B]">{selectedApplication.targetScore || '320+'}</strong></div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <h4 className="font-extrabold text-[#25166B] uppercase text-[11px]">Contact &amp; Personal Info</h4>
+                <div className="flex justify-between"><span className="text-slate-500">Email:</span><strong>{selectedApplication.email}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Phone:</span><strong className="font-mono">{selectedApplication.phone}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Gender:</span><strong>{(selectedApplication as any).gender || 'N/A'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">State / LGA:</span><strong>{(selectedApplication as any).stateOfOrigin || 'N/A'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Address:</span><strong className="truncate max-w-[150px]">{selectedApplication.address || 'N/A'}</strong></div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <h4 className="font-extrabold text-[#25166B] uppercase text-[11px]">Parent / Guardian Info</h4>
+                <div className="flex justify-between"><span className="text-slate-500">Parent Name:</span><strong>{selectedApplication.parentName || 'N/A'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Parent Phone:</span><strong className="font-mono">{selectedApplication.parentPhone || 'N/A'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Parent Email:</span><strong>{selectedApplication.parentEmail || 'N/A'}</strong></div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <h4 className="font-extrabold text-[#25166B] uppercase text-[11px]">Enrollment &amp; Financials</h4>
+                <div className="flex justify-between"><span className="text-slate-500">Enrollment Status:</span><strong className="text-emerald-700">{selectedApplication.enrollmentStatus || 'PENDING'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Payment Status:</span><strong>{selectedApplication.paymentStatus || 'NOT_PAID'}</strong></div>
+                <div className="flex justify-between"><span className="text-slate-500">Monthly Tuition:</span><strong className="font-mono text-[#D5241B]">₦20,000</strong></div>
+              </div>
+            </div>
+
+            {/* Subject Combination */}
+            {selectedApplication.subjects && selectedApplication.subjects.length > 0 && (
+              <div className="p-4 bg-sky-50/50 rounded-2xl border border-sky-200 space-y-2 text-xs">
+                <h4 className="font-extrabold text-[#0284c7] uppercase text-[11px]">Enrolled Subject Combination</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedApplication.subjects.map((sub: string) => (
+                    <span key={sub} className="px-2.5 py-1 rounded-lg bg-[#25166B] text-white font-bold text-[11px]">
+                      {sub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => setSelectedApplication(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+              >
+                Close
+              </button>
+              {selectedApplication.status !== 'Approved' && selectedApplication.enrollmentStatus !== 'APPROVED' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateApplicationStatus(selectedApplication.id, 'Approved');
+                    setSelectedApplication(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Approve Enrollment</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Student Information */}
+      {editingApplication && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4 my-8">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <div>
+                <h3 className="font-black text-slate-900 text-lg">Edit Student Application</h3>
+                <p className="text-xs text-slate-500 font-mono">App ID: {editingApplication.id}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingApplication(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateApplication(editingApplication.id, {
+                  fullName: editAppForm.fullName,
+                  email: editAppForm.email,
+                  phone: editAppForm.phone,
+                  program: editAppForm.program as any,
+                  studyMode: editAppForm.studyMode as any,
+                  targetScore: editAppForm.targetScore,
+                  targetExamDate: editAppForm.targetExamDate,
+                  parentName: editAppForm.parentName,
+                  parentPhone: editAppForm.parentPhone,
+                  parentEmail: editAppForm.parentEmail,
+                  address: editAppForm.address,
+                });
+                setEditingApplication(null);
+              }}
+              className="space-y-3 text-xs"
+            >
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Full Candidate Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editAppForm.fullName}
+                  onChange={(e) => setEditAppForm({ ...editAppForm, fullName: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={editAppForm.email}
+                    onChange={(e) => setEditAppForm({ ...editAppForm, email: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={editAppForm.phone}
+                    onChange={(e) => setEditAppForm({ ...editAppForm, phone: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Program Track</label>
+                  <select
+                    value={editAppForm.program}
+                    onChange={(e) => setEditAppForm({ ...editAppForm, program: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-300 font-bold outline-hidden bg-white"
+                  >
+                    <option value="UTME">UTME (JAMB)</option>
+                    <option value="WAEC">WAEC (SSCE)</option>
+                    <option value="NECO">NECO</option>
+                    <option value="IELTS">IELTS Prep</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Study Mode</label>
+                  <select
+                    value={editAppForm.studyMode}
+                    onChange={(e) => setEditAppForm({ ...editAppForm, studyMode: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-300 font-bold outline-hidden bg-white"
+                  >
+                    <option value="Physical Weekday">Physical Weekday</option>
+                    <option value="Physical Weekend">Physical Weekend</option>
+                    <option value="Online Virtual">Online Virtual</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Parent Name</label>
+                  <input
+                    type="text"
+                    value={editAppForm.parentName}
+                    onChange={(e) => setEditAppForm({ ...editAppForm, parentName: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Parent Phone</label>
+                  <input
+                    type="tel"
+                    value={editAppForm.parentPhone}
+                    onChange={(e) => setEditAppForm({ ...editAppForm, parentPhone: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Residential Address</label>
+                <input
+                  type="text"
+                  value={editAppForm.address}
+                  onChange={(e) => setEditAppForm({ ...editAppForm, address: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 font-medium outline-hidden"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setEditingApplication(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#25166B] hover:bg-[#1a0f4d] text-[#FFC600] font-extrabold text-xs cursor-pointer shadow-md"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal: Enroll New Student */}
       {showAddStudentModal && (

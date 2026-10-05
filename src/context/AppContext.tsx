@@ -162,6 +162,7 @@ interface AppContextType {
   applications: AdmissionApplication[];
   submitAdmission: (data: Omit<AdmissionApplication, 'id' | 'submittedAt' | 'status'>) => string;
   updateApplicationStatus: (id: string, status: AdmissionApplication['status']) => void;
+  updateApplication: (id: string, updatedData: Partial<AdmissionApplication>) => void;
   deleteApplication: (id: string) => void;
   submitStudentApplicationWithPayment: (
     formData: any,
@@ -1412,7 +1413,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!found) {
-      // Check if there is an application waiting for Directorate payment approval
+      // Check if there is an application waiting for academy enrollment approval
       const matchingApp = applications.find(
         (a) =>
           (a.email || '').toLowerCase().trim() === cleanId ||
@@ -1420,15 +1421,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           (a.fullName || '').toLowerCase().trim() === cleanId
       );
       if (matchingApp) {
+        if (matchingApp.status === 'Rejected' || matchingApp.enrollmentStatus === 'REJECTED') {
+          return {
+            success: false,
+            message: 'Your enrollment application has been declined. Please contact the academy administration.',
+          };
+        }
         return {
           success: false,
           message:
-            'Payment approval pending: Your enrollment application and initial tuition payment are currently awaiting approval by the Executive Directorate. Once the Directorate approves your payment, you will be able to sign in immediately.',
+            'Your enrollment application is currently under review by the academy. Once your enrollment is approved by the admin in Enrollment Management, you will be able to sign in immediately.',
         };
       }
       return {
         success: false,
         message: 'No student record found with this Email or Registration Number. Please apply or verify your email.',
+      };
+    }
+
+    // Check if found student account has enrollment pending or rejected
+    if (found.enrollmentStatus === 'PENDING') {
+      return {
+        success: false,
+        message:
+          'Your enrollment application is currently under review by the academy. Once your enrollment is approved by the admin in Enrollment Management, you will be able to sign in immediately.',
+      };
+    }
+    if (found.enrollmentStatus === 'REJECTED') {
+      return {
+        success: false,
+        message: 'Your enrollment application has been declined. Please contact the academy administration.',
       };
     }
 
@@ -1700,7 +1722,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const submitAdmission = (data: Omit<AdmissionApplication, 'id' | 'submittedAt' | 'status'>): string => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const newId = `DEC-2026-${randomNum}`;
+    const newId = `DEC-APP-2026-${randomNum}`;
     const newApp: AdmissionApplication = {
       ...data,
       id: newId,
@@ -1711,168 +1733,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hour: '2-digit',
         minute: '2-digit',
       }),
-      status: 'Enrolled',
+      status: 'Pending Review',
+      enrollmentStatus: 'PENDING',
+      paymentStatus: 'NOT_PAID',
     };
 
     setApplications((prev) => [newApp, ...prev]);
-    addAuditLog('Admission Application Received', `Application #${newId} for ${data.fullName} (${data.program})`);
+    setDoc(doc(db, 'applications', newId), newApp).catch(() => {});
 
-    // Automatically create and sync the student profile
-    const progStr = (data.program || '').toUpperCase();
-    const tuitionTotal = progStr.includes('IELTS')
-      ? 70000
-      : progStr.includes('ADULT')
-      ? 60000
-      : 20000; // JAMB, WAEC, NECO, GCE
-    const shift: StudentShift = data.studentShift || 'Morning';
-    const monthlyFee = tuitionTotal;
-    const currentMonthPeriod = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
-
-    const studentProfile: StudentProfile = {
-      id: `std-${Date.now()}`,
-      registrationNumber: newId,
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
-      password: data.password || 'student123',
-      avatar: data.passportPhotoUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>',
-      program: data.program,
-      studyMode: data.studyMode,
-      studentShift: shift,
-      monthlyFee,
-      subscriptionStatus: 'Unpaid',
-      subscriptionMonth: currentMonthPeriod,
-      targetExamDate: data.program === 'IELTS' ? 'June 2026' : 'April 2026',
-      daysRemaining: 45,
-      targetScore: data.program === 'IELTS' ? (data.ieltsTargetBand ? `Band ${data.ieltsTargetBand}` : 'Band 8.0') : '320+',
-      currentAverageScore: data.program === 'IELTS' ? 7.0 : 280,
-      attendanceRate: 100,
-      syllabusCompletion: 25,
-      tuitionTotal,
-      tuitionPaid: 0,
-      tuitionBalance: tuitionTotal,
-      currency: 'NGN',
-      nextClass: data.program === 'IELTS'
-        ? 'IELTS Masterclass (Audio Lab & Writing Task 2) - Saturday 10:00 AM'
-        : 'Use of English & Core Combination - Saturday 09:00 AM (Hall A)',
-      assignedAdvisor: data.program === 'IELTS' ? 'Mrs. Abigail Mensah (British Council Certified)' : 'Mr. Akinjo Rotimi (Founder)',
-      subjectCombinations: data.subjectCombinations,
-      selectedSubjects: data.subjectCombinations || [],
-      ieltsModule: data.ieltsModule,
-      ieltsTargetBand: data.ieltsTargetBand,
-      ieltsFocusArea: data.ieltsFocusArea,
-      destinationCountry: data.destinationCountry,
-      targetInstitution: data.targetInstitution,
-      targetCourse: data.targetCourse,
-      nin: data.nin,
-      dateOfBirth: data.dateOfBirth,
-      gender: data.gender,
-      academicSession: data.academicSession || 'Official 2026/2027 academic session',
-      stateOfOrigin: data.stateOfOrigin,
-      lga: data.lga,
-      parentName: data.parentName,
-      parentPhone: data.parentPhone,
-      parentRelationship: data.parentRelationship,
-      parentEmail: data.parentEmail,
-      parentOccupation: data.parentOccupation,
-      parentAddress: data.parentAddress,
-      residentialAddress: data.residentialAddress,
-      attendanceHistory: [
-        {
-          id: `att-init-${Date.now()}`,
-          date: new Date().toISOString().split('T')[0],
-          status: 'Present',
-          remark: 'Initial Induction & Biometric Enrollment',
-        },
-      ],
-      recentMockTests: [],
-    };
-
-    setStudentsList((prev) => [studentProfile, ...prev]);
-    setCurrentStudent(studentProfile);
-    setIsStudentLoggedIn(true);
-    localStorage.setItem('dec_student_logged_in', 'true');
-
-    try {
-      confetti({
-        particleCount: 85,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#D5241B', '#25166B', '#028D3B', '#098CD0', '#FFC600'],
-      });
-    } catch {
-      // Ignore
+    if (data.passportPhotoUrl) {
+      try {
+        if (data.email) localStorage.setItem(`dec_photo_${data.email.toLowerCase().trim()}`, data.passportPhotoUrl);
+        localStorage.setItem(`dec_photo_${newId}`, data.passportPhotoUrl);
+      } catch {}
     }
 
+    addAuditLog('Enrollment Application Received', `Application #${newId} for ${data.fullName} (${data.program || 'UTME'}). Status: PENDING`);
+
     showToast(
-      'success',
-      'Registration Completed!',
-      `Registration ID: ${newId}. Profile created for e-portal.`
+      'info',
+      'Enrollment Application Submitted!',
+      `Application #${newId} received. Status: PENDING review by Academy Administration.`
     );
 
     return newId;
   };
 
+  const updateApplication = (id: string, updatedData: Partial<AdmissionApplication>) => {
+    setApplications((prev) =>
+      prev.map((app) => (app.id === id ? { ...app, ...updatedData } : app))
+    );
+    setDoc(doc(db, 'applications', id), updatedData, { merge: true }).catch(() => {});
+
+    // Sync to Student Profile in Directory if exists
+    setStudentsList((prev) =>
+      prev.map((s) => {
+        if (
+          s.id === id ||
+          s.registrationNumber === id ||
+          (s.email && updatedData.email && s.email.toLowerCase().trim() === updatedData.email.toLowerCase().trim())
+        ) {
+          const updated: StudentProfile = {
+            ...s,
+            fullName: updatedData.fullName || s.fullName,
+            email: updatedData.email || s.email,
+            phone: updatedData.phone || s.phone,
+            program: (updatedData.program as any) || s.program,
+            studentShift: updatedData.studentShift || s.studentShift,
+            studyMode: updatedData.studyMode || s.studyMode,
+          };
+          setDoc(doc(db, 'students', s.id), updated, { merge: true }).catch(() => {});
+          return updated;
+        }
+        return s;
+      })
+    );
+
+    addAuditLog('Application Data Modified', `Application #${id} information updated by Admin.`);
+    showToast('success', 'Application Updated', `Application #${id} has been modified successfully.`);
+  };
+
   const updateApplicationStatus = (id: string, status: AdmissionApplication['status']) => {
-    if (status === 'Rejected') {
-      const appToDelete = applications.find((app) => app.id === id);
-      setApplications((prev) => {
-        const remaining = prev.filter((app) => app.id !== id);
-        try {
-          localStorage.setItem('dec_applications', JSON.stringify(remaining));
-        } catch {
-          // ignore
-        }
-        return remaining;
-      });
+    const isApproved = status === 'Approved';
+    const isRejected = status === 'Rejected';
+    const newEnrollmentStatus = isApproved ? 'APPROVED' : isRejected ? 'REJECTED' : 'PENDING';
 
-      // Also clean up any associated pending transactions for this rejected application
-      setTransactions((prev) => {
-        const filteredTx = prev.filter(
-          (t) =>
-            !(
-              (t.studentId === id ||
-                (appToDelete?.email && t.studentId === appToDelete.email) ||
-                (appToDelete?.fullName &&
-                  t.studentName &&
-                  t.studentName.toLowerCase().trim() === appToDelete.fullName.toLowerCase().trim())) &&
-              t.status === 'Pending'
-            )
-        );
-        try {
-          localStorage.setItem('dec_transactions_clean_v1', JSON.stringify(filteredTx));
-        } catch {
-          // ignore
-        }
-        return filteredTx;
-      });
-
-      // Clean up any associated pending monthly payment submissions
-      setMonthlyPaymentSubmissions((prev) =>
-        prev.filter(
-          (m) =>
-            m.studentId !== id &&
-            m.studentId !== appToDelete?.email &&
-            m.studentName !== appToDelete?.fullName
-        )
-      );
-
-      // Also delete from Firestore if connected
-      deleteDoc(doc(db, 'applications', id)).catch(() => {});
-
-      addAuditLog(
-        'Registration Rejected & Application Deleted',
-        `Application #${id} for ${appToDelete?.fullName || 'Applicant'} was rejected and deleted immediately.`
-      );
-      showToast(
-        'warning',
-        'Registration Rejected & Application Deleted',
-        `Application for ${appToDelete?.fullName || id} has been rejected and deleted immediately.`
-      );
-      return;
-    }
-
-    if (status === 'Approved') {
+    if (isApproved) {
       const app = applications.find((a) => a.id === id);
       if (app) {
         setStudentsList((prev) => {
@@ -1884,19 +1810,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           );
           if (already) {
             const photo = app.passportPhotoUrl || (app as any).photoUrl || (app as any).photo_url || (app as any).avatar;
-            if (photo && (!already.avatar || already.avatar.includes('<svg') || already.avatar.includes('unsplash.com'))) {
-              const updated = { ...already, avatar: photo, photoUrl: photo, photo_url: photo, passportPhotoUrl: photo };
-              setDoc(doc(db, 'students', already.id), updated).catch(() => {});
-              return prev.map((s) => (s.id === already.id ? updated : s));
-            }
-            return prev;
+            const updated: StudentProfile = {
+              ...already,
+              enrollmentStatus: 'APPROVED',
+              avatar: photo || already.avatar,
+              photoUrl: photo || already.photoUrl,
+              photo_url: photo || already.photo_url,
+              passportPhotoUrl: photo || already.passportPhotoUrl,
+            };
+            setDoc(doc(db, 'students', already.id), updated, { merge: true }).catch(() => {});
+            return prev.map((s) => (s.id === already.id ? updated : s));
           }
 
           const progStr = (app.program || 'UTME').toUpperCase();
-          const amount = progStr.includes('IELTS') ? 70000 : progStr.includes('ADULT') ? 60000 : 20000;
-          const now = new Date();
-          const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-          const expiryDateFormatted = `${lastDayOfMonth.getDate()} ${now.toLocaleString('en-US', { month: 'short' })} ${now.getFullYear()}, 11:59 PM`;
+          const amount = 20000;
           const regNum = `DEC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
           const enrolledId = `std-${Date.now()}`;
           const photo = app.passportPhotoUrl || (app as any).photoUrl || (app as any).photo_url || (app as any).avatar || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23e0f2fe"/><circle cx="100" cy="80" r="40" fill="%230284c7"/><path d="M35 175 C35 130 65 118 100 118 C135 118 165 130 165 175 Z" fill="%230369a1"/></svg>';
@@ -1915,9 +1842,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             studyMode: app.studyMode || 'Physical Weekday',
             studentShift: app.studentShift || 'Morning',
             monthlyFee: amount,
-            subscriptionStatus: 'Active',
-            subscriptionMonth: now.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
-            subscriptionExpiryDate: expiryDateFormatted,
+            enrollmentStatus: 'APPROVED',
+            paymentStatus: 'NOT_PAID',
+            subscriptionStatus: 'Unpaid',
             targetExamDate: progStr.includes('IELTS') ? 'June 2026' : 'April 2026',
             daysRemaining: 180,
             targetScore: progStr.includes('IELTS') ? 'Band 8.0' : '320+',
@@ -1925,20 +1852,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             attendanceRate: 100,
             syllabusCompletion: 5,
             tuitionTotal: amount,
-            tuitionPaid: amount,
-            tuitionBalance: 0,
+            tuitionPaid: 0,
+            tuitionBalance: amount,
             currency: 'NGN',
             nextClass: 'Monday 08:30 AM (Lecture Hall A)',
             assignedAdvisor: 'Mr. Akinjo Rotimi (Directorate)',
             recentMockTests: [],
             password: app.password || 'student123',
             subjectCombinations: app.subjectCombinations || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
+            selectedSubjects: app.subjectCombinations || ['Use of English', 'Mathematics', 'Physics', 'Chemistry'],
             attendanceHistory: [
               {
                 id: `att-init-${Date.now()}`,
-                date: now.toISOString().split('T')[0],
+                date: new Date().toISOString().split('T')[0],
                 status: 'Present',
-                remark: 'Admissions Approved & Registered in Directorate Directory',
+                remark: 'Enrollment Approved & Student Account Activated',
               },
             ],
           };
@@ -1950,10 +1878,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     setApplications((prev) =>
-      prev.map((app) => (app.id === id ? { ...app, status } : app))
+      prev.map((app) =>
+        app.id === id
+          ? {
+              ...app,
+              status,
+              enrollmentStatus: newEnrollmentStatus,
+            }
+          : app
+      )
     );
-    addAuditLog('Application Status Updated', `Application #${id} status changed to ${status}`);
-    showToast('info', 'Application Updated', `Application #${id} set to "${status}".`);
+    setDoc(
+      doc(db, 'applications', id),
+      {
+        status,
+        enrollmentStatus: newEnrollmentStatus,
+      },
+      { merge: true }
+    ).catch(() => {});
+
+    addAuditLog('Enrollment Status Updated', `Application #${id} enrollment status set to ${status} (${newEnrollmentStatus})`);
+    showToast(
+      isApproved ? 'success' : isRejected ? 'warning' : 'info',
+      'Enrollment Updated',
+      `Student enrollment #${id} is now ${status}.`
+    );
   };
 
   const deleteApplication = (id: string) => {
@@ -3373,6 +3322,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isStudentSubscriptionActive = (student: StudentProfile): boolean => {
     if (!student) return false;
+
+    // Enrollment must be approved
+    if (student.enrollmentStatus && student.enrollmentStatus !== 'APPROVED') {
+      return false;
+    }
+
+    // Explicit paymentStatus checks
+    if (
+      student.paymentStatus === 'NOT_PAID' ||
+      student.paymentStatus === 'PENDING' ||
+      student.paymentStatus === 'EXPIRED' ||
+      student.paymentStatus === 'REJECTED'
+    ) {
+      return false;
+    }
+
+    // Legacy subscriptionStatus fallback checks
     if (
       student.subscriptionStatus === 'Expired' ||
       student.subscriptionStatus === 'Unpaid' ||
@@ -3380,24 +3346,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ) {
       return false;
     }
-    if (student.subscriptionStatus !== 'Active') return false;
 
     const now = new Date();
     const currentMonthYear = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
     // Tuition payment expires at the end of the month
-    if (student.subscriptionMonth && student.subscriptionMonth !== currentMonthYear) {
+    const studentMonth = student.paymentMonth || student.subscriptionMonth;
+    if (studentMonth && studentMonth !== currentMonthYear) {
       return false;
     }
 
-    if (student.subscriptionExpiryDate) {
-      const parsedDate = new Date(student.subscriptionExpiryDate);
+    const expiryDateStr = student.paymentExpiryDate || student.subscriptionExpiryDate;
+    if (expiryDateStr) {
+      const parsedDate = new Date(expiryDateStr);
       if (!isNaN(parsedDate.getTime()) && now.getTime() > parsedDate.getTime()) {
         return false;
       }
     }
 
-    return true;
+    return student.paymentStatus === 'APPROVED' || student.subscriptionStatus === 'Active';
   };
 
   // Official Receipt Modal State
@@ -3462,6 +3429,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         applications,
         submitAdmission,
         updateApplicationStatus,
+        updateApplication,
         deleteApplication,
         submitStudentApplicationWithPayment,
 

@@ -467,6 +467,73 @@ export const StudentPortal: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const LockedFeatureNotice: React.FC<{ featureName: string }> = ({ featureName }) => (
+    <div className="bg-white rounded-3xl border-2 border-amber-400/80 p-6 sm:p-10 text-center max-w-xl mx-auto space-y-6 shadow-sm animate-in fade-in duration-200">
+      <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto">
+        <Lock className="w-8 h-8 text-amber-600" />
+      </div>
+      <div className="space-y-2">
+        <span className="inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+          Payment-Protected Learning Feature
+        </span>
+        <h3 className="text-xl sm:text-2xl font-black text-[#25166B]">
+          {featureName} is Locked
+        </h3>
+        <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed max-w-md mx-auto">
+          Your monthly payment has not been approved. Please complete your ₦20,000 monthly payment to access this feature.
+        </p>
+      </div>
+
+      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-left space-y-2 max-w-md mx-auto">
+        <div className="flex justify-between">
+          <span className="text-slate-500">Candidate Name:</span>
+          <strong className="text-[#25166B]">{currentStudent.fullName}</strong>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Student ID / Reg:</span>
+          <strong className="font-mono text-slate-900">{currentStudent.registrationNumber}</strong>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Enrollment Status:</span>
+          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+            APPROVED
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Monthly Payment Status:</span>
+          <span
+            className={`px-2 py-0.5 rounded text-[10px] font-black border ${
+              currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
+                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                : currentStudent.paymentStatus === 'EXPIRED' || currentStudent.subscriptionStatus === 'Expired'
+                ? 'bg-red-100 text-red-900 border-red-300'
+                : 'bg-slate-200 text-slate-800 border-slate-300'
+            }`}
+          >
+            {currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
+              ? 'PENDING ADMIN APPROVAL'
+              : currentStudent.paymentStatus === 'EXPIRED' || currentStudent.subscriptionStatus === 'Expired'
+              ? 'EXPIRED'
+              : 'NOT PAID'}
+          </span>
+        </div>
+        <div className="flex justify-between border-t border-slate-200 pt-2 font-bold">
+          <span className="text-slate-700">Monthly Tuition Fee:</span>
+          <span className="font-mono text-[#D5241B] text-sm">₦20,000</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setStudentTab('finance')}
+        className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
+      >
+        <CreditCard className="w-4 h-4" />
+        <span>Complete ₦20,000 Monthly Payment</span>
+      </button>
+    </div>
+  );
+
   const navItems: { id: StudentPortalTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'id-card', label: 'My ID Card', icon: <CreditCard className="w-4 h-4" />, badge: 'Official' },
@@ -686,356 +753,106 @@ export const StudentPortal: React.FC = () => {
           </div>
         </div>
 
-        {!isSubscriptionActive ? (
-          /* LOCKED PORTAL SCREEN */
-          <div className="space-y-6">
-            {/* Status Alert Bar */}
-            <div className="bg-amber-50 border-2 border-amber-500/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                  <Lock className="w-5 h-5 text-amber-700" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">
-                    Your monthly tuition payment has expired at the end of the month.
-                  </h3>
-                  <p className="text-slate-600 text-xs mt-0.5 leading-relaxed">
-                    You are signed in to your individual portal, but access to all features (CBT mock exams, lecture notes, master timetables, academic progress, results, and digital ID card) is locked until your monthly tuition payment is renewed and approved by the Executive Directorate.
-                  </p>
-                </div>
+        {/* Active Subscription Banner or Payment Status Alert */}
+        {isSubscriptionActive ? (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#028D3B]/15 text-[#028D3B] flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-[#028D3B]" />
               </div>
-              <a
-                href="#renew-tuition"
-                className="px-5 py-2.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold shrink-0 transition-colors shadow-xs"
-              >
-                Renew Tuition Payment
-              </a>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-[#25166B] text-sm sm:text-base">
+                    Monthly Pass Active: {currentStudent.studentShift} Student
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-[#028D3B] text-white">
+                    Verified
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Monthly Tuition: <strong>₦{currentStudent.monthlyFee.toLocaleString()}/mo</strong> • Valid until end of month: <strong className="text-[#25166B]">{currentStudent.subscriptionExpiryDate || '30 Sep 2026, 11:59 PM'}</strong>.
+                </p>
+              </div>
             </div>
 
-            {/* If Payment is Pending Admin Approval */}
-            {currentStudent.subscriptionStatus === 'Pending Approval' ? (
-              <div className="bg-white rounded-3xl border-2 border-[#FFC600]/60 p-6 sm:p-8 shadow-sm space-y-6">
-                <div className="text-center max-w-2xl mx-auto space-y-3">
-                  <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto">
-                    <Clock className="w-8 h-8 text-amber-600 animate-pulse" />
-                  </div>
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
-                    Awaiting Admin Directorate Clearance
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl font-black text-[#25166B]">
-                    Monthly Tuition Submitted for Approval
-                  </h2>
-                  <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                    Your monthly tuition has been submitted. In accordance with institution policy, <strong>every payment is approved by the admin on the admin dashboard before full access to the features of the app is granted</strong>.
-                  </p>
-                </div>
-
-                {/* Submitted Details Card */}
-                <div className="max-w-xl mx-auto bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-3 text-xs">
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-                    <span className="text-slate-500">Candidate:</span>
-                    <strong className="text-[#25166B]">{currentStudent.fullName} ({currentStudent.registrationNumber})</strong>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-                    <span className="text-slate-500">Selected Shift:</span>
-                    <strong className="text-[#25166B]">{currentStudent.studentShift} Student</strong>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-                    <span className="text-slate-500">Monthly Tuition Fee:</span>
-                    <strong className="font-mono text-[#25166B] text-sm">₦{currentStudent.monthlyFee.toLocaleString()}</strong>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-                    <span className="text-slate-500">Billing Cycle:</span>
-                    <strong className="text-[#1D1918]">{currentStudent.subscriptionMonth || 'September 2026'} (Expires End of Month)</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Transaction Ref:</span>
-                    <strong className="font-mono text-[#098CD0]">{pendingTx?.reference || 'DEC-PAY-PENDING'}</strong>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigateTo('admin-portal');
-                      setAdminTab('pending-payments');
-                    }}
-                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md transition-colors"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-[#FFC600]" />
-                    <span>Open Admin Dashboard (To Approve)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const rec = approveTuitionPayment(pendingTx?.id || '');
-                      if (rec) {
-                        openReceiptModal(rec);
-                      }
-                    }}
-                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#028D3B] hover:bg-[#027531] text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md transition-colors"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Simulate Instant Admin Approval</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* If Unpaid or Expired: Shift Selection & Payment Form */
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8">
-                <div className="text-center max-w-2xl mx-auto space-y-2">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#D5241B]/10 text-[#D5241B] border border-[#D5241B]/20">
-                    Monthly Access Activation
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl font-black text-[#25166B]">
-                    Select Your Student Shift & Make Payment
-                  </h2>
-                  <p className="text-slate-600 text-xs sm:text-sm">
-                    Select whether you are a <strong>Morning student (₦20,000)</strong> or <strong>Evening student (₦15,000)</strong>. Every payment is approved by the admin before full access to the features of the app.
-                  </p>
-                </div>
-
-                {/* Program & Shift Choice Cards */}
-                {(() => {
-                  const progUpper = (currentStudent.program || '').toUpperCase();
-                  const programTuition = currentStudent.monthlyFee || (
-                    progUpper.includes('IELTS') ? 70000 : progUpper.includes('ADULT') ? 60000 : 20000
-                  );
-
-                  return (
-                    <div className="space-y-4 max-w-2xl mx-auto">
-                      <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-300 flex items-center justify-between">
-                        <div>
-                          <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider">Enrolled Program</span>
-                          <h4 className="text-base font-black text-[#25166B]">{currentStudent.program || 'JAMB / WAEC / NECO / GCE'}</h4>
-                          <p className="text-xs text-slate-600">Official 2026/2027 Academic Session Tuition Fee</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-2xl font-black font-mono text-[#D5241B]">₦{programTuition.toLocaleString()}</span>
-                          <span className="block text-[10px] font-bold text-slate-500 uppercase">Clearance Fee</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Morning Student Card */}
-                        <div
-                          onClick={() => setSelectedShift('Morning')}
-                          className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative ${
-                            selectedShift === 'Morning'
-                              ? 'border-[#25166B] bg-[#25166B]/5 shadow-md'
-                              : 'border-slate-200 bg-white hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#25166B] text-white">
-                              Morning Shift
-                            </span>
-                            <span className="text-sm font-black font-mono text-[#25166B]">09:00 AM – 01:30 PM</span>
-                          </div>
-                          <p className="text-xs text-slate-500 font-medium mb-2">
-                            Monday – Friday intensive lectures &amp; CBT laboratory drills
-                          </p>
-                          <ul className="text-xs text-slate-600 space-y-1">
-                            <li className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                              <span>Daily morning intensive syllabus coverage</span>
-                            </li>
-                            <li className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                              <span>Air-conditioned CBT computer laboratory access</span>
-                            </li>
-                          </ul>
-                        </div>
-
-                        {/* Evening Student Card */}
-                        <div
-                          onClick={() => setSelectedShift('Evening')}
-                          className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative ${
-                            selectedShift === 'Evening'
-                              ? 'border-[#25166B] bg-[#25166B]/5 shadow-md'
-                              : 'border-slate-200 bg-white hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#098CD0] text-white">
-                              Evening Shift
-                            </span>
-                            <span className="text-sm font-black font-mono text-[#25166B]">02:00 PM – 06:30 PM</span>
-                          </div>
-                          <p className="text-xs text-slate-500 font-medium mb-2">
-                            Monday – Friday evening lectures &amp; mock test clinics
-                          </p>
-                          <ul className="text-xs text-slate-600 space-y-1">
-                            <li className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                              <span>Evening accelerated coaching &amp; past question drill</span>
-                            </li>
-                            <li className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#028D3B] shrink-0" />
-                              <span>Full e-portal access, digital library &amp; materials</span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Bank Account Details Box - OPAY Dedicated Official Account */}
-                <div className="max-w-2xl mx-auto bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-3 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                    <span className="font-extrabold text-[#25166B] uppercase text-[11px]">Official Tuition Bank Account</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#028D3B]/10 text-[#028D3B]">
-                      Verified Official Account
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Bank Name</span>
-                      <strong className="text-[#1D1918] text-sm">OPAY</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Account Name</span>
-                      <strong className="text-[#1D1918] text-sm">D Ensured Consult Enterprise</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Account Number</span>
-                      <strong className="font-mono text-[#25166B] text-base tracking-wider font-black">6111753209</strong>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
-                    Location: Doyin Plaza, Igboelerin Bus Stop, beside Prime-Mart, Okomaiko, Lagos. Tuition payment must be made to this official OPAY account only.
-                  </p>
-                </div>
-
-                {/* Payment Channel Radio */}
-                <div className="max-w-2xl mx-auto space-y-2">
-                  <label className="text-xs font-bold text-slate-700 block">Select Payment Channel:</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                    {['Bank Transfer', 'Paystack Online Card', 'Cash / POS at Reception'].map((method) => (
-                      <button
-                        key={method}
-                        type="button"
-                        onClick={() => setSelectedPaymentMethod(method)}
-                        className={`p-3 rounded-xl border text-left font-bold cursor-pointer transition-all ${
-                          selectedPaymentMethod === method
-                            ? 'border-[#25166B] bg-[#25166B] text-white shadow-2xs'
-                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        {method}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Submit Monthly Payment for Admin Clearance */}
-                <div className="max-w-md mx-auto pt-2 text-center space-y-3">
-                  <button
-                    type="button"
-                    disabled={isSubmittingMonthly}
-                    onClick={() => {
-                      setIsSubmittingMonthly(true);
-                      setTimeout(() => {
-                        submitMonthlyTuition(currentStudent.id, selectedShift, selectedPaymentMethod as any);
-                        setIsSubmittingMonthly(false);
-                      }, 500);
-                    }}
-                    className="w-full py-4 px-6 rounded-xl bg-[#D5241B] hover:bg-[#b81d15] text-white font-extrabold text-sm shadow-xl cursor-pointer transition-all flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>
-                      {isSubmittingMonthly
-                        ? 'Logging Payment Submission...'
-                        : `Submit ₦${(
-                            currentStudent.monthlyFee ||
-                            ((currentStudent.program || '').toUpperCase().includes('IELTS')
-                              ? 70000
-                              : (currentStudent.program || '').toUpperCase().includes('ADULT')
-                              ? 60000
-                              : 20000)
-                          ).toLocaleString()} for Admin Clearance`}
-                    </span>
-                  </button>
-                  <p className="text-[11px] text-slate-500">
-                    Every payment is approved by the admin on the admin dashboard before full access to the features of the app is granted.
-                  </p>
-                </div>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => handleOpenOfficialReceipt()}
+              className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] font-extrabold text-xs shadow-xs cursor-pointer flex items-center gap-2 shrink-0 transition-all"
+            >
+              <QrCode className="w-4 h-4 text-[#FFC600]" />
+              <span>View Official Receipt (with QR Code)</span>
+            </button>
           </div>
         ) : (
-          /* UNLOCKED PORTAL FEATURES */
-          <>
-            {/* Active Subscription Banner with View Official Receipt button */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#028D3B]/15 text-[#028D3B] flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-6 h-6 text-[#028D3B]" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-[#25166B] text-sm sm:text-base">
-                      Monthly Pass Active: {currentStudent.studentShift} Student
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-[#028D3B] text-white">
-                      Verified
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Monthly Tuition: <strong>₦{currentStudent.monthlyFee.toLocaleString()}/mo</strong> • Valid until end of month: <strong className="text-[#25166B]">{currentStudent.subscriptionExpiryDate || '30 Sep 2026, 11:59 PM'}</strong>.
-                  </p>
-                </div>
+          <div className="bg-amber-50 border-2 border-amber-500/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5 text-amber-700" />
               </div>
-
-              <button
-                type="button"
-                onClick={() => handleOpenOfficialReceipt()}
-                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl bg-[#25166B] hover:bg-[#1c1152] text-[#FFC600] font-extrabold text-xs shadow-xs cursor-pointer flex items-center gap-2 shrink-0 transition-all"
-              >
-                <QrCode className="w-4 h-4 text-[#FFC600]" />
-                <span>View Official Receipt (with QR Code)</span>
-              </button>
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-base">
+                  {currentStudent.paymentStatus === 'EXPIRED' || currentStudent.subscriptionStatus === 'Expired'
+                    ? 'Your monthly payment has expired.'
+                    : currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
+                    ? 'Monthly payment pending admin approval.'
+                    : 'Your monthly payment has not been approved.'}
+                </h3>
+                <p className="text-slate-600 text-xs mt-0.5 leading-relaxed">
+                  Your monthly payment has not been approved. Please complete your ₦20,000 monthly payment to access this feature.
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setStudentTab('finance')}
+              className="px-5 py-2.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs font-bold shrink-0 transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>
+                {currentStudent.paymentStatus === 'PENDING' || currentStudent.subscriptionStatus === 'Pending Approval'
+                  ? 'View Payment Status'
+                  : 'Pay ₦20,000 Tuition'}
+              </span>
+            </button>
+          </div>
+        )}
 
-            {/* Horizontal Scrollable Tabs with Direct Links */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-xs overflow-x-auto">
-              <nav className="flex items-center gap-1.5 min-w-max">
-                {navItems.map((tab) => {
-                  const isActive = studentTab === tab.id;
-                  return (
-                    <a
-                      key={tab.id}
-                      href={`#/student-portal?tab=${tab.id}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setStudentTab(tab.id);
-                      }}
-                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-[#25166B] text-[#FFC600] shadow-sm'
-                          : 'text-slate-600 hover:text-[#25166B] hover:bg-slate-100'
+        {/* Horizontal Scrollable Tabs with Direct Links */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-xs overflow-x-auto">
+          <nav className="flex items-center gap-1.5 min-w-max">
+            {navItems.map((tab) => {
+              const isActive = studentTab === tab.id;
+              return (
+                <a
+                  key={tab.id}
+                  href={`#/student-portal?tab=${tab.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setStudentTab(tab.id);
+                  }}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[#25166B] text-[#FFC600] shadow-sm'
+                      : 'text-slate-600 hover:text-[#25166B] hover:bg-slate-100'
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase ${
+                        isActive ? 'bg-[#FFC600] text-[#25166B]' : 'bg-amber-100 text-[#25166B]'
                       }`}
                     >
-                      {tab.icon}
-                      <span>{tab.label}</span>
-                      {tab.badge && (
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase ${
-                            isActive ? 'bg-[#FFC600] text-[#25166B]' : 'bg-amber-100 text-[#25166B]'
-                          }`}
-                        >
-                          {tab.badge}
-                        </span>
-                      )}
-                    </a>
-                  );
-                })}
-              </nav>
-            </div>
+                      {tab.badge}
+                    </span>
+                  )}
+                </a>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* TAB 1: DASHBOARD */}
         {studentTab === 'dashboard' && (
@@ -1275,8 +1092,11 @@ export const StudentPortal: React.FC = () => {
         {/* TAB 2: MY ID CARD */}
         {studentTab === 'id-card' && (
           <div className="space-y-6">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+            {!isSubscriptionActive ? (
+              <LockedFeatureNotice featureName="Official Student ID Card" />
+            ) : (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#25166B]">
                     Official Student Identity Card
@@ -1530,7 +1350,8 @@ export const StudentPortal: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1776,24 +1597,7 @@ export const StudentPortal: React.FC = () => {
         {studentTab === 'cbt-mocks' && (
           <div className="space-y-6">
             {!isSubscriptionActive ? (
-              <div className="bg-amber-50 border-2 border-amber-500/40 rounded-3xl p-7 text-center space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
-                  <Lock className="w-7 h-7 text-amber-700" />
-                </div>
-                <div className="max-w-md mx-auto space-y-1.5">
-                  <h3 className="text-xl font-black text-[#0a192f]">CBT Practice Feature Locked</h3>
-                  <p className="text-slate-600 text-xs leading-relaxed">
-                    Access to Computer-Based Test (CBT) simulations and past questions bank requires your full monthly tuition payment of <strong>₦20,000</strong> to be approved by the admin in the admin dashboard.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setStudentTab('finance')}
-                  className="px-5 py-2.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
-                >
-                  Renew / Verify Monthly Payment
-                </button>
-              </div>
+              <LockedFeatureNotice featureName="Mock Exams & CBT Practice Simulations" />
             ) : !activeCbtExamId ? (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
@@ -2190,90 +1994,100 @@ export const StudentPortal: React.FC = () => {
 
         {/* TAB 6: MY RESULTS */}
         {studentTab === 'results' && (
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">My Results & Test History</h2>
-                <p className="text-slate-500 text-xs mt-0.5">
-                  Detailed subject performance analytics and tutor diagnostic feedback.
-                </p>
-              </div>
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Print Result Slip</span>
-              </button>
-            </div>
-
-            {/* Test Results Cards */}
-            <div className="space-y-6">
-              {currentStudent.recentMockTests.map((test) => (
-                <div key={test.id} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-extrabold text-[#0a192f] text-base">{test.title}</h3>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800">
-                          {test.status}
-                        </span>
-                      </div>
-                      <span className="text-xs text-slate-400">{test.date} • Standard Testing Format</span>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-2xl font-black text-[#0a192f] font-mono">
-                        {test.totalScore} <span className="text-xs text-slate-400 font-normal">/ {test.maxScore}</span>
-                      </span>
-                      <span className="text-xs text-emerald-600 font-bold block">
-                        {test.percentage}% (Percentile: {test.percentile}th)
-                      </span>
-                    </div>
+          <div className="space-y-6">
+            {!isSubscriptionActive ? (
+              <LockedFeatureNotice featureName="My CBT Examination Results" />
+            ) : (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">My Results & Test History</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Detailed subject performance analytics and tutor diagnostic feedback.
+                    </p>
                   </div>
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print Result Slip</span>
+                  </button>
+                </div>
 
-                  {/* Subject Scores */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {test.subjects.map((sub, idx) => (
-                      <div key={idx} className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-1 text-xs">
-                        <div className="flex justify-between items-center font-bold">
-                          <span className="text-[#0a192f]">{sub.subject}</span>
-                          <span className="font-mono text-[#d97706]">
-                            {sub.score} / {sub.maxScore}
+                {/* Test Results Cards */}
+                <div className="space-y-6">
+                  {currentStudent.recentMockTests.map((test) => (
+                    <div key={test.id} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-extrabold text-[#0a192f] text-base">{test.title}</h3>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800">
+                              {test.status}
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-400">{test.date} • Standard Testing Format</span>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-2xl font-black text-[#0a192f] font-mono">
+                            {test.totalScore} <span className="text-xs text-slate-400 font-normal">/ {test.maxScore}</span>
+                          </span>
+                          <span className="text-xs text-emerald-600 font-bold block">
+                            {test.percentage}% (Percentile: {test.percentile}th)
                           </span>
                         </div>
-                        <p className="text-slate-500 text-[11px] italic">"{sub.teacherFeedback}"</p>
                       </div>
-                    ))}
-                  </div>
+
+                      {/* Subject Scores */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {test.subjects.map((sub, idx) => (
+                          <div key={idx} className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-1 text-xs">
+                            <div className="flex justify-between items-center font-bold">
+                              <span className="text-[#0a192f]">{sub.subject}</span>
+                              <span className="font-mono text-[#d97706]">
+                                {sub.score} / {sub.maxScore}
+                              </span>
+                            </div>
+                            <p className="text-slate-500 text-[11px] italic">"{sub.teacherFeedback}"</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* TAB 6B: ACADEMIC PROGRESS (Requirement 34) */}
         {studentTab === 'progress' && (
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
-                  Academic Performance Ledger
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900">Continuous Academic Progress</h2>
-                <p className="text-slate-500 text-xs mt-0.5">
-                  Multi-assessment heuristic progress, subject mastery curves, and teacher evaluation comments.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-[#0284c7] border border-sky-300 text-xs font-bold transition-colors cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Print Progress Report</span>
-              </button>
-            </div>
+          <div className="space-y-6">
+            {!isSubscriptionActive ? (
+              <LockedFeatureNotice featureName="Academic Progress Scorecard" />
+            ) : (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1 rounded-full inline-block mb-1.5">
+                      Academic Performance Ledger
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900">Continuous Academic Progress</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Multi-assessment heuristic progress, subject mastery curves, and teacher evaluation comments.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-[#0284c7] border border-sky-300 text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print Progress Report</span>
+                  </button>
+                </div>
 
             {/* High-Level Standing Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -2378,134 +2192,142 @@ export const StudentPortal: React.FC = () => {
               </div>
             </div>
           </div>
+            )}
+          </div>
         )}
 
         {/* TAB 7: PRACTICE SETS */}
         {studentTab === 'practice-sets' && (
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Interactive Practice Question Bank</h2>
-                <p className="text-slate-500 text-xs mt-0.5">
-                  Topical past questions with instant answer checking and step-by-step heuristic solutions.
-                </p>
-              </div>
+          <div className="space-y-6">
+            {!isSubscriptionActive ? (
+              <LockedFeatureNotice featureName="Interactive Practice Question Bank" />
+            ) : (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Interactive Practice Question Bank</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Topical past questions with instant answer checking and step-by-step heuristic solutions.
+                    </p>
+                  </div>
 
-              {/* Subject Filter */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 font-semibold">Subject:</span>
-                <select
-                  value={practiceSubjectFilter}
-                  onChange={(e) => setPracticeSubjectFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-white outline-hidden"
-                >
-                  <option value="All">All Subjects</option>
-                  <option value="Physics">Physics</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Chemistry">Chemistry</option>
-                  <option value="Biology">Biology</option>
-                  <option value="Use of English & Literature">Use of English</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Questions List */}
-            <div className="space-y-4">
-              {practiceQuestions
-                .filter((q) => practiceSubjectFilter === 'All' || q.subject.includes(practiceSubjectFilter))
-                .map((q, idx) => {
-                  const isRevealed = revealedExplanations[q.id];
-                  const chosenOpt = practiceUserAnswers[q.id];
-                  return (
-                    <div
-                      key={q.id}
-                      className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3 text-xs"
+                  {/* Subject Filter */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 font-semibold">Subject:</span>
+                    <select
+                      value={practiceSubjectFilter}
+                      onChange={(e) => setPracticeSubjectFilter(e.target.value)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-white outline-hidden"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#d97706]">
-                            {q.subject}
-                          </span>
-                          <span className="text-slate-400 font-mono text-[11px]">{q.examYear}</span>
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">
-                          {q.difficulty}
-                        </span>
-                      </div>
+                      <option value="All">All Subjects</option>
+                      <option value="Physics">Physics</option>
+                      <option value="Mathematics">Mathematics</option>
+                      <option value="Chemistry">Chemistry</option>
+                      <option value="Biology">Biology</option>
+                      <option value="Use of English & Literature">Use of English</option>
+                    </select>
+                  </div>
+                </div>
 
-                      <h4 className="font-bold text-[#0a192f] text-sm leading-relaxed">
-                        {idx + 1}. {q.questionText}
-                      </h4>
-
-                      {/* Options */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                        {q.options.map((opt) => {
-                          const isSelected = chosenOpt === opt.label;
-                          const isCorrect = isRevealed && opt.label === q.correctOption;
-                          const isWrong = isRevealed && isSelected && opt.label !== q.correctOption;
-                          return (
-                            <button
-                              key={opt.label}
-                              onClick={() => {
-                                setPracticeUserAnswers((prev) => ({ ...prev, [q.id]: opt.label }));
-                              }}
-                              className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                                isCorrect
-                                  ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
-                                  : isWrong
-                                  ? 'border-red-400 bg-red-50 text-red-900'
-                                  : isSelected
-                                  ? 'border-[#d97706] bg-amber-50/50 text-[#0a192f] font-bold'
-                                  : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
-                              }`}
-                            >
-                              <span
-                                className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-[11px] shrink-0 ${
-                                  isCorrect
-                                    ? 'bg-emerald-600 text-white'
-                                    : isWrong
-                                    ? 'bg-red-600 text-white'
-                                    : isSelected
-                                    ? 'bg-[#d97706] text-white'
-                                    : 'bg-slate-100 text-slate-600'
-                                }`}
-                              >
-                                {opt.label}
-                              </span>
-                              <span className="text-xs">{opt.text}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Reveal Explanation Button */}
-                      <div className="pt-2 flex items-center justify-between border-t border-slate-200">
-                        <button
-                          onClick={() => {
-                            setRevealedExplanations((prev) => ({
-                              ...prev,
-                              [q.id]: !prev[q.id],
-                            }));
-                          }}
-                          className="text-xs text-[#d97706] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                {/* Questions List */}
+                <div className="space-y-4">
+                  {practiceQuestions
+                    .filter((q) => practiceSubjectFilter === 'All' || q.subject.includes(practiceSubjectFilter))
+                    .map((q, idx) => {
+                      const isRevealed = revealedExplanations[q.id];
+                      const chosenOpt = practiceUserAnswers[q.id];
+                      return (
+                        <div
+                          key={q.id}
+                          className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3 text-xs"
                         >
-                          <HelpCircle className="w-3.5 h-3.5" />
-                          <span>{isRevealed ? 'Hide Solution' : 'Check Correct Answer & Heuristic Solution'}</span>
-                        </button>
-                      </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#d97706]">
+                                {q.subject}
+                              </span>
+                              <span className="text-slate-400 font-mono text-[11px]">{q.examYear}</span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">
+                              {q.difficulty}
+                            </span>
+                          </div>
 
-                      {isRevealed && (
-                        <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200 text-slate-800 space-y-1">
-                          <span className="font-bold text-[#0a192f] block">
-                            Correct Answer: Option {q.correctOption}
-                          </span>
-                          <p className="text-[11px] leading-relaxed text-slate-600">{q.explanation}</p>
+                          <h4 className="font-bold text-[#0a192f] text-sm leading-relaxed">
+                            {idx + 1}. {q.questionText}
+                          </h4>
+
+                          {/* Options */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            {q.options.map((opt) => {
+                              const isSelected = chosenOpt === opt.label;
+                              const isCorrect = isRevealed && opt.label === q.correctOption;
+                              const isWrong = isRevealed && isSelected && opt.label !== q.correctOption;
+                              return (
+                                <button
+                                  key={opt.label}
+                                  onClick={() => {
+                                    setPracticeUserAnswers((prev) => ({ ...prev, [q.id]: opt.label }));
+                                  }}
+                                  className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                                    isCorrect
+                                      ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
+                                      : isWrong
+                                      ? 'border-red-400 bg-red-50 text-red-900'
+                                      : isSelected
+                                      ? 'border-[#d97706] bg-amber-50/50 text-[#0a192f] font-bold'
+                                      : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                                      isCorrect
+                                        ? 'bg-emerald-600 text-white'
+                                        : isWrong
+                                        ? 'bg-red-600 text-white'
+                                        : isSelected
+                                        ? 'bg-[#d97706] text-white'
+                                        : 'bg-slate-100 text-slate-600'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </span>
+                                  <span className="text-xs">{opt.text}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Reveal Explanation Button */}
+                          <div className="pt-2 flex items-center justify-between border-t border-slate-200">
+                            <button
+                              onClick={() => {
+                                setRevealedExplanations((prev) => ({
+                                  ...prev,
+                                  [q.id]: !prev[q.id],
+                                }));
+                              }}
+                              className="text-xs text-[#d97706] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                            >
+                              <HelpCircle className="w-3.5 h-3.5" />
+                              <span>{isRevealed ? 'Hide Solution' : 'Check Correct Answer & Heuristic Solution'}</span>
+                            </button>
+                          </div>
+
+                          {isRevealed && (
+                            <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200 text-slate-800 space-y-1">
+                              <span className="font-bold text-[#0a192f] block">
+                                Correct Answer: Option {q.correctOption}
+                              </span>
+                              <p className="text-[11px] leading-relaxed text-slate-600">{q.explanation}</p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -2559,96 +2381,102 @@ export const StudentPortal: React.FC = () => {
 
         {/* TAB 9: LECTURE NOTES & STUDY MATERIALS */}
         {studentTab === 'notes' && (
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Digital Study Materials &amp; Handouts</h2>
-                <p className="text-slate-500 text-xs mt-0.5">
-                  Official lesson summaries, formula cheat sheets, and syllabus compilations uploaded from the Directorate.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-500">Filter:</span>
-                <select
-                  value={materialSubjectFilter}
-                  onChange={(e) => setMaterialSubjectFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-slate-50 cursor-pointer focus:outline-hidden"
-                >
-                  <option value="All">All Academy Materials ({studyMaterials.length})</option>
-                  <option value="My Subjects">My Enrolled Subjects</option>
-                  <option value="Physics">Physics</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Chemistry">Chemistry</option>
-                  <option value="Biology">Biology</option>
-                  <option value="Use of English & Literature">Use of English</option>
-                  <option value="Economics">Economics</option>
-                  <option value="Government">Government</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="p-3 bg-gradient-to-r from-sky-50 to-indigo-50/50 rounded-2xl border border-sky-200 text-xs text-[#0a192f] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#0284c7] shrink-0" />
-                <span>
-                  Showing <strong>{filteredStudyMaterials.length}</strong> study resource{filteredStudyMaterials.length === 1 ? '' : 's'} ({materialSubjectFilter === 'All' ? 'All Academy Handouts' : materialSubjectFilter === 'My Subjects' ? 'Enrolled Subjects' : materialSubjectFilter})
-                </span>
-              </div>
-              <div className="flex items-center gap-1 flex-wrap text-[10px]">
-                {registeredSubjects.map((s) => (
-                  <span key={s} className="px-2 py-0.5 rounded-full font-bold bg-[#0a192f] text-[#FFC600]">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {filteredStudyMaterials.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredStudyMaterials.map((mat: StudyMaterial) => (
-                  <div
-                    key={mat.id}
-                    className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 space-y-3 text-xs transition-shadow hover:shadow-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#FFC600]">
-                        {mat.subject}
-                      </span>
-                      <span className="font-mono text-slate-400 font-bold">{mat.fileSize}</span>
-                    </div>
-
-                    <h3 className="font-extrabold text-[#0a192f] text-sm leading-snug">{mat.title}</h3>
-                    <p className="text-slate-500 text-[11px]">
-                      Author: {mat.author} • Program: {mat.program}
-                    </p>
-
-                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                      <span className="text-slate-400 text-[11px]">{mat.downloadsCount || 0} downloads</span>
-                      <button
-                        onClick={() => {
-                          showToast('success', 'Download Started', `Downloading "${mat.title}" (${mat.fileSize})`);
-                        }}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#0a192f] hover:bg-[#112240] text-[#FFC600] font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download Handout</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="space-y-6">
+            {!isSubscriptionActive ? (
+              <LockedFeatureNotice featureName="Digital Study Materials & Handouts" />
             ) : (
-              <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 space-y-2">
-                <FileText className="w-8 h-8 text-slate-400 mx-auto" />
-                <p className="font-bold text-slate-700 text-sm">No study materials in this filter yet</p>
-                <p className="text-slate-400 text-xs">Switch to &quot;All Academy Materials&quot; to view all handouts uploaded by the Directorate.</p>
-                <button
-                  type="button"
-                  onClick={() => setMaterialSubjectFilter('All')}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#0a192f] text-[#FFC600] font-bold text-xs cursor-pointer inline-flex items-center gap-1 mt-2"
-                >
-                  View All Materials
-                </button>
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-[#0a192f]">Digital Study Materials &amp; Handouts</h2>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                      Official lesson summaries, formula cheat sheets, and syllabus compilations uploaded from the Directorate.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-500">Filter:</span>
+                    <select
+                      value={materialSubjectFilter}
+                      onChange={(e) => setMaterialSubjectFilter(e.target.value)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#0a192f] bg-slate-50 cursor-pointer focus:outline-hidden"
+                    >
+                      <option value="All">All Academy Materials ({studyMaterials.length})</option>
+                      <option value="My Subjects">My Enrolled Subjects</option>
+                      <option value="Physics">Physics</option>
+                      <option value="Mathematics">Mathematics</option>
+                      <option value="Chemistry">Chemistry</option>
+                      <option value="Biology">Biology</option>
+                      <option value="Use of English & Literature">Use of English</option>
+                      <option value="Economics">Economics</option>
+                      <option value="Government">Government</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-gradient-to-r from-sky-50 to-indigo-50/50 rounded-2xl border border-sky-200 text-xs text-[#0a192f] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#0284c7] shrink-0" />
+                    <span>
+                      Showing <strong>{filteredStudyMaterials.length}</strong> study resource{filteredStudyMaterials.length === 1 ? '' : 's'} ({materialSubjectFilter === 'All' ? 'All Academy Handouts' : materialSubjectFilter === 'My Subjects' ? 'Enrolled Subjects' : materialSubjectFilter})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap text-[10px]">
+                    {registeredSubjects.map((s) => (
+                      <span key={s} className="px-2 py-0.5 rounded-full font-bold bg-[#0a192f] text-[#FFC600]">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {filteredStudyMaterials.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredStudyMaterials.map((mat: StudyMaterial) => (
+                      <div
+                        key={mat.id}
+                        className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 space-y-3 text-xs transition-shadow hover:shadow-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-[#0a192f] text-[#FFC600]">
+                            {mat.subject}
+                          </span>
+                          <span className="font-mono text-slate-400 font-bold">{mat.fileSize}</span>
+                        </div>
+
+                        <h3 className="font-extrabold text-[#0a192f] text-sm leading-snug">{mat.title}</h3>
+                        <p className="text-slate-500 text-[11px]">
+                          Author: {mat.author} • Program: {mat.program}
+                        </p>
+
+                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                          <span className="text-slate-400 text-[11px]">{mat.downloadsCount || 0} downloads</span>
+                          <button
+                            onClick={() => {
+                              showToast('success', 'Download Started', `Downloading "${mat.title}" (${mat.fileSize})`);
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl bg-[#0a192f] hover:bg-[#112240] text-[#FFC600] font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download Handout</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 space-y-2">
+                    <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+                    <p className="font-bold text-slate-700 text-sm">No study materials in this filter yet</p>
+                    <p className="text-slate-400 text-xs">Switch to &quot;All Academy Materials&quot; to view all handouts uploaded by the Directorate.</p>
+                    <button
+                      type="button"
+                      onClick={() => setMaterialSubjectFilter('All')}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#0a192f] text-[#FFC600] font-bold text-xs cursor-pointer inline-flex items-center gap-1 mt-2"
+                    >
+                      View All Materials
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2844,8 +2672,6 @@ export const StudentPortal: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
-          </>
         )}
       </div>
     </div>

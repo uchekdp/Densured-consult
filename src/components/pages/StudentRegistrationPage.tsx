@@ -20,6 +20,7 @@ import {
   Mail,
   MapPin,
   Upload,
+  Clock,
 } from 'lucide-react';
 
 export const StudentRegistrationPage: React.FC = () => {
@@ -435,159 +436,91 @@ export const StudentRegistrationPage: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
-        {/* SUCCESS STATE & TUITION PAYMENT WORKFLOW (Requirement 16)                 */}
+        {/* SUCCESS STATE: ENROLLMENT SUBMITTED (Awaiting Enrollment Approval)        */}
         {/* ========================================================================= */}
         {registrationResult ? (
-          <div className="bg-white rounded-3xl p-6 sm:p-10 border-2 border-emerald-300 shadow-xl space-y-8 animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-3xl p-6 sm:p-10 border-2 border-sky-300 shadow-xl space-y-8 animate-in fade-in zoom-in-95 duration-300">
             <div className="text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto border-2 border-emerald-300 shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-sky-100 text-[#0284c7] flex items-center justify-center mx-auto border-2 border-sky-300 shadow-sm">
                 <CheckCircle2 className="w-9 h-9" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-                Registration Submitted Successfully!
+                Enrollment Application Submitted!
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Your official candidate dossier has been created. Save your registration number below.
+              <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto">
+                Your student enrollment record has been created and saved in the academy database. Please wait for the academy to review and approve your enrollment.
               </p>
 
-              {/* Unique Student ID Card */}
+              {/* Unique Student Reference Card */}
               <div className="inline-block p-4 sm:p-6 bg-sky-50 rounded-2xl border-2 border-[#0284c7] space-y-1 my-2">
                 <span className="text-[11px] font-bold text-[#0369a1] uppercase tracking-wider block">
-                  Official Student ID (Reg Number)
+                  Application Reference ID
                 </span>
                 <span className="text-2xl sm:text-3xl font-mono font-black text-[#0284c7] tracking-wider">
                   {registrationResult.student_id}
                 </span>
                 <div className="pt-1 flex items-center justify-center gap-2">
-                  <span className="px-3 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-[#ea580c] border border-amber-300 uppercase">
-                    Status: PENDING PAYMENT
+                  <span className="px-3 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 uppercase">
+                    Enrollment Status: PENDING REVIEW
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Tuition Payment Step */}
-            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#ea580c] text-white flex items-center justify-center font-bold">
-                  2
+            {/* Applicant Summary */}
+            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4 text-xs">
+              <h3 className="font-extrabold text-slate-900 text-sm border-b border-slate-200 pb-2">
+                Submitted Candidate Profile
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-slate-700">
+                <div>
+                  <span className="text-slate-400 block font-medium">Candidate Name:</span>
+                  <strong className="text-slate-900">{registrationResult.student?.fullName || `${formData.firstName} ${formData.lastName}`}</strong>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">
-                    Step 2: Submit Tuition Payment for Approval
-                  </h3>
-                  <p className="text-xs text-slate-600">
-                    Your student account is activated immediately once the directorate verifies your tuition payment.
-                  </p>
+                  <span className="text-slate-400 block font-medium">Registered Email:</span>
+                  <strong className="text-slate-900">{formData.email}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Phone Number:</span>
+                  <strong className="text-slate-900">{formData.phone}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Programme:</span>
+                  <strong className="text-slate-900">{formData.preferredProgramme}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Study Mode &amp; Shift:</span>
+                  <strong className="text-slate-900">Physical (Morning Shift)</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Selected Subjects:</span>
+                  <strong className="text-slate-900">{formData.subjects.join(' • ')}</strong>
                 </div>
               </div>
-
-              {/* Academy Bank Details */}
-              <div className="p-4 bg-white rounded-xl border border-sky-200 grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Bank Name</span>
-                  <span className="font-bold text-slate-900">OPAY</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Account Name</span>
-                  <span className="font-bold text-slate-900">D Ensured Consult Enterprise</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Account Number</span>
-                  <span className="font-mono font-bold text-[#0284c7] text-sm">6111753209</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-semibold block text-[11px]">Standard Monthly Fee</span>
-                  <span className="font-bold text-[#0284c7] text-sm font-mono">₦20,000 / month</span>
-                </div>
-              </div>
-
-              {!paySubmitted ? (
-                <form onSubmit={handleSubmitInitialPayment} className="space-y-4 pt-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Tuition Month *</label>
-                      <input
-                        type="text"
-                        value={payMonth}
-                        onChange={(e) => setPayMonth(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white rounded-xl border border-slate-300 text-xs font-semibold focus:outline-hidden focus:border-[#0284c7]"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Amount (NGN) *</label>
-                      <input
-                        type="number"
-                        value={payAmount}
-                        onChange={(e) => setPayAmount(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white rounded-xl border border-slate-300 text-xs font-semibold focus:outline-hidden focus:border-[#0284c7]"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Payment Method *</label>
-                      <select
-                        value={payMethod}
-                        onChange={(e) => setPayMethod(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white rounded-xl border border-slate-300 text-xs font-semibold focus:outline-hidden focus:border-[#0284c7]"
-                      >
-                        <option value="Direct Bank Transfer">Direct Bank Transfer</option>
-                        <option value="POS at Center">POS at Okomaiko Center</option>
-                        <option value="Bank Teller / Cash Deposit">Bank Teller / Cash Deposit</option>
-                        <option value="Online Payment">Online Payment</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Bank Transfer Reference / Session ID / Slip No *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. GTB/TRF/2026/0928192 or POS-09821"
-                      value={payRef}
-                      onChange={(e) => setPayRef(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white rounded-xl border border-slate-300 text-xs font-semibold focus:outline-hidden focus:border-[#0284c7]"
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={paySubmitting}
-                    className="w-full py-3.5 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>{paySubmitting ? 'Submitting Payment...' : 'Submit Payment for Directorate Approval'}</span>
-                  </button>
-                </form>
-              ) : (
-                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 space-y-1">
-                  <p className="font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Tuition payment submitted (Status: PENDING APPROVAL).</span>
-                  </p>
-                  <p className="text-[11px] text-emerald-700">
-                    The Directorate is verifying your transaction. Once approved, your status becomes Active with full
-                    access to the Student Portal, CBT tests, and study materials.
-                  </p>
-                </div>
-              )}
             </div>
 
-            {/* Direct Link to Login */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
-              <span className="text-xs text-slate-500">
-                You can log into your student account at any time using your Email or Student ID.
-              </span>
+            {/* Next Steps & Workflow Information */}
+            <div className="p-5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2 text-xs text-amber-900">
+              <h4 className="font-extrabold text-sm text-amber-950 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-700" />
+                <span>Next Steps in Your Enrollment Workflow:</span>
+              </h4>
+              <ul className="space-y-1.5 list-disc list-inside text-[11px] leading-relaxed">
+                <li>The academy admissions team will review your application in the <strong>Enrollment Management</strong> section.</li>
+                <li>Upon enrollment approval, your official Student ID will be activated and you will be able to log in to the Student Portal immediately.</li>
+                <li>In the Student Portal, you can submit your <strong>₦20,000 monthly tuition payment</strong>, which will be verified separately by the admin in the Finance section to unlock all paid learning features (CBT Practice, Study Materials, ID Card, and Examinations).</li>
+              </ul>
+            </div>
+
+            {/* Navigation Button */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => setCurrentPage('student-login')}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Proceed to Student Login</span>
+                <span>Proceed to Student Portal Login</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

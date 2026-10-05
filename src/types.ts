@@ -64,7 +64,14 @@ export interface AdmissionApplication {
   preferredExamTown?: string;
   subjectCombinations?: string[];
   submittedAt: string;
-  status: 'Pending Review' | 'Approved' | 'Interview Scheduled' | 'Enrolled' | 'Rejected';
+  status: 'Pending Review' | 'Pending' | 'Approved' | 'Interview Scheduled' | 'Enrolled' | 'Rejected';
+  enrollmentStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  paymentStatus?: 'NOT_PAID' | 'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED';
+  student_id?: string;
+  targetScore?: string;
+  targetExamDate?: string;
+  address?: string;
+  subjects?: string[];
   notes?: string;
   assignedCohort?: string;
   password?: string;
@@ -185,6 +192,10 @@ export interface StudentProfile {
   studyMode: StudyMode;
   studentShift: StudentShift;
   monthlyFee: number; // 20000 for Morning, 15000 for Evening
+  enrollmentStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  paymentStatus?: 'NOT_PAID' | 'PENDING' | 'APPROVED' | 'EXPIRED' | 'REJECTED';
+  paymentExpiryDate?: string;
+  paymentMonth?: string;
   subscriptionStatus: 'Active' | 'Pending Approval' | 'Expired' | 'Unpaid';
   subscriptionExpiryDate?: string;
   subscriptionMonth?: string;

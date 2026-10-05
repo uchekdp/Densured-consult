@@ -14,11 +14,10 @@ import {
   ArrowRight,
   MessageCircle,
   MapPin,
-  Lock,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { currentPage, navigateTo, isStudentLoggedIn, isAdminLoggedIn } = useApp();
+  const { currentPage, navigateTo, isStudentLoggedIn } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Exact Main Navigation (Requirement 8): Home, About Us, Admission, Gallery, Contact
@@ -77,19 +76,6 @@ export const Navbar: React.FC = () => {
             >
               <MessageCircle className="w-3.5 h-3.5 text-emerald-300" />
               <span>WhatsApp Desk</span>
-            </a>
-            <span className="text-white/40">|</span>
-            <a
-              href="/admin"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateTo(isAdminLoggedIn ? 'admin-portal' : 'admin-login');
-              }}
-              className="flex items-center gap-1 text-sky-200 hover:text-amber-300 transition-colors font-semibold"
-              title="Admin Dashboard (https://www.densuredconsultacademy.com.ng/admin)"
-            >
-              <Lock className="w-3 h-3 text-amber-300" />
-              <span>Admin</span>
             </a>
           </div>
         </div>
@@ -227,7 +213,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Prominent Apply Now on Mobile */}
-          <div className="pt-2 space-y-2">
+          <div className="pt-2">
             <a
               href="/register"
               onClick={(e) => handleNavClick(e, 'register')}
@@ -236,22 +222,6 @@ export const Navbar: React.FC = () => {
               <span>Apply Now • 2026/2027 Admissions</span>
               <ArrowRight className="w-4 h-4" />
             </a>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 px-1">
-              <span>Directorate Hub:</span>
-              <a
-                href="/admin"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNavClick(e, isAdminLoggedIn ? 'admin-portal' : 'admin-login');
-                }}
-                className="inline-flex items-center gap-1 font-bold text-[#0284c7] hover:text-[#0369a1]"
-                title="https://www.densuredconsultacademy.com.ng/admin"
-              >
-                <Lock className="w-3.5 h-3.5 text-amber-500" />
-                <span>Admin Dashboard</span>
-              </a>
-            </div>
           </div>
         </div>
       )}
